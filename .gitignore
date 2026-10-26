@@ -1,0 +1,16 @@
+.idea/
+*.iml
+.vscode/
+
+target/
+build/
+.gradle/
+.mvn/
+out/
+
+.DS_Store
+Thumbs.db
+
+application-local.properties
+local.properties
+*.log
