@@ -1,5 +1,3 @@
--- Remaining tables moved unchanged from the former db/db.sql so Flyway owns the whole schema.
-
 CREATE TABLE merchant
 (
     id_merchant         BIGSERIAL PRIMARY KEY,

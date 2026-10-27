@@ -124,7 +124,6 @@ public class AppUserServiceImpl implements AppUserService {
         user.changeEmail(email);
     }
 
-    // Admins can activate or deactivate a user, but only the activation flow leaves PENDING_ACTIVATION.
     private void changeStatus(AppUser user, UserStatus status) {
         if (status == UserStatus.PENDING_ACTIVATION && user.getStatus() != UserStatus.PENDING_ACTIVATION) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Status cannot be changed back to PENDING_ACTIVATION.");
@@ -141,7 +140,6 @@ public class AppUserServiceImpl implements AppUserService {
         return currentUserProvider.getCurrentUser().organisationId();
     }
 
-    // The unique index is the final guard when two requests claim the same email at the same time.
     private AppUser saveAndFlush(AppUser user) {
         try {
             return appUserRepository.saveAndFlush(user);

@@ -7,9 +7,6 @@ import com.example.paypulse.dto.UpdateAppUserRequest;
 import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
 
-/**
- * Manages the users of the current user's organisation.
- */
 public interface AppUserService {
 
     AppUserResponse createUser(CreateAppUserRequest request);

@@ -15,10 +15,6 @@ import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 
-/**
- * Writes 401 and 403 responses from the security filters in the standard {@link ErrorResponse} format,
- * since those requests never reach the controllers' exception handler.
- */
 @Component
 public class SecurityErrorResponseWriter implements AuthenticationEntryPoint, AccessDeniedHandler {
 

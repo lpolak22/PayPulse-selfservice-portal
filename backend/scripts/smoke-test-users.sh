@@ -1,18 +1,15 @@
 #!/usr/bin/env bash
-# Smoke test for PULSE-34 (user CRUD API) against a locally running app started with the "dev" profile.
-# Safe to re-run: every run creates users with unique emails.
-# Usage: bash scripts/smoke-test-users.sh     (BASE_URL defaults to http://localhost:8080)
 
 BASE_URL=${BASE_URL:-http://localhost:8080}
 BASE=$BASE_URL/api/users
-PW='PayPulse-Dev-2026!'   # dev password of the seeded users, see db/seed/R__dev_seed_data.sql
+PW='PayPulse-Dev-2026!'
 ADMIN="ana.horvat@paypulse-demo.example:$PW"
 OTHER_ORG_ADMIN="nikola.peric@adriatic-retail.example:$PW"
 PLAIN_USER="ivana.babic@paypulse-demo.example:$PW"
 RUN=$(date +%s)
 PASSED=0; FAILED=0
 
-call() { # label, expected status, curl args...
+call() {
   local label=$1 expected=$2; shift 2
   local out status
   out=$(curl -s -w $'\n%{http_code}' "$@")
@@ -21,11 +18,11 @@ call() { # label, expected status, curl args...
   printf '%s  %-56s %s\n' "$mark" "$label" "$status"
   [ -n "$LAST_BODY" ] && printf '      %s\n' "$(echo "$LAST_BODY" | cut -c1-200)"
 }
-body_has() { # label, text the last response body must contain
+body_has() {
   if [[ "$LAST_BODY" == *"$2"* ]]; then PASSED=$((PASSED + 1)); mark=PASS; else FAILED=$((FAILED + 1)); mark=FAIL; fi
   printf '%s    %-54s\n' "$mark" "$1"
 }
-body_lacks() { # label, text the last response body must not contain
+body_lacks() {
   if [[ "$LAST_BODY" != *"$2"* ]]; then PASSED=$((PASSED + 1)); mark=PASS; else FAILED=$((FAILED + 1)); mark=FAIL; fi
   printf '%s    %-54s\n' "$mark" "$1"
 }

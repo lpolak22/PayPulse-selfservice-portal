@@ -19,14 +19,12 @@ import org.springframework.security.web.SecurityFilterChain;
 @SecurityScheme(name = SecurityConfig.BASIC_AUTH, type = SecuritySchemeType.HTTP, scheme = "basic")
 public class SecurityConfig {
 
-    /** OpenAPI security scheme that endpoints requiring a signed-in user refer to. */
     public static final String BASIC_AUTH = "basicAuth";
 
     private static final String[] OPEN_API_PATHS = {
             "/api/docs", "/api/docs/**", "/swagger-ui/**", "/swagger-ui.html"
     };
 
-    // HTTP Basic against app_user is a stand-in until the login feature replaces it.
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityErrorResponseWriter errorWriter)
             throws Exception {

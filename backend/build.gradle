@@ -48,8 +48,6 @@ tasks.register('refreshDb', JavaExec) {
 
 tasks.named('test') {
 	useJUnitPlatform()
-	// Load Mockito as an agent; letting it self-attach prints a warning on current JDKs.
-	// Class data sharing is off because the agent extends the boot classpath, which CDS warns about.
 	jvmArgs '-Xshare:off'
 	jvmArgumentProviders.add({ ["-javaagent:${configurations.mockitoAgent.singleFile}"] } as CommandLineArgumentProvider)
 }

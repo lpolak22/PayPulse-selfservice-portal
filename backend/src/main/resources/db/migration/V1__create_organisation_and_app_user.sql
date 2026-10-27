@@ -7,9 +7,6 @@ CREATE TABLE organisation
     updated_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- totp_enabled and totp_secret are reserved for the MFA feature and are not used yet.
--- password_hash stays NULL until the user activates the account and sets a password.
--- is_active mirrors status (true only for ACTIVE, not deleted users); status is the source of truth.
 CREATE TABLE app_user
 (
     id_user            BIGSERIAL PRIMARY KEY,
@@ -36,7 +33,6 @@ CREATE TABLE app_user
     CONSTRAINT ck_app_user_status CHECK (status IN ('PENDING_ACTIVATION', 'ACTIVE', 'INACTIVE'))
 );
 
--- Email is unique regardless of letter case, but only among users that are not deleted.
 CREATE UNIQUE INDEX ux_app_user_email_lower ON app_user (lower(email)) WHERE deleted_at IS NULL;
 
 CREATE INDEX ix_app_user_organisation ON app_user (id_organisation);

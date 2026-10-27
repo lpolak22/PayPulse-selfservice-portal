@@ -28,7 +28,6 @@ public class AuditLogServiceImpl implements AuditLogService {
         this.jsonMapper = jsonMapper;
     }
 
-    // Joins the caller's transaction, so the audit row and the change it describes commit together.
     @Override
     @Transactional
     public void record(AuditAction action, Long entityId, Object oldValue, Object newValue) {

@@ -18,9 +18,6 @@ public final class AppUserSpecifications {
     private AppUserSpecifications() {
     }
 
-    /**
-     * Undeleted users of one organisation that match every filter set in the criteria.
-     */
     public static Specification<AppUser> matching(Long organisationId, AppUserSearchCriteria criteria) {
         List<Specification<AppUser>> specifications = new ArrayList<>();
         specifications.add(belongsToOrganisation(organisationId));
@@ -54,9 +51,6 @@ public final class AppUserSpecifications {
         return (root, query, builder) -> builder.equal(root.get("status"), status);
     }
 
-    /**
-     * Case-insensitive "contains" match on "first last" name or email.
-     */
     static Specification<AppUser> nameOrEmailContains(String search) {
         String pattern = "%" + escapeLikeWildcards(search.strip().toLowerCase(Locale.ROOT)) + "%";
         return (root, query, builder) -> {

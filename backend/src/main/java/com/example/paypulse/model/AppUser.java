@@ -117,7 +117,6 @@ public class AppUser {
         syncActiveFlag();
     }
 
-    // is_active is derived: status is the source of truth and deleted users are never active.
     private void syncActiveFlag() {
         this.active = status == UserStatus.ACTIVE && deletedAt == null;
     }

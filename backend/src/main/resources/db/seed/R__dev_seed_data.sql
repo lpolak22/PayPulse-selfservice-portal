@@ -1,12 +1,3 @@
--- Demo data for local development and API testing. Loaded only with the "dev" profile
--- (see application-dev.properties) and by the refreshDb Gradle task.
---
--- Users marked has_password can sign in with HTTP Basic using the dev password: PayPulse-Dev-2026!
---   PayPulse Demo d.o.o.     admins: ana.horvat@paypulse-demo.example, marko.kovacevic@paypulse-demo.example
---   Adriatic Retail j.d.o.o. admin:  nikola.peric@adriatic-retail.example
---
--- The script is idempotent: rows that already exist are left untouched.
-
 INSERT INTO organisation (name, status)
 SELECT v.name, v.status
 FROM (VALUES ('PayPulse Demo d.o.o.', 'ACTIVE'),
