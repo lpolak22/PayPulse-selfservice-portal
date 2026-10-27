@@ -1,3 +1,20 @@
 <resources>
     <string name="app_name">PayPulse</string>
+    <string name="app_logo_description">Logo aplikacije</string>
+
+    <string name="login_title">Dobrodošli u Merchant Portal</string>
+    <string name="login_subtitle">Prijavi se e-mail adresom i lozinkom koju si dobio od administratora.</string>
+    <string name="login_email_label">E-mail</string>
+    <string name="login_password_label">Lozinka</string>
+    <string name="login_show_password">Prikaži lozinku</string>
+    <string name="login_hide_password">Sakrij lozinku</string>
+    <string name="login_forgot_password">Zaboravio si lozinku?</string>
+    <string name="login_button">Prijavi se</string>
+    <string name="login_first_login_hint">Prva prijava? Upiši privremenu lozinku iz e-maila.</string>
+
+    <string name="login_error_email_required">Upiši e-mail adresu.</string>
+    <string name="login_error_email_invalid">E-mail adresa nije ispravna.</string>
+    <string name="login_error_password_required">Upiši lozinku.</string>
+    <string name="login_error_invalid_credentials">Neispravan e-mail ili lozinka.</string>
+    <string name="login_error_network">Veza nije uspjela. Provjeri internet i pokušaj ponovno.</string>
 </resources>
