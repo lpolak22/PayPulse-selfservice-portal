@@ -12,10 +12,10 @@ public class Organisation {
     @Column(name = "id_organisation")
     private Long idOrganisation;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 150)
     private String name;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private String status;
 
     @Column(name = "created_at")

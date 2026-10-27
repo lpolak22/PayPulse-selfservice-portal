@@ -2,6 +2,8 @@ package com.example.paypulse.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,12 +11,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "app_user")
 public class AppUser {
+
+    public static final String EMAIL_UNIQUE_INDEX = "ux_app_user_email_lower";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,25 +45,81 @@ public class AppUser {
     @Column(length = 16)
     private String phone;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private String role;
+    private UserRole role;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String status;
+    private UserStatus status;
 
-    @Column(name = "is_active")
-    private Boolean active;
+    @JdbcTypeCode(SqlTypes.CHAR)
+    @Column(name = "password_hash", length = 60)
+    private String passwordHash;
 
-    @Column(name = "created_at")
+    @Column(name = "is_active", nullable = false)
+    private boolean active;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     protected AppUser() {
+    }
+
+    public static AppUser createPending(Organisation organisation, String firstName, String lastName,
+                                        String email, String phone, UserRole role) {
+        AppUser user = new AppUser();
+        user.organisation = organisation;
+        user.changeFirstName(firstName);
+        user.changeLastName(lastName);
+        user.changeEmail(email);
+        user.changePhone(phone);
+        user.changeRole(role);
+        user.changeStatus(UserStatus.PENDING_ACTIVATION);
+        return user;
+    }
+
+    public void changeFirstName(String firstName) {
+        this.firstName = firstName.strip();
+    }
+
+    public void changeLastName(String lastName) {
+        this.lastName = lastName.strip();
+    }
+
+    public void changeEmail(String email) {
+        this.email = email.strip();
+    }
+
+    public void changePhone(String phone) {
+        this.phone = phone;
+    }
+
+    public void changeRole(UserRole role) {
+        this.role = role;
+    }
+
+    public void changeStatus(UserStatus status) {
+        this.status = status;
+        syncActiveFlag();
+    }
+
+    public void markDeleted(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+        syncActiveFlag();
+    }
+
+    // is_active is derived: status is the source of truth and deleted users are never active.
+    private void syncActiveFlag() {
+        this.active = status == UserStatus.ACTIVE && deletedAt == null;
     }
 
     public Long getIdUser() {
@@ -82,15 +146,19 @@ public class AppUser {
         return phone;
     }
 
-    public String getRole() {
+    public UserRole getRole() {
         return role;
     }
 
-    public String getStatus() {
+    public UserStatus getStatus() {
         return status;
     }
 
-    public Boolean isActive() {
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public boolean isActive() {
         return active;
     }
 
