@@ -1,9 +1,4 @@
 package com.example.paypulse.exception;
-
-/**
- * Base exception for expected business errors. The global handler turns it into
- * an {@link com.example.paypulse.dto.common.ErrorResponse} with the status of its {@link ErrorCode}.
- */
 public class ApiException extends RuntimeException {
 
     private final ErrorCode errorCode;
