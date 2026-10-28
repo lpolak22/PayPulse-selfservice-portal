@@ -39,7 +39,7 @@ import java.net.URI;
 @RestController
 @RequestMapping("/api/users")
 @Tag(name = "Users", description = "Manage the user accounts of the signed-in admin's organisation")
-@SecurityRequirement(name = SecurityConfig.BASIC_AUTH)
+@SecurityRequirement(name = SecurityConfig.BEARER_AUTH)
 @ApiResponse(responseCode = "401", description = "UNAUTHORIZED: not signed in",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
 @ApiResponse(responseCode = "403", description = "FORBIDDEN: the signed-in user is not an admin",

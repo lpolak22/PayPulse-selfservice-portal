@@ -4,10 +4,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-/**
- * Pagination parameters read from the query string, e.g. {@code ?page=0&pageSize=20}.
- * Pages are zero-based. pageSize defaults to 20 and is capped at 100.
- */
 public record PageQuery(Integer page, Integer pageSize) {
 
     public static final int DEFAULT_PAGE_SIZE = 20;

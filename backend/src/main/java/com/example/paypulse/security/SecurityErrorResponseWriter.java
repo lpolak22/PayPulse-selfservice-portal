@@ -27,7 +27,7 @@ public class SecurityErrorResponseWriter implements AuthenticationEntryPoint, Ac
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
                          AuthenticationException exception) throws IOException {
-        response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Basic realm=\"PayPulse\"");
+        response.setHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
         write(response, ErrorCode.UNAUTHORIZED);
     }
 
