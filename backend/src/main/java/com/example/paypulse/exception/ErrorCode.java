@@ -14,6 +14,7 @@ public enum ErrorCode {
     FORBIDDEN(HttpStatus.FORBIDDEN, "You do not have permission to perform this action."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "The requested resource was not found."),
     CONFLICT(HttpStatus.CONFLICT, "The request conflicts with the current state of the resource."),
+    USER_EMAIL_EXISTS(HttpStatus.CONFLICT, "A user with this email already exists."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
 
     private final HttpStatus status;

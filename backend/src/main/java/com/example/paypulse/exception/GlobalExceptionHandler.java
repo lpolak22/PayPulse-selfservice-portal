@@ -15,10 +15,6 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
-
-/**
- * Converts exceptions thrown by controllers into the standard {@link ErrorResponse} format.
- */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
