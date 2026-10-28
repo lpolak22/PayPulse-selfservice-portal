@@ -31,8 +31,14 @@ public class AuditLogServiceImpl implements AuditLogService {
     @Override
     @Transactional
     public void record(AuditAction action, Long entityId, Object oldValue, Object newValue) {
+        record(currentUserProvider.getCurrentUser().userId(), action, entityId, oldValue, newValue);
+    }
+
+    @Override
+    @Transactional
+    public void record(Long actorUserId, AuditAction action, Long entityId, Object oldValue, Object newValue) {
         AuditLog entry = new AuditLog(
-                currentUserProvider.getCurrentUser().userId(),
+                actorUserId,
                 action,
                 entityId,
                 toJson(oldValue),

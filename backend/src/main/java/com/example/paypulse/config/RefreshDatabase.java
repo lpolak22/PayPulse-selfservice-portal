@@ -12,7 +12,7 @@ public class RefreshDatabase {
     private static final String URL_BASE = "jdbc:postgresql://localhost:5432/";
     private static final String TARGET_DB = "paypulse_db";
     private static final String USER = "postgres";
-    private static final String PASSWORD = ""; // here goes your psql pass
+    private static final String PASSWORD = System.getenv().getOrDefault("SPRING_DATASOURCE_PASSWORD", "");
 
     public static void main(String[] args) {
         try {
