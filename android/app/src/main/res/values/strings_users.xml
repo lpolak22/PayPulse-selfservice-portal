@@ -21,7 +21,6 @@
     <string name="users_back_description">Natrag</string>
     <string name="users_new_title">Novi korisnik</string>
     <string name="users_edit_title">Uredi korisnika</string>
-    <string name="users_last_login">Zadnja prijava: %1$s u %2$s</string>
     <string name="users_first_name_label">Ime</string>
     <string name="users_last_name_label">Prezime</string>
     <string name="users_email_label">E-mail</string>
