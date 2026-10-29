@@ -23,7 +23,6 @@ import java.util.function.LongFunction;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -32,8 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Only signed-in, active admins may use /api/users: the User role gets 403, and anonymous, wrong, deactivated
- * or deleted credentials get 401 on every route.
+ * Only signed-in, active admins may use /api/users: the User role gets 403, and anonymous requests, invalid
+ * tokens and the access tokens of deactivated or deleted users get 401 on every route.
  */
 class UserApiSecurityTest extends ApiIntegrationTest {
 
@@ -101,8 +100,8 @@ class UserApiSecurityTest extends ApiIntegrationTest {
 
     @ParameterizedTest(name = "{0}")
     @MethodSource("routes")
-    void wrongPasswordIsUnauthorized(LongFunction<MockHttpServletRequestBuilder> route) throws Exception {
-        expectUnauthorized(mockMvc.perform(route.apply(target.id()).with(httpBasic(admin.email(), "wrong"))));
+    void invalidTokenIsUnauthorized(LongFunction<MockHttpServletRequestBuilder> route) throws Exception {
+        expectUnauthorized(performWithToken("not-a-jwt", route.apply(target.id())));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -123,7 +122,7 @@ class UserApiSecurityTest extends ApiIntegrationTest {
     }
 
     @Test
-    void pendingAdminWithoutPasswordIsUnauthorized() throws Exception {
+    void pendingAdminTokenIsUnauthorized() throws Exception {
         TestUser pending = fixtures.user(organisationId, UserRole.ADMIN, UserStatus.PENDING_ACTIVATION);
 
         expectUnauthorized(performAs(pending, get("/api/users")));
@@ -139,21 +138,34 @@ class UserApiSecurityTest extends ApiIntegrationTest {
     @Test
     void deactivationTakesEffectOnTheVeryNextRequest() throws Exception {
         TestUser otherAdmin = fixtures.user(organisationId, UserRole.ADMIN, UserStatus.ACTIVE);
-        performAs(otherAdmin, get("/api/users")).andExpect(status().isOk());
+        String token = accessToken(otherAdmin);
+        performWithToken(token, get("/api/users")).andExpect(status().isOk());
 
         performAs(admin, withJson(patch("/api/users/{id}", otherAdmin.id()), Map.of("status", "INACTIVE")))
                 .andExpect(status().isOk());
 
-        expectUnauthorized(performAs(otherAdmin, get("/api/users")));
+        expectUnauthorized(performWithToken(token, get("/api/users")));
     }
 
     @Test
     void deletionTakesEffectOnTheVeryNextRequest() throws Exception {
         TestUser otherAdmin = fixtures.user(organisationId, UserRole.ADMIN, UserStatus.ACTIVE);
+        String token = accessToken(otherAdmin);
 
         performAs(admin, delete("/api/users/{id}", otherAdmin.id())).andExpect(status().isNoContent());
 
-        expectUnauthorized(performAs(otherAdmin, get("/api/users")));
+        expectUnauthorized(performWithToken(token, get("/api/users")));
+    }
+
+    @Test
+    void demotionTakesEffectOnTheVeryNextRequest() throws Exception {
+        TestUser otherAdmin = fixtures.user(organisationId, UserRole.ADMIN, UserStatus.ACTIVE);
+        String token = accessToken(otherAdmin);
+
+        performAs(admin, withJson(patch("/api/users/{id}", otherAdmin.id()), Map.of("role", "USER")))
+                .andExpect(status().isOk());
+
+        performWithToken(token, get("/api/users")).andExpect(status().isForbidden());
     }
 
     private static void expectUnauthorized(ResultActions result) throws Exception {

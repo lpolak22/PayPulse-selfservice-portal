@@ -47,6 +47,11 @@ public final class UserFixtures {
         return new TestUser(id, email);
     }
 
+    /** Gives the user the fixture password, e.g. a pending user who has not finished activation. */
+    public void givePassword(TestUser user) {
+        jdbc.update("update app_user set password_hash = ? where id_user = ?", PASSWORD_HASH, user.id());
+    }
+
     public void markDeleted(TestUser user) {
         jdbc.update("update app_user set deleted_at = current_timestamp, is_active = false where id_user = ?",
                 user.id());
