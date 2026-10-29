@@ -7,7 +7,9 @@ import com.example.paypulse.dto.UpdateAppUserRequest;
 import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
 import com.example.paypulse.exception.ApiException;
+import com.example.paypulse.exception.ConflictException;
 import com.example.paypulse.exception.ErrorCode;
+import com.example.paypulse.exception.LastAdminException;
 import com.example.paypulse.exception.ResourceNotFoundException;
 import com.example.paypulse.exception.UserEmailAlreadyExistsException;
 import com.example.paypulse.mapper.AppUserMapper;
@@ -20,7 +22,10 @@ import com.example.paypulse.repository.AppUserRepository;
 import com.example.paypulse.repository.OrganisationRepository;
 import com.example.paypulse.security.CurrentUser;
 import com.example.paypulse.security.CurrentUserProvider;
+import com.example.paypulse.service.ActivationService;
 import com.example.paypulse.service.AuditLogService;
+import com.example.paypulse.service.LastAdminGuard;
+import com.example.paypulse.service.RefreshTokenService;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -76,6 +81,12 @@ class AppUserServiceImplTest {
     private AuditLogService auditLogService;
     @Mock
     private CurrentUserProvider currentUserProvider;
+    @Mock
+    private LastAdminGuard lastAdminGuard;
+    @Mock
+    private RefreshTokenService refreshTokenService;
+    @Mock
+    private ActivationService activationService;
 
     private AppUserServiceImpl service;
     private Organisation organisation;
@@ -83,7 +94,8 @@ class AppUserServiceImplTest {
     @BeforeEach
     void setUp() {
         service = new AppUserServiceImpl(appUserRepository, organisationRepository, new AppUserMapper(),
-                auditLogService, currentUserProvider, Clock.fixed(NOW, ZoneOffset.UTC));
+                auditLogService, currentUserProvider, lastAdminGuard, refreshTokenService, activationService,
+                Clock.fixed(NOW, ZoneOffset.UTC));
         organisation = new Organisation();
         organisation.setIdOrganisation(ORGANISATION_ID);
         organisation.setName("PayPulse Demo d.o.o.");
@@ -100,7 +112,7 @@ class AppUserServiceImplTest {
                 .isInstanceOf(UserEmailAlreadyExistsException.class)
                 .extracting(e -> ((ApiException) e).getErrorCode()).isEqualTo(ErrorCode.USER_EMAIL_EXISTS);
         verify(appUserRepository, never()).saveAndFlush(any());
-        verifyNoInteractions(auditLogService);
+        verifyNoInteractions(auditLogService, activationService);
     }
 
     @Test
@@ -272,6 +284,175 @@ class AppUserServiceImplTest {
         when(appUserRepository.findUndeletedInOrganisation(USER_ID, ORGANISATION_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.deleteUser(USER_ID)).isInstanceOf(ResourceNotFoundException.class);
+        verifyNoInteractions(auditLogService);
+    }
+
+    @Test
+    void createUserStartsTheActivationFlowForTheNewUser() {
+        service.createUser(createRequest("iva@example.com"));
+
+        ArgumentCaptor<AppUser> user = ArgumentCaptor.forClass(AppUser.class);
+        verify(activationService).startActivation(user.capture());
+        assertThat(user.getValue().getIdUser()).isEqualTo(USER_ID);
+        assertThat(user.getValue().getEmail()).isEqualTo("iva@example.com");
+    }
+
+    @Test
+    void activateUserSetsTheUserActiveAndAudits() {
+        AppUser user = existingUser(UserStatus.INACTIVE);
+
+        AppUserResponse activated = service.activateUser(USER_ID);
+
+        assertThat(activated.status()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(activated.active()).isTrue();
+        assertThat(user.isActive()).isTrue();
+        ArgumentCaptor<AppUserResponse> before = ArgumentCaptor.forClass(AppUserResponse.class);
+        verify(auditLogService).record(eq(AuditAction.USER_ACTIVATED), eq(USER_ID), before.capture(), eq(activated));
+        assertThat(before.getValue().status()).isEqualTo(UserStatus.INACTIVE);
+    }
+
+    @Test
+    void activateUserRejectsAUserWhoHasNotCompletedActivation() {
+        AppUser user = existingUser(UserStatus.PENDING_ACTIVATION);
+
+        assertThatThrownBy(() -> service.activateUser(USER_ID))
+                .isInstanceOf(ConflictException.class)
+                .extracting(e -> ((ApiException) e).getErrorCode()).isEqualTo(ErrorCode.CONFLICT);
+        assertThat(user.getStatus()).isEqualTo(UserStatus.PENDING_ACTIVATION);
+        verify(appUserRepository, never()).saveAndFlush(any());
+        verifyNoInteractions(auditLogService);
+    }
+
+    @Test
+    void activatingAnActiveUserChangesNothing() {
+        existingUser(UserStatus.ACTIVE);
+
+        AppUserResponse unchanged = service.activateUser(USER_ID);
+
+        assertThat(unchanged.status()).isEqualTo(UserStatus.ACTIVE);
+        verify(appUserRepository, never()).saveAndFlush(any());
+        verifyNoInteractions(auditLogService, lastAdminGuard);
+    }
+
+    @Test
+    void deactivateUserClearsTheActiveFlagEndsTheSessionsAndAudits() {
+        AppUser user = existingUser(UserStatus.ACTIVE);
+
+        AppUserResponse deactivated = service.deactivateUser(USER_ID);
+
+        assertThat(deactivated.status()).isEqualTo(UserStatus.INACTIVE);
+        assertThat(deactivated.active()).isFalse();
+        assertThat(user.isActive()).isFalse();
+        verify(refreshTokenService).revokeAllForUser(USER_ID);
+        verify(auditLogService).record(eq(AuditAction.USER_DEACTIVATED), eq(USER_ID), any(AppUserResponse.class),
+                eq(deactivated));
+    }
+
+    @Test
+    void deactivateUserAsksTheLastAdminGuardBeforeChangingAnything() {
+        AppUser admin = existingUser(UserStatus.ACTIVE);
+        admin.changeRole(UserRole.ADMIN);
+        doThrow(new LastAdminException()).when(lastAdminGuard).ensureCanChangeStatus(admin, UserStatus.INACTIVE);
+
+        assertThatThrownBy(() -> service.deactivateUser(USER_ID)).isInstanceOf(LastAdminException.class);
+
+        assertThat(admin.isActive()).isTrue();
+        verify(refreshTokenService, never()).revokeAllForUser(anyLong());
+        verify(appUserRepository, never()).saveAndFlush(any());
+        verifyNoInteractions(auditLogService);
+    }
+
+    @Test
+    void deactivatingAnInactiveUserChangesNothing() {
+        existingUser(UserStatus.INACTIVE);
+
+        AppUserResponse unchanged = service.deactivateUser(USER_ID);
+
+        assertThat(unchanged.status()).isEqualTo(UserStatus.INACTIVE);
+        verify(refreshTokenService, never()).revokeAllForUser(anyLong());
+        verifyNoInteractions(auditLogService);
+    }
+
+    @Test
+    void activateAndDeactivateThrowNotFoundForAMissingUser() {
+        when(appUserRepository.findUndeletedInOrganisation(USER_ID, ORGANISATION_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.activateUser(USER_ID)).isInstanceOf(ResourceNotFoundException.class);
+        assertThatThrownBy(() -> service.deactivateUser(USER_ID)).isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void updateUserDeactivationEndsTheSessions() {
+        existingUser(UserStatus.ACTIVE);
+
+        service.updateUser(USER_ID, updateRequest(null, null, null, UserStatus.INACTIVE));
+
+        verify(refreshTokenService).revokeAllForUser(USER_ID);
+    }
+
+    @Test
+    void updateUserKeepsTheSessionsWhileTheUserStaysActive() {
+        existingUser(UserStatus.ACTIVE);
+
+        service.updateUser(USER_ID, updateRequest(null, "+385911111111", UserRole.ADMIN, UserStatus.ACTIVE));
+
+        verify(refreshTokenService, never()).revokeAllForUser(anyLong());
+    }
+
+    @Test
+    void updateUserRejectsActivatingAUserWhoHasNotCompletedActivation() {
+        existingUser(UserStatus.PENDING_ACTIVATION);
+
+        assertThatThrownBy(() -> service.updateUser(USER_ID, updateRequest(null, null, null, UserStatus.ACTIVE)))
+                .isInstanceOf(ConflictException.class);
+        verify(appUserRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void updateUserDemotionIsCheckedByTheLastAdminGuard() {
+        AppUser admin = existingUser(UserStatus.ACTIVE);
+        admin.changeRole(UserRole.ADMIN);
+        doThrow(new LastAdminException()).when(lastAdminGuard).ensureCanChangeRole(admin, UserRole.USER);
+
+        assertThatThrownBy(() -> service.updateUser(USER_ID, updateRequest(null, null, UserRole.USER, null)))
+                .isInstanceOf(LastAdminException.class);
+
+        assertThat(admin.getRole()).isEqualTo(UserRole.ADMIN);
+        verifyNoInteractions(auditLogService);
+    }
+
+    @Test
+    void updateUserDeactivationIsCheckedByTheLastAdminGuard() {
+        AppUser admin = existingUser(UserStatus.ACTIVE);
+        admin.changeRole(UserRole.ADMIN);
+        doThrow(new LastAdminException()).when(lastAdminGuard).ensureCanChangeStatus(admin, UserStatus.INACTIVE);
+
+        assertThatThrownBy(() -> service.updateUser(USER_ID, updateRequest(null, null, null, UserStatus.INACTIVE)))
+                .isInstanceOf(LastAdminException.class);
+
+        assertThat(admin.isActive()).isTrue();
+        verify(refreshTokenService, never()).revokeAllForUser(anyLong());
+    }
+
+    @Test
+    void deleteUserEndsTheSessions() {
+        existingUser(UserStatus.ACTIVE);
+
+        service.deleteUser(USER_ID);
+
+        verify(refreshTokenService).revokeAllForUser(USER_ID);
+    }
+
+    @Test
+    void deleteUserIsCheckedByTheLastAdminGuard() {
+        AppUser admin = existingUser(UserStatus.ACTIVE);
+        admin.changeRole(UserRole.ADMIN);
+        doThrow(new LastAdminException()).when(lastAdminGuard).ensureCanDelete(admin);
+
+        assertThatThrownBy(() -> service.deleteUser(USER_ID)).isInstanceOf(LastAdminException.class);
+
+        assertThat(admin.getDeletedAt()).isNull();
+        verify(refreshTokenService, never()).revokeAllForUser(anyLong());
         verifyNoInteractions(auditLogService);
     }
 
