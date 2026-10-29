@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.ResultActions;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,6 +50,23 @@ class RefreshTokenApiTest extends ApiIntegrationTest {
     @Test
     void refreshNeedsNoAccessToken() throws Exception {
         postRefresh(login(user).refreshToken()).andExpect(status().isOk());
+    }
+
+    @Test
+    void refreshStartsANewThirtyMinuteIdleWindow() throws Exception {
+        TokenResponse first = login(user);
+        jdbc.update("update refresh_token set expires_at = current_timestamp + interval '1 minute' where id_user = ?",
+                user.id());
+        LocalDateTime before = LocalDateTime.now().withNano(0);
+
+        postRefresh(first.refreshToken())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.expiresIn").value(900));
+
+        LocalDateTime expiresAt = jdbc.queryForObject(
+                "select expires_at from refresh_token where id_user = ? and used_at is null",
+                LocalDateTime.class, user.id());
+        assertThat(expiresAt).isBetween(before.plusMinutes(30), LocalDateTime.now().plusMinutes(30));
     }
 
     @Test
@@ -95,6 +113,19 @@ class RefreshTokenApiTest extends ApiIntegrationTest {
     }
 
     @Test
+    void anExpiredRefreshTokenIsNotTreatedAsReuse() throws Exception {
+        TokenResponse phone = login(user);
+        TokenResponse laptop = login(user);
+        jdbc.update("""
+                update refresh_token set expires_at = current_timestamp - interval '1 minute'
+                where id_token = (select min(id_token) from refresh_token where id_user = ?)""", user.id());
+
+        expectInvalidRefreshToken(postRefresh(phone.refreshToken()));
+
+        postRefresh(laptop.refreshToken()).andExpect(status().isOk());
+    }
+
+    @Test
     void blankRefreshTokenReturns400() throws Exception {
         postRefresh(" ").andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("VALIDATION_ERROR"));
     }
@@ -131,6 +162,18 @@ class RefreshTokenApiTest extends ApiIntegrationTest {
 
         assertThat(openRefreshTokensOf(user)).isZero();
         expectInvalidRefreshToken(postRefresh(tokens.refreshToken()));
+    }
+
+    @Test
+    void refreshTokenOfAUserDeletedOutsideTheApiIsRejectedAndRevoked() throws Exception {
+        TokenResponse tokens = login(user);
+        jdbc.update("update app_user set deleted_at = current_timestamp where id_user = ?", user.id());
+
+        postRefresh(tokens.refreshToken())
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("ACCOUNT_INACTIVE"));
+
+        assertThat(openRefreshTokensOf(user)).isZero();
     }
 
     @Test
