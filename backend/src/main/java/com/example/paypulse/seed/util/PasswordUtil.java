@@ -1,24 +1,11 @@
-/*package com.example.paypulse.seed.util;
-
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.stereotype.Component;
-
-@Component
-public class PasswordUtil {
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-
-    public String hash(String rawPassword) {
-        return encoder.encode(rawPassword);
-    }
-}
-*/
-
 package com.example.paypulse.seed.util;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 @Component
+@Profile("seed")
 public class PasswordUtil {
     private final PasswordEncoder passwordEncoder;
 

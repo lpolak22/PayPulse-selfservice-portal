@@ -16,7 +16,6 @@ import com.example.paypulse.seed.service.TerminalSeedService;
 import com.example.paypulse.seed.service.UserSeedService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,9 +38,6 @@ public class SeedOrchestrator {
     private final TerminalSeedService terminalSeedService;
     private final TransactionGenerator transactionGenerator;
 
-    @Value("${spring.profiles.active:}")
-    private String activeProfiles;
-
     public SeedOrchestrator(OrganisationSeedService organisationSeedService,
                             UserSeedService userSeedService,
                             AcquirerSeedService acquirerSeedService,
@@ -62,28 +58,19 @@ public class SeedOrchestrator {
 
     @Transactional
     public void orchestrate() {
-        if (activeProfiles != null && activeProfiles.toLowerCase().contains("production")) {
-            log.warn("Active profile is production - stopping seed script");
-            return;
-        }
+        log.info("Starting seed");
 
-        log.info("Starting modular seed with profile: {}", activeProfiles);
-
-        // Create 2 merchant organisations
         Organisation org1 = organisationSeedService.createOrganisation("Zagreb Retail Group d.o.o.");
         Organisation org2 = organisationSeedService.createOrganisation("Split Trade Solutions d.o.o.");
 
-        // Create users for each organisation
         userSeedService.createUsersForOrganisation(org1);
         userSeedService.createUsersForOrganisation(org2);
 
-        // Create Acquirers
         Acquirer acq1 = acquirerSeedService.createAcquirer("ACQ001", "First Croatian Acquirer d.o.o.");
         Acquirer acq2 = acquirerSeedService.createAcquirer("ACQ002", "Adriatic Payment Services d.o.o.");
         Acquirer acq3 = acquirerSeedService.createAcquirer("ACQ003", "Central Payment Solutions d.o.o.");
         List<Acquirer> acquirers = Arrays.asList(acq1, acq2, acq3);
 
-        // Create MCC codes needed by terminals and transactions
         MccCode mcc1 = mccCodeSeedService.createMccCode("5411", "Grocery Stores, Supermarkets");
         MccCode mcc2 = mccCodeSeedService.createMccCode("5812", "Eating Places, Restaurants");
         MccCode mcc3 = mccCodeSeedService.createMccCode("5541", "Service Stations");
@@ -91,18 +78,14 @@ public class SeedOrchestrator {
         MccCode mcc5 = mccCodeSeedService.createMccCode("5732", "Electronics Stores");
         List<MccCode> mccCodes = Arrays.asList(mcc1, mcc2, mcc3, mcc4, mcc5);
 
-        // Create 2 merchants per organisation (3 each as per requirement - wait, requirement says "Create 2 merchant organisations with 3 merchants each")
         List<Merchant> merchants = new ArrayList<>();
         merchants.addAll(merchantSeedService.createMerchantsForOrganisation(org1, "ORG1"));
         merchants.addAll(merchantSeedService.createMerchantsForOrganisation(org2, "ORG2"));
 
-        // Create 2 to 5 outlets per merchant with Croatian addresses
         List<Outlet> outlets = outletSeedService.createOutlets(merchants);
 
-        // Create 2 to 4 terminals per outlet with different types, MCC codes from MCC_Code and statuses, including deactivated terminals
         List<Terminal> terminals = terminalSeedService.createTerminals(outlets, mccCodes);
 
-        // Generate ~100000 transactions over last 13 months covering every acquirer, card brand, status, type and sales channel
         transactionGenerator.generateTransactions(terminals, acquirers);
 
         log.info("Seed completed successfully");

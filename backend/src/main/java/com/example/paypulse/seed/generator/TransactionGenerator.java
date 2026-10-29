@@ -8,6 +8,7 @@ import com.example.paypulse.seed.config.SeedProperties;
 import com.example.paypulse.seed.util.DataGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,7 +16,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -26,6 +26,7 @@ import java.util.Random;
 import java.util.UUID;
 
 @Service
+@Profile("seed")
 public class TransactionGenerator {
     private static final Logger log = LoggerFactory.getLogger(TransactionGenerator.class);
     private final TransactionRepository transactionRepository;

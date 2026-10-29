@@ -48,7 +48,7 @@ final class TestDatabase {
     private static void requireDocker() {
         if (!DockerClientFactory.instance().isDockerAvailable()) {
             throw new IllegalStateException("The API tests need PostgreSQL. Start Docker, or point them at a local "
-                    + "database with " + URL_VARIABLE + " (see backend/test.ps1).");
+                    + "database with " + URL_VARIABLE + ", PAYPULSE_TEST_DB_USERNAME and PAYPULSE_TEST_DB_PASSWORD.");
         }
     }
 

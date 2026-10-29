@@ -1,45 +1,34 @@
 package com.example.paypulse.seed.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 @Configuration
-@ConfigurationProperties(prefix = "seed")
+@Profile("seed")
 public class SeedProperties {
-    private boolean enabled = true;
-    private String testPassword = "Password123!";
-    private int transactionCount = 100000;
-    private int batchSize = 1000;
+    private final String testPassword;
+    private final int transactionCount;
+    private final int batchSize;
 
-    public int getBatchSize() {
-        return batchSize;
-    }
-
-    public void setBatchSize(int batchSize) {
+    public SeedProperties(
+            @Value("${SEED_TEST_PASSWORD}") String testPassword,
+            @Value("${SEED_TRANSACTION_COUNT}") int transactionCount,
+            @Value("${SEED_BATCH_SIZE}") int batchSize) {
+        this.testPassword = testPassword;
+        this.transactionCount = transactionCount;
         this.batchSize = batchSize;
-    }
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
     }
 
     public String getTestPassword() {
         return testPassword;
     }
 
-    public void setTestPassword(String testPassword) {
-        this.testPassword = testPassword;
-    }
-
     public int getTransactionCount() {
         return transactionCount;
     }
 
-    public void setTransactionCount(int transactionCount) {
-        this.transactionCount = transactionCount;
+    public int getBatchSize() {
+        return batchSize;
     }
 }

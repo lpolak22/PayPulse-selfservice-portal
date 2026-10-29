@@ -4,7 +4,7 @@ FROM (VALUES ('PayPulse Demo d.o.o.', 'ACTIVE'),
              ('Adriatic Retail j.d.o.o.', 'ACTIVE')) AS v (name, status)
 WHERE NOT EXISTS (SELECT 1 FROM organisation o WHERE o.name = v.name);
 
-WITH dev_password AS (SELECT '$2a$10$QBaArHbfvBXGkYwuYlGwYuPWh/KLVnovtTVpYZB94lUTS3tbMLcA6' AS hash)
+WITH dev_password AS (SELECT '$2a$10$BUYY3qGwunbtM0ksJRjNHuh7hcCkUTUsweDfiIaoAbdEa.ewTXtyi' AS hash)
 INSERT INTO app_user (id_organisation, first_name, last_name, email, phone, role, status,
                       password_hash, is_active, is_first_login, deleted_at)
 SELECT o.id_organisation,

@@ -27,10 +27,6 @@ public class DataGenerator {
         return "+385" + (random.nextInt(900000000) + 100000000);
     }
 
-    public String randomEmail(String prefix) {
-        return prefix.toLowerCase().replace(" ", "") + random.nextInt(10000) + "@example.hr";
-    }
-
     public String randomTerminalId() {
         return "T" + String.format("%015d", Math.abs(random.nextLong())).substring(0, 15);
     }
