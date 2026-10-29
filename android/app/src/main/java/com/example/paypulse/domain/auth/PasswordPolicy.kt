@@ -10,6 +10,9 @@ object PasswordPolicy {
         PasswordRule.DIGIT -> password.any { it.isDigit() }
     }
 
+    fun metRules(password: String): Set<PasswordRule> =
+        PasswordRule.entries.filter { isMet(it, password) }.toSet()
+
     fun unmetRules(password: String): Set<PasswordRule> =
         PasswordRule.entries.filterNot { isMet(it, password) }.toSet()
 

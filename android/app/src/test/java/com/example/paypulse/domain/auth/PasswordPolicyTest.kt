@@ -62,6 +62,12 @@ class PasswordPolicyTest {
     }
 
     @Test
+    fun metRules_listsOnlyThePassedRules() {
+        val met = PasswordPolicy.metRules("abc".padEnd(PasswordPolicy.MIN_LENGTH, 'x'))
+        assertEquals(setOf(PasswordRule.MIN_LENGTH, PasswordRule.LOWERCASE), met)
+    }
+
+    @Test
     fun anyUnmetRule_meansPolicyIsNotSatisfied() {
         assertFalse(PasswordPolicy.isSatisfiedBy(validPassword.lowercase()))
     }

@@ -5,19 +5,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import com.example.paypulse.R
 import com.example.paypulse.domain.auth.PasswordPolicy
-import com.example.paypulse.domain.auth.PasswordRule
 import com.example.paypulse.ui.theme.PayPulseTheme
 
 private const val VALID_PASSWORD = "Lozinka1"
 private const val WEAK_PASSWORD = "loz"
 
-private fun metRulesOf(password: String): Set<PasswordRule> =
-    PasswordRule.entries.filter { PasswordPolicy.isMet(it, password) }.toSet()
-
 private val formState = ActivationUiState(page = ActivationPage.Form)
 
 private val submittedWithErrorsState = formState.copy(
-    metRules = metRulesOf(WEAK_PASSWORD),
+    metRules = PasswordPolicy.metRules(WEAK_PASSWORD),
     highlightUnmetRules = true,
     confirmPasswordError = R.string.activation_error_mismatch
 )
@@ -34,7 +30,7 @@ private fun ActivationEmptyFormPreview() = ActivationPreview(state = formState)
 @Composable
 private fun ActivationPartlyMetPreview() = ActivationPreview(
     password = WEAK_PASSWORD,
-    state = formState.copy(metRules = metRulesOf(WEAK_PASSWORD))
+    state = formState.copy(metRules = PasswordPolicy.metRules(WEAK_PASSWORD))
 )
 
 @PreviewLightDark
@@ -42,7 +38,7 @@ private fun ActivationPartlyMetPreview() = ActivationPreview(
 private fun ActivationAllMetPreview() = ActivationPreview(
     password = VALID_PASSWORD,
     confirmPassword = VALID_PASSWORD,
-    state = formState.copy(metRules = metRulesOf(VALID_PASSWORD))
+    state = formState.copy(metRules = PasswordPolicy.metRules(VALID_PASSWORD))
 )
 
 @PreviewLightDark
@@ -58,7 +54,7 @@ private fun ActivationSubmittedWithErrorsPreview() = ActivationPreview(
 private fun ActivationSavingPreview() = ActivationPreview(
     password = VALID_PASSWORD,
     confirmPassword = VALID_PASSWORD,
-    state = formState.copy(metRules = metRulesOf(VALID_PASSWORD), isLoading = true)
+    state = formState.copy(metRules = PasswordPolicy.metRules(VALID_PASSWORD), isLoading = true)
 )
 
 @PreviewLightDark
@@ -66,7 +62,7 @@ private fun ActivationSavingPreview() = ActivationPreview(
 private fun ActivationNetworkErrorPreview() = ActivationPreview(
     password = VALID_PASSWORD,
     confirmPassword = VALID_PASSWORD,
-    state = formState.copy(metRules = metRulesOf(VALID_PASSWORD), formError = R.string.activation_error_network)
+    state = formState.copy(metRules = PasswordPolicy.metRules(VALID_PASSWORD), formError = R.string.activation_error_network)
 )
 
 @PreviewLightDark

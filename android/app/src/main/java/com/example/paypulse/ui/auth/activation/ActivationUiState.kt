@@ -10,6 +10,7 @@ data class ActivationUiState(
     val isPasswordVisible: Boolean = false,
     val isConfirmPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,
+    val isActivated: Boolean = false,
     @param:StringRes val confirmPasswordError: Int? = null,
     @param:StringRes val formError: Int? = null
 )

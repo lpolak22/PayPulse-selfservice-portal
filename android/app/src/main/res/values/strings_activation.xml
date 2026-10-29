@@ -11,6 +11,8 @@
 
     <string name="activation_error_mismatch">Lozinke se ne podudaraju.</string>
     <string name="activation_error_network">Veza nije uspjela. Provjeri internet i pokušaj ponovno.</string>
+    <string name="activation_error_password_policy">Lozinka ne zadovoljava sva pravila.</string>
+    <string name="activation_error_unknown">Nešto nije u redu. Pokušaj ponovno.</string>
 
     <string name="activation_link_expired">Poveznica je istekla. Zatraži od administratora novu.</string>
     <string name="activation_link_used">Poveznica je već iskorištena. Zatraži od administratora novu.</string>
