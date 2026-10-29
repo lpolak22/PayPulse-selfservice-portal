@@ -36,6 +36,15 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void lastAdminExceptionReturns409WithCodeLastAdmin() {
+        ResponseEntity<ErrorResponse> response = handler.handleApiException(new LastAdminException());
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(response.getBody().code()).isEqualTo("LAST_ADMIN");
+        assertThat(response.getBody().message()).contains("last active admin");
+    }
+
+    @Test
     void validationErrorReturns400WithFieldErrors() throws NoSuchMethodException {
         BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "request");
         bindingResult.addError(new org.springframework.validation.FieldError(

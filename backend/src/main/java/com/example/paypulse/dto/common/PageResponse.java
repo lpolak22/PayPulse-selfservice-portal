@@ -5,14 +5,6 @@ import org.springframework.data.domain.Page;
 import java.util.List;
 import java.util.function.Function;
 
-/**
- * Standard paginated response body.
- *
- * @param items    items on the current page
- * @param page     zero-based page index
- * @param pageSize requested page size
- * @param total    total number of items across all pages
- */
 public record PageResponse<T>(List<T> items, int page, int pageSize, long total) {
 
     public PageResponse {

@@ -17,5 +17,9 @@ public interface AppUserService {
 
     AppUserResponse updateUser(Long id, UpdateAppUserRequest request);
 
+    AppUserResponse activateUser(Long id);
+
+    AppUserResponse deactivateUser(Long id);
+
     void deleteUser(Long id);
 }

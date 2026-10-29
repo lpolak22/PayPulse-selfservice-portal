@@ -2,13 +2,6 @@ package com.example.paypulse.dto.common;
 
 import java.util.List;
 
-/**
- * Standard error body returned by every endpoint.
- *
- * @param code        machine-readable error code (see {@code ErrorCode})
- * @param message     human-readable description
- * @param fieldErrors list of invalid fields; empty when the error is not field-specific
- */
 public record ErrorResponse(String code, String message, List<FieldError> fieldErrors) {
 
     public ErrorResponse {
