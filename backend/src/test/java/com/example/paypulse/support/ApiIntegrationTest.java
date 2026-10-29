@@ -111,4 +111,9 @@ public abstract class ApiIntegrationTest {
         String body = refreshResult.andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         return jsonMapper.readValue(body, TokenResponse.class);
     }
+
+    protected long openRefreshTokensOf(TestUser owner) {
+        return jdbc.queryForObject("select count(*) from refresh_token where id_user = ? and used_at is null",
+                Long.class, owner.id());
+    }
 }

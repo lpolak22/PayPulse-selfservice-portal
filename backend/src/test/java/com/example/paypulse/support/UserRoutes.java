@@ -24,12 +24,14 @@ public final class UserRoutes {
     public static final String GET = "GET /api/users/{id}";
     public static final String UPDATE = "PATCH /api/users/{id}";
     public static final String DELETE = "DELETE /api/users/{id}";
+    public static final String ACTIVATE = "POST /api/users/{id}/activate";
+    public static final String DEACTIVATE = "POST /api/users/{id}/deactivate";
 
     private UserRoutes() {
     }
 
     public static List<String> names() {
-        return List.of(CREATE, LIST, GET, UPDATE, DELETE);
+        return List.of(CREATE, LIST, GET, UPDATE, DELETE, ACTIVATE, DEACTIVATE);
     }
 
     /** Route name with a request factory that takes the id of an existing target user. */
@@ -42,6 +44,8 @@ public final class UserRoutes {
                 Named.of(GET, id -> get("/api/users/{id}", id)),
                 Named.of(UPDATE, id -> patch("/api/users/{id}", id).contentType(MediaType.APPLICATION_JSON)
                         .content("{\"firstName\": \"Changed\"}")),
-                Named.of(DELETE, id -> delete("/api/users/{id}", id)));
+                Named.of(DELETE, id -> delete("/api/users/{id}", id)),
+                Named.of(ACTIVATE, id -> post("/api/users/{id}/activate", id)),
+                Named.of(DEACTIVATE, id -> post("/api/users/{id}/deactivate", id)));
     }
 }

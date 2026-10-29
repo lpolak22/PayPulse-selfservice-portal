@@ -100,10 +100,30 @@ class RefreshTokenApiTest extends ApiIntegrationTest {
     }
 
     @Test
-    void refreshTokenOfADeactivatedUserIsRejectedAndRevoked() throws Exception {
+    void deactivatingAUserRevokesTheirRefreshTokensAtOnce() throws Exception {
         TokenResponse tokens = login(user);
+
         performAs(admin, withJson(patch("/api/users/{id}", user.id()), Map.of("status", "INACTIVE")))
                 .andExpect(status().isOk());
+
+        assertThat(openRefreshTokensOf(user)).isZero();
+        expectInvalidRefreshToken(postRefresh(tokens.refreshToken()));
+    }
+
+    @Test
+    void deletingAUserRevokesTheirRefreshTokensAtOnce() throws Exception {
+        TokenResponse tokens = login(user);
+
+        performAs(admin, delete("/api/users/{id}", user.id())).andExpect(status().isNoContent());
+
+        assertThat(openRefreshTokensOf(user)).isZero();
+        expectInvalidRefreshToken(postRefresh(tokens.refreshToken()));
+    }
+
+    @Test
+    void refreshTokenOfAUserDeactivatedOutsideTheApiIsRejectedAndRevoked() throws Exception {
+        TokenResponse tokens = login(user);
+        jdbc.update("update app_user set status = 'INACTIVE', is_active = false where id_user = ?", user.id());
 
         postRefresh(tokens.refreshToken())
                 .andExpect(status().isForbidden())
@@ -111,18 +131,6 @@ class RefreshTokenApiTest extends ApiIntegrationTest {
 
         assertThat(openRefreshTokensOf(user)).isZero();
         expectInvalidRefreshToken(postRefresh(tokens.refreshToken()));
-    }
-
-    @Test
-    void refreshTokenOfADeletedUserIsRejectedAndRevoked() throws Exception {
-        TokenResponse tokens = login(user);
-        performAs(admin, delete("/api/users/{id}", user.id())).andExpect(status().isNoContent());
-
-        postRefresh(tokens.refreshToken())
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("ACCOUNT_INACTIVE"));
-
-        assertThat(openRefreshTokensOf(user)).isZero();
     }
 
     @Test
@@ -160,11 +168,6 @@ class RefreshTokenApiTest extends ApiIntegrationTest {
 
     private ResultActions logout(String refreshToken) throws Exception {
         return mockMvc.perform(withJson(post("/api/auth/logout"), Map.of("refreshToken", refreshToken)));
-    }
-
-    private long openRefreshTokensOf(TestUser owner) {
-        return jdbc.queryForObject("select count(*) from refresh_token where id_user = ? and used_at is null",
-                Long.class, owner.id());
     }
 
     private static void expectInvalidRefreshToken(ResultActions result) throws Exception {
