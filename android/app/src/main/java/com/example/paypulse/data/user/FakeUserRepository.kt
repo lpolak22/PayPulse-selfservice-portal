@@ -27,6 +27,11 @@ class FakeUserRepository : UserRepository {
         list.sortedWith(compareBy<User>({ it.lastName }, { it.firstName }))
     }
 
+    override suspend fun getUser(id: Long): User {
+        delay(FAKE_NETWORK_DELAY_MS)
+        return findUser(id)
+    }
+
     override suspend fun createUser(draft: UserDraft): User {
         delay(FAKE_NETWORK_DELAY_MS)
         ensureEmailIsFree(draft.email, exceptId = null)

@@ -44,7 +44,7 @@ internal fun UserRow(user: User, onClick: () -> Unit, modifier: Modifier = Modif
 }
 
 @Composable
-private fun UserAvatar(user: User) {
+internal fun UserAvatar(user: User) {
     val colors = MaterialTheme.colorScheme
     val highlighted = user.role == UserRole.ADMIN && user.status != UserStatus.INACTIVE
     Box(

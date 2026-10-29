@@ -42,6 +42,8 @@
     <string name="users_error_last_admin">Zadnji administrator ne može biti deaktiviran ni obrisan.</string>
     <string name="users_error_too_long">Unos je predugačak.</string>
     <string name="users_error_save_failed">Spremanje nije uspjelo. Pokušaj ponovno.</string>
+    <string name="users_not_found">Korisnik nije pronađen.</string>
+    <string name="users_pending_note">Korisnik još nije aktivirao račun putem poveznice iz e-maila.</string>
 
     <string name="users_created_message">Korisnik je kreiran.</string>
     <string name="users_saved_message">Promjene su spremljene.</string>

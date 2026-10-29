@@ -7,4 +7,5 @@ interface UserRepository {
     suspend fun createUser(draft: UserDraft): User
     suspend fun updateUser(id: Long, draft: UserDraft, status: UserStatus): User
     suspend fun deleteUser(id: Long)
+    suspend fun getUser(id: Long): User
 }
