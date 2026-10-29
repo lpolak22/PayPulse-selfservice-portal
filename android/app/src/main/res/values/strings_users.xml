@@ -29,8 +29,8 @@
     <string name="users_role_admin_description">Puna prava: pregled, uređivanje i upravljanje korisnicima</string>
     <string name="users_role_user_description">Samo pregled podataka, bez izmjena</string>
     <string name="users_active_label">Aktivan korisnik</string>
+    <string name="users_activation_note">Korisnik će na e-mail dobiti poveznicu za aktivaciju računa i postavljanje lozinke.</string>
     <string name="users_active_description">Neaktivan korisnik se ne može prijaviti</string>
-    <string name="users_temp_password_note">Korisnik će na e-mail dobiti privremenu lozinku koju mijenja pri prvoj prijavi.</string>
     <string name="users_create_button">Kreiraj korisnika</string>
     <string name="users_save_button">Spremi promjene</string>
     <string name="users_delete_button">Obriši korisnika</string>
@@ -40,6 +40,8 @@
     <string name="users_error_email_exists">Korisnik s ovom e-mail adresom već postoji.</string>
     <string name="users_error_phone_invalid">Broj telefona nije ispravan.</string>
     <string name="users_error_last_admin">Zadnji administrator ne može biti deaktiviran ni obrisan.</string>
+    <string name="users_error_too_long">Unos je predugačak.</string>
+    <string name="users_error_save_failed">Spremanje nije uspjelo. Pokušaj ponovno.</string>
 
     <string name="users_created_message">Korisnik je kreiran.</string>
     <string name="users_saved_message">Promjene su spremljene.</string>
