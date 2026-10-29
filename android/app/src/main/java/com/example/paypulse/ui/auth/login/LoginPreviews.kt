@@ -45,6 +45,13 @@ private fun LoginInvalidCredentialsPreview() = LoginPreview(
 
 @PreviewLightDark
 @Composable
+private fun LoginSessionExpiredPreview() = LoginPreview(
+    email = SAMPLE_EMAIL,
+    state = LoginUiState(formError = R.string.login_error_session_expired)
+)
+
+@PreviewLightDark
+@Composable
 private fun LoginLoadingPreview() = LoginPreview(
     email = SAMPLE_EMAIL,
     password = SAMPLE_PASSWORD,

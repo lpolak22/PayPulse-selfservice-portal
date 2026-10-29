@@ -14,6 +14,7 @@
     <string name="login_error_invalid_credentials">Neispravan e-mail ili lozinka.</string>
     <string name="login_error_account_inactive">Račun je deaktiviran. Obrati se administratoru.</string>
     <string name="login_error_account_pending_activation">Račun još nije aktiviran. Otvori poveznicu za aktivaciju iz e-maila.</string>
+    <string name="login_error_session_expired">Sesija je istekla. Prijavi se ponovno.</string>
     <string name="login_error_network">Veza nije uspjela. Provjeri internet i pokušaj ponovno.</string>
     <string name="login_error_unknown">Nešto nije u redu. Pokušaj ponovno.</string>
 </resources>

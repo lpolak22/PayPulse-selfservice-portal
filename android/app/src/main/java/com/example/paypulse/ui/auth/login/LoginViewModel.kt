@@ -14,6 +14,7 @@ import com.example.paypulse.domain.auth.AuthRepository
 import com.example.paypulse.domain.auth.EmailRule
 import com.example.paypulse.domain.auth.LoginError
 import com.example.paypulse.domain.auth.LoginResult
+import com.example.paypulse.domain.auth.SessionState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -29,6 +30,14 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            authRepository.sessionState.collect { state ->
+                if (state is SessionState.LoggedOut) showSessionError(state.error)
+            }
+        }
+    }
 
     fun onEmailChange(value: String) {
         email = value
@@ -56,15 +65,25 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
         _uiState.update { it.copy(isLoading = true) }
         viewModelScope.launch {
             when (val result = authRepository.login(email.trim(), password)) {
-                LoginResult.Success -> _uiState.update { it.copy(isLoading = false, isLoggedIn = true) }
+                LoginResult.Success -> onLoginSucceeded()
                 is LoginResult.Failure -> onLoginFailed(result.error)
             }
         }
     }
 
+    private fun onLoginSucceeded() {
+        password = ""
+        _uiState.update { it.copy(isLoading = false, isPasswordVisible = false) }
+    }
+
     private fun onLoginFailed(error: LoginError) {
         if (error == LoginError.INVALID_CREDENTIALS) password = ""
         _uiState.update { it.copy(isLoading = false, isPasswordVisible = false, formError = error.toMessage()) }
+    }
+
+    private fun showSessionError(error: LoginError?) {
+        if (error == null) return
+        _uiState.update { it.copy(isLoading = false, formError = error.toMessage()) }
     }
 
     @StringRes

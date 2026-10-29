@@ -1,10 +1,13 @@
 package com.example.paypulse.data.remote
 
 import com.example.paypulse.data.auth.AuthTokens
+import com.example.paypulse.data.auth.SessionStore
 import com.example.paypulse.data.auth.TokenStorage
 import com.example.paypulse.data.remote.dto.RefreshTokenRequestDto
 import com.example.paypulse.data.remote.dto.TokenResponseDto
+import com.example.paypulse.data.remote.mapper.loginErrorFromCode
 import com.example.paypulse.data.remote.mapper.toAuthTokens
+import com.example.paypulse.domain.auth.LoginError
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -13,14 +16,14 @@ import okhttp3.Authenticator
 import okhttp3.Request
 import okhttp3.Response
 import okhttp3.Route
-import java.io.IOException
 import retrofit2.Response as RetrofitResponse
 
-private val SESSION_ENDED_ERROR_CODES = setOf("INVALID_REFRESH_TOKEN", "ACCOUNT_INACTIVE")
+private val SESSION_ENDING_ERRORS = setOf(LoginError.SESSION_EXPIRED, LoginError.ACCOUNT_INACTIVE)
 
 class TokenRefreshAuthenticator(
     private val authApi: AuthApi,
     private val tokenStorage: TokenStorage,
+    private val sessionStore: SessionStore,
     private val errorResponseParser: ErrorResponseParser
 ) : Authenticator {
 
@@ -47,14 +50,18 @@ class TokenRefreshAuthenticator(
         if (response.isSuccessful && body != null) {
             return body.toAuthTokens().also { tokenStorage.save(it) }
         }
-        if (errorResponseParser.errorCode(response) in SESSION_ENDED_ERROR_CODES) tokenStorage.clear()
+        val error = loginErrorFromCode(errorResponseParser.errorCode(response))
+        if (error in SESSION_ENDING_ERRORS) endSession(error)
         return null
+    }
+
+    private suspend fun endSession(error: LoginError) {
+        tokenStorage.clear()
+        sessionStore.end(error)
     }
 
     private fun executeRefresh(refreshToken: String): RetrofitResponse<TokenResponseDto>? = try {
         authApi.refresh(RefreshTokenRequestDto(refreshToken)).execute()
-    } catch (exception: IOException) {
-        null
     } catch (exception: SerializationException) {
         null
     }
