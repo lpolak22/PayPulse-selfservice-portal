@@ -1,0 +1,44 @@
+package com.example.paypulse.seed.service;
+
+import com.example.paypulse.model.Merchant;
+import com.example.paypulse.model.Organisation;
+import com.example.paypulse.repository.MerchantRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Service
+public class MerchantSeedService {
+    private final MerchantRepository merchantRepository;
+
+    public MerchantSeedService(MerchantRepository merchantRepository) {
+        this.merchantRepository = merchantRepository;
+    }
+
+    @Transactional
+    public List<Merchant> createMerchantsForOrganisation(Organisation org, String prefix) {
+        List<Merchant> merchants = new ArrayList<>();
+        String[] merchantNames = {
+            "Market Pro d.o.o.", "Fresh Foods d.o.o.", "Quick Shop d.o.o.", "TradeMart d.o.o."
+        };
+        for (int i = 0; i < 3; i++) {
+            String regNum = prefix + String.format("%07d", i + 1000);
+            if (merchantRepository.existsByRegistrationNumber(regNum)) {
+                merchantRepository.findByRegistrationNumber(regNum).ifPresent(merchants::add);
+                continue;
+            }
+            Merchant merchant = new Merchant();
+            merchant.setOrganisation(org);
+            merchant.setSourceId(prefix + "-M" + i);
+            String baseName = org.getName().split(" ")[0];
+            merchant.setName(merchantNames[i % merchantNames.length] + " " + baseName);
+            merchant.setRegistrationNumber(regNum);
+            merchant.setStatus("ACTIVE");
+            merchant = merchantRepository.save(merchant);
+            merchants.add(merchant);
+        }
+        return merchants;
+    }
+}
