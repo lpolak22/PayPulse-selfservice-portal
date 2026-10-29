@@ -38,12 +38,15 @@
     <string name="users_error_required">Obavezno polje.</string>
     <string name="users_error_email_invalid">E-mail adresa nije ispravna.</string>
     <string name="users_error_email_exists">Korisnik s ovom e-mail adresom već postoji.</string>
-    <string name="users_error_phone_invalid">Broj telefona nije ispravan.</string>
+    <string name="users_error_phone_invalid">Broj mora počinjati s + i pozivnim brojem države, npr. +385 91 234 5678.</string>
     <string name="users_error_last_admin">Zadnji administrator ne može biti deaktiviran ni obrisan.</string>
     <string name="users_error_too_long">Unos je predugačak.</string>
     <string name="users_error_save_failed">Spremanje nije uspjelo. Pokušaj ponovno.</string>
     <string name="users_not_found">Korisnik nije pronađen.</string>
     <string name="users_pending_note">Korisnik još nije aktivirao račun putem poveznice iz e-maila.</string>
+    <string name="users_access_denied">Nemaš ovlasti za upravljanje korisnicima.</string>
+    <string name="users_phone_placeholder">+385 91 234 5678</string>
+    <string name="users_phone_hint">Neobavezno. Upiši s pozivnim brojem države, npr. +385.</string>
 
     <string name="users_created_message">Korisnik je kreiran.</string>
     <string name="users_saved_message">Promjene su spremljene.</string>

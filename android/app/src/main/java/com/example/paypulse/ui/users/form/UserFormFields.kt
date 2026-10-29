@@ -48,7 +48,9 @@ internal fun UserFormFields(
             label = R.string.users_phone_label,
             error = state.phoneError,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Done),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = R.string.users_phone_placeholder,
+            hint = R.string.users_phone_hint
         )
     }
 }
@@ -83,16 +85,24 @@ private fun FormTextField(
     @StringRes label: Int,
     @StringRes error: Int?,
     keyboardOptions: KeyboardOptions,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    @StringRes placeholder: Int? = null,
+    @StringRes hint: Int? = null
 ) {
+    val supporting = error ?: hint
     TextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
         label = { Text(stringResource(label)) },
+        placeholder = if (placeholder != null) {
+            { Text(stringResource(placeholder)) }
+        } else {
+            null
+        },
         isError = error != null,
-        supportingText = if (error != null) {
-            { Text(stringResource(error)) }
+        supportingText = if (supporting != null) {
+            { Text(stringResource(supporting)) }
         } else {
             null
         },

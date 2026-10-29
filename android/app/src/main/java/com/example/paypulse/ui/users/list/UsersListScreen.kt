@@ -34,10 +34,12 @@ fun UsersListScreen(
     onQueryChange: (String) -> Unit,
     onAddUser: () -> Unit,
     onUserClick: (Long) -> Unit,
+    snackbarHost: @Composable () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         modifier = modifier,
+        snackbarHost = snackbarHost,
         floatingActionButton = { AddUserButton(onClick = onAddUser) }
     ) { padding ->
         Column(
