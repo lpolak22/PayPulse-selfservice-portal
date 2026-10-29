@@ -4,6 +4,7 @@ import com.example.paypulse.data.remote.AuthApi
 import com.example.paypulse.data.remote.CurrentUserApi
 import com.example.paypulse.data.remote.ErrorResponseParser
 import com.example.paypulse.data.remote.dto.LoginRequestDto
+import com.example.paypulse.data.remote.dto.RefreshTokenRequestDto
 import com.example.paypulse.data.remote.mapper.loginErrorFromCode
 import com.example.paypulse.data.remote.mapper.toAuthTokens
 import com.example.paypulse.data.remote.mapper.toUser
@@ -41,6 +42,19 @@ class ApiAuthRepository(
         val sessionError = startSession() ?: return LoginResult.Success
         tokenStorage.clear()
         return LoginResult.Failure(sessionError)
+    }
+
+    override suspend fun logout() {
+        val refreshToken = tokenStorage.read()?.refreshToken
+        tokenStorage.clear()
+        sessionStore.end()
+        if (refreshToken != null) revokeOnServer(refreshToken)
+    }
+
+    private suspend fun revokeOnServer(refreshToken: String): Boolean = try {
+        authApi.logout(RefreshTokenRequestDto(refreshToken)).isSuccessful
+    } catch (exception: IOException) {
+        false
     }
 
     private suspend fun requestTokens(email: String, password: String): LoginError? = loginErrorOrNull {

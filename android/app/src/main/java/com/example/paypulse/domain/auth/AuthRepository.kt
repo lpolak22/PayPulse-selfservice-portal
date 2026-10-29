@@ -6,4 +6,5 @@ interface AuthRepository {
     val sessionState: StateFlow<SessionState>
     suspend fun restoreSession()
     suspend fun login(email: String, password: String): LoginResult
+    suspend fun logout()
 }

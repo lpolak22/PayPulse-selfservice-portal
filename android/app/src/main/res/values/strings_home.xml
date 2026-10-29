@@ -1,3 +1,6 @@
 <resources>
     <string name="home_logged_in">Prijavljeni ste</string>
+    <string name="home_role_admin">Admin</string>
+    <string name="home_role_user">Korisnik</string>
+    <string name="home_logout">Odjava</string>
 </resources>

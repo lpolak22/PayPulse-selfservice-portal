@@ -10,12 +10,16 @@ import com.example.paypulse.domain.auth.SessionState
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class AppViewModel(authRepository: AuthRepository) : ViewModel() {
+class AppViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     val sessionState: StateFlow<SessionState> = authRepository.sessionState
 
     init {
         viewModelScope.launch { authRepository.restoreSession() }
+    }
+
+    fun onLogoutClick() {
+        viewModelScope.launch { authRepository.logout() }
     }
 
     companion object {

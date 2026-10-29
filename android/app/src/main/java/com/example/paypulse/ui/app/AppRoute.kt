@@ -16,9 +16,13 @@ fun AppRoute(
     viewModel: AppViewModel = viewModel(factory = AppViewModel.Factory)
 ) {
     val sessionState by viewModel.sessionState.collectAsStateWithLifecycle()
-    when (sessionState) {
+    when (val state = sessionState) {
         SessionState.Checking -> LoadingScreen(modifier = modifier)
-        is SessionState.LoggedIn -> HomeScreen(modifier = modifier)
+        is SessionState.LoggedIn -> HomeScreen(
+            user = state.user,
+            onLogoutClick = viewModel::onLogoutClick,
+            modifier = modifier
+        )
         is SessionState.LoggedOut -> LoginRoute(onForgotPasswordClick = {}, modifier = modifier)
     }
 }
