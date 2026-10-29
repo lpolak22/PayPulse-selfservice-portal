@@ -1,5 +1,6 @@
 package com.example.paypulse.ui.auth.login
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -10,6 +11,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun LoginRoute(
     onForgotPasswordClick: () -> Unit,
     modifier: Modifier = Modifier,
+    @StringRes notice: Int? = null,
     viewModel: LoginViewModel = viewModel(factory = LoginViewModel.Factory)
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -22,6 +24,7 @@ fun LoginRoute(
         onPasswordVisibilityToggle = viewModel::onPasswordVisibilityToggle,
         onLoginClick = viewModel::onLoginClick,
         onForgotPasswordClick = onForgotPasswordClick,
-        modifier = modifier
+        modifier = modifier,
+        notice = notice
     )
 }

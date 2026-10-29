@@ -2,6 +2,7 @@ package com.example.paypulse.data
 
 import android.content.Context
 import com.example.paypulse.BuildConfig
+import com.example.paypulse.data.activation.FakeActivationRepository
 import com.example.paypulse.data.auth.ApiAuthRepository
 import com.example.paypulse.data.auth.EncryptedTokenStorage
 import com.example.paypulse.data.auth.SessionStore
@@ -16,6 +17,7 @@ import com.example.paypulse.data.remote.createOkHttpClient
 import com.example.paypulse.data.remote.createRetrofit
 import com.example.paypulse.data.remote.withTokenAuthentication
 import com.example.paypulse.data.security.KeystoreCipher
+import com.example.paypulse.domain.activation.ActivationRepository
 import com.example.paypulse.domain.auth.AuthRepository
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -48,4 +50,6 @@ object AppContainer {
     val authRepository: AuthRepository by lazy {
         ApiAuthRepository(authApi, currentUserApi, errorResponseParser, tokenStorage, sessionStore)
     }
+
+    val activationRepository: ActivationRepository by lazy { FakeActivationRepository() }
 }

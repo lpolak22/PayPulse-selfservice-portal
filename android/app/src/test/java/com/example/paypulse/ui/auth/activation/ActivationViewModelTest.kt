@@ -195,6 +195,15 @@ class ActivationViewModelTest {
     }
 
     @Test
+    fun leaving_clearsBothPasswords() = runTest {
+        val viewModel = openedViewModel()
+        viewModel.fillIn(validPassword)
+        viewModel.onLeave()
+        assertEquals("", viewModel.password)
+        assertEquals("", viewModel.confirmPassword)
+    }
+
+    @Test
     fun typingAfterFormError_clearsTheError() = runTest {
         val viewModel = submittedWithResult(ActivationResult.Failure(ActivationError.NETWORK))
         viewModel.onPasswordChange(validPassword + "x")

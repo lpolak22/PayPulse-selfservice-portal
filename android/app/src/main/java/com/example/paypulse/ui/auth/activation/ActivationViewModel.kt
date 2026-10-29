@@ -6,7 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.example.paypulse.R
+import com.example.paypulse.data.AppContainer
 import com.example.paypulse.domain.activation.ActivationError
 import com.example.paypulse.domain.activation.ActivationRepository
 import com.example.paypulse.domain.activation.ActivationResult
@@ -38,6 +41,8 @@ class ActivationViewModel(
     }
 
     fun onRetryClick() = checkLink()
+
+    fun onLeave() = clearPasswords()
 
     fun onPasswordChange(value: String) {
         password = value
@@ -115,4 +120,10 @@ class ActivationViewModel(
     @StringRes
     private fun mismatchError(): Int? =
         if (hasTriedToSubmit && password != confirmPassword) R.string.activation_error_mismatch else null
+
+    companion object {
+        fun factory(token: String) = viewModelFactory {
+            initializer { ActivationViewModel(token, AppContainer.activationRepository) }
+        }
+    }
 }

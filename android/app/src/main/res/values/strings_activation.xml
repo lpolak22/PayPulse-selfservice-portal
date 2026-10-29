@@ -8,6 +8,7 @@
     <string name="activation_loading">Spremanje lozinke u tijeku</string>
     <string name="activation_back_to_login">Natrag na prijavu</string>
     <string name="activation_retry">Pokušaj ponovno</string>
+    <string name="activation_success_notice">Lozinka je postavljena. Prijavi se novom lozinkom.</string>
 
     <string name="activation_error_mismatch">Lozinke se ne podudaraju.</string>
     <string name="activation_error_network">Veza nije uspjela. Provjeri internet i pokušaj ponovno.</string>

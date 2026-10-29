@@ -2,25 +2,15 @@ package com.example.paypulse.ui.auth.login
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -30,10 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -41,6 +28,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.paypulse.R
+import com.example.paypulse.ui.components.FullHeightScrollColumn
+import com.example.paypulse.ui.components.LoadingButton
+import com.example.paypulse.ui.components.MessageBanner
+import com.example.paypulse.ui.components.MessageBannerStyle
 import com.example.paypulse.ui.components.PasswordTextField
 
 @Composable
@@ -53,7 +44,8 @@ fun LoginScreen(
     onPasswordVisibilityToggle: () -> Unit,
     onLoginClick: () -> Unit,
     onForgotPasswordClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    @StringRes notice: Int? = null
 ) {
     Surface(modifier = modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
         Column(
@@ -61,7 +53,7 @@ fun LoginScreen(
                 .fillMaxSize()
                 .safeDrawingPadding()
         ) {
-            SpaceBetweenScrollColumn(modifier = Modifier.weight(1f)) {
+            FullHeightScrollColumn(verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.weight(1f)) {
                 AppNameLogo()
                 Column(modifier = Modifier.padding(vertical = 32.dp)) {
                     LoginHeader()
@@ -69,6 +61,7 @@ fun LoginScreen(
                         email = email,
                         password = password,
                         state = state,
+                        notice = notice,
                         onEmailChange = onEmailChange,
                         onPasswordChange = onPasswordChange,
                         onPasswordVisibilityToggle = onPasswordVisibilityToggle,
@@ -80,25 +73,6 @@ fun LoginScreen(
             }
             LoginFooter(isLoading = state.isLoading, onLoginClick = onLoginClick)
         }
-    }
-}
-
-@Composable
-private fun SpaceBetweenScrollColumn(
-    modifier: Modifier = Modifier,
-    content: @Composable ColumnScope.() -> Unit
-) {
-    BoxWithConstraints(modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .heightIn(min = maxHeight)
-                .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            content = content
-        )
     }
 }
 
@@ -137,6 +111,7 @@ private fun LoginForm(
     email: String,
     password: String,
     state: LoginUiState,
+    @StringRes notice: Int?,
     onEmailChange: (String) -> Unit,
     onPasswordChange: (String) -> Unit,
     onPasswordVisibilityToggle: () -> Unit,
@@ -149,7 +124,7 @@ private fun LoginForm(
             .padding(top = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        state.formError?.let { FormErrorMessage(stringResource(it)) }
+        FormMessage(formError = state.formError, notice = notice)
         EmailField(value = email, error = state.emailError, onValueChange = onEmailChange)
         PasswordTextField(
             value = password,
@@ -166,20 +141,10 @@ private fun LoginForm(
 }
 
 @Composable
-private fun FormErrorMessage(message: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.errorContainer,
-        contentColor = MaterialTheme.colorScheme.onErrorContainer
-    ) {
-        Text(
-            text = message,
-            modifier = Modifier
-                .padding(16.dp)
-                .semantics { liveRegion = LiveRegionMode.Polite },
-            style = MaterialTheme.typography.bodyMedium
-        )
+private fun FormMessage(@StringRes formError: Int?, @StringRes notice: Int?) {
+    when {
+        formError != null -> MessageBanner(message = stringResource(formError))
+        notice != null -> MessageBanner(message = stringResource(notice), style = MessageBannerStyle.INFO)
     }
 }
 
@@ -212,7 +177,13 @@ private fun LoginFooter(isLoading: Boolean, onLoginClick: () -> Unit) {
             .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        LoginButton(isLoading = isLoading, onClick = onLoginClick)
+        LoadingButton(
+            text = stringResource(R.string.login_button),
+            loadingDescription = stringResource(R.string.login_loading),
+            isLoading = isLoading,
+            onClick = onLoginClick,
+            modifier = Modifier.fillMaxWidth()
+        )
         Spacer(Modifier.height(12.dp))
         Text(
             text = stringResource(R.string.login_first_login_hint),
@@ -221,28 +192,4 @@ private fun LoginFooter(isLoading: Boolean, onLoginClick: () -> Unit) {
             textAlign = TextAlign.Center
         )
     }
-}
-
-@Composable
-private fun LoginButton(isLoading: Boolean, onClick: () -> Unit) {
-    Button(
-        onClick = onClick,
-        enabled = !isLoading,
-        modifier = Modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 24.dp, vertical = 16.dp)
-    ) {
-        if (isLoading) LoadingIndicator() else Text(stringResource(R.string.login_button), style = MaterialTheme.typography.titleMedium)
-    }
-}
-
-@Composable
-private fun LoadingIndicator() {
-    val description = stringResource(R.string.login_loading)
-    CircularProgressIndicator(
-        modifier = Modifier
-            .size(24.dp)
-            .semantics { contentDescription = description },
-        color = LocalContentColor.current,
-        strokeWidth = 2.dp
-    )
 }
