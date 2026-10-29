@@ -33,7 +33,7 @@ CREATE TABLE outlet
 
 CREATE TABLE mcc_code
 (
-    mcc_code    CHAR(4) PRIMARY KEY,
+    mcc_code    VARCHAR(4) PRIMARY KEY,
     description VARCHAR(255) NOT NULL
 );
 
