@@ -5,4 +5,15 @@
 
     <string name="password_show">Prikaži lozinku</string>
     <string name="password_hide">Sakrij lozinku</string>
+
+    <plurals name="password_rule_min_length">
+        <item quantity="one">Najmanje %1$d znak</item>
+        <item quantity="few">Najmanje %1$d znaka</item>
+        <item quantity="other">Najmanje %1$d znakova</item>
+    </plurals>
+    <string name="password_rule_uppercase">Barem jedno veliko slovo</string>
+    <string name="password_rule_lowercase">Barem jedno malo slovo</string>
+    <string name="password_rule_digit">Barem jedna znamenka</string>
+    <string name="password_rule_met">Ispunjeno</string>
+    <string name="password_rule_unmet">Nije ispunjeno</string>
 </resources>
