@@ -17,6 +17,46 @@ repositories {
 	mavenCentral()
 }
 
+def loadDotEnv = {
+	def envFile = file('.env')
+	if (!envFile.exists()) {
+		return [:]
+	}
+
+	def values = [:]
+	envFile.eachLine { rawLine, lineNumber ->
+		def line = rawLine.trim()
+		if (!line || line.startsWith('#')) {
+			return
+		}
+		if (line.startsWith('export ')) {
+			line = line.substring(7).trim()
+		}
+
+		def separator = line.indexOf('=')
+		if (separator <= 0) {
+			throw new GradleException("Invalid .env entry on line ${lineNumber}")
+		}
+
+		def key = line.substring(0, separator).trim()
+		if (!(key ==~ /[A-Za-z_][A-Za-z0-9_]*/)) {
+			throw new GradleException("Invalid .env key on line ${lineNumber}")
+		}
+
+		def value = line.substring(separator + 1).trim()
+		if (value.length() >= 2 &&
+				((value.startsWith('"') && value.endsWith('"')) ||
+						(value.startsWith("'") && value.endsWith("'")))) {
+			value = value.substring(1, value.length() - 1)
+		}
+		if (System.getenv(key) != null) {
+			return
+		}
+		values[key] = value
+	}
+	values
+}
+
 configurations {
 	mockitoAgent
 }
@@ -44,9 +84,23 @@ dependencies {
 
 tasks.register('refreshDb', JavaExec) {
 	group = 'database'
-	description = 'Recreating scheme public and running the Flyway migrations with seed data'
+	description = 'Recreating schema public and running the Flyway migrations'
 	classpath = sourceSets.main.runtimeClasspath
 	mainClass = 'com.example.paypulse.config.RefreshDatabase'
+	environment loadDotEnv()
+}
+
+tasks.register('seed', org.springframework.boot.gradle.tasks.run.BootRun) {
+	group = 'database'
+	description = 'Seed database with test data using seed profile'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.example.paypulse.PaypulseApplication'
+	systemProperty 'spring.profiles.active', 'seed'
+	environment loadDotEnv()
+}
+
+tasks.withType(org.springframework.boot.gradle.tasks.run.BootRun).configureEach {
+	environment loadDotEnv()
 }
 
 tasks.withType(Test).configureEach {
