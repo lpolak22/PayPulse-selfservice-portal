@@ -31,7 +31,7 @@ public class SecurityConfig {
     };
 
     private static final String[] PUBLIC_AUTH_PATHS = {
-            "/api/auth/login", "/api/auth/refresh", "/api/auth/logout"
+            "/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/activation"
     };
 
     @Bean
@@ -49,6 +49,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(OPEN_API_PATHS).permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_PATHS).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/activation/**").permitAll()
                         .requestMatchers("/api/users/**").hasRole(UserRole.ADMIN.name())
                         .anyRequest().authenticated());
 

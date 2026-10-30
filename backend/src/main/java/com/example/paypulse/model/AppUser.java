@@ -60,6 +60,9 @@ public class AppUser {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    @Column(name = "is_first_login")
+    private Boolean isFirstLogin = true;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -110,6 +113,16 @@ public class AppUser {
     public void changeStatus(UserStatus status) {
         this.status = status;
         syncActiveFlag();
+    }
+
+    public void completeActivation(String passwordHash) {
+        this.passwordHash = passwordHash;
+        this.isFirstLogin = false;
+        changeStatus(UserStatus.ACTIVE);
+    }
+
+    public void markActivationResent(LocalDateTime resentAt) {
+        this.updatedAt = resentAt;
     }
 
     public void markDeleted(LocalDateTime deletedAt) {
@@ -171,5 +184,13 @@ public class AppUser {
 
     public LocalDateTime getDeletedAt() {
         return deletedAt;
+    }
+
+    public Boolean getIsFirstLogin() {
+        return isFirstLogin;
+    }
+
+    public void setIsFirstLogin(Boolean isFirstLogin) {
+        this.isFirstLogin = isFirstLogin;
     }
 }

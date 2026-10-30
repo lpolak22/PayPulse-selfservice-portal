@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -55,4 +56,7 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long>, JpaSpec
               and u.idUser <> :excludedUserId
             """)
     boolean existsOtherActiveUserWithRole(Long organisationId, UserRole role, Long excludedUserId);
+
+    @Query("select u.updatedAt from AppUser u where u.idUser = :userId")
+    Optional<LocalDateTime> findUpdatedAt(Long userId);
 }
