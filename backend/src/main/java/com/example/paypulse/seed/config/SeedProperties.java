@@ -12,9 +12,9 @@ public class SeedProperties {
     private final int batchSize;
 
     public SeedProperties(
-            @Value("${SEED_TEST_PASSWORD}") String testPassword,
-            @Value("${SEED_TRANSACTION_COUNT}") int transactionCount,
-            @Value("${SEED_BATCH_SIZE}") int batchSize) {
+            @Value("${SEED_TEST_PASSWORD:Password123!}") String testPassword,
+            @Value("${SEED_TRANSACTION_COUNT:100000}") int transactionCount,
+            @Value("${SEED_BATCH_SIZE:1000}") int batchSize) {
         this.testPassword = testPassword;
         this.transactionCount = transactionCount;
         this.batchSize = batchSize;

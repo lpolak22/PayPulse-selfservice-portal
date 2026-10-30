@@ -11,8 +11,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -34,7 +32,6 @@ public class Merchant {
     @Column(nullable = false, length = 150)
     private String name;
 
-    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "registration_number", nullable = false, length = 11, unique = true)
     private String registrationNumber;
 

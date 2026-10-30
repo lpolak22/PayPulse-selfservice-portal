@@ -81,7 +81,7 @@ dependencies {
 
 tasks.register('refreshDb', JavaExec) {
 	group = 'database'
-	description = 'Recreating scheme public and running the Flyway migrations with seed data'
+	description = 'Recreating schema public and running the Flyway migrations'
 	classpath = sourceSets.main.runtimeClasspath
 	mainClass = 'com.example.paypulse.config.RefreshDatabase'
 	environment loadDotEnv()

@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Service
@@ -35,13 +36,14 @@ public class TerminalSeedService {
             int terminalCount = 2 + random.nextInt(3); // 2 to 4
             for (int i = 0; i < terminalCount; i++) {
                 String termSourceId = "TRM-" + outlet.getSourceId() + "-" + i;
-                String termId = dataGenerator.randomTerminalId();
-                if (terminalRepository.existsByTerminalId(termId) || terminalRepository.existsBySourceId(termSourceId)) {
-                    terminalRepository.findAll().stream()
-                            .filter(t -> termSourceId.equals(t.getSourceId()) || termId.equals(t.getTerminalId()))
-                            .findFirst()
-                            .ifPresent(terminals::add);
+                Optional<Terminal> existing = terminalRepository.findBySourceId(termSourceId);
+                if (existing.isPresent()) {
+                    terminals.add(existing.get());
                     continue;
+                }
+                String termId = dataGenerator.randomTerminalId();
+                while (terminalRepository.existsByTerminalId(termId)) {
+                    termId = dataGenerator.randomTerminalId();
                 }
                 Terminal terminal = new Terminal();
                 terminal.setOutlet(outlet);

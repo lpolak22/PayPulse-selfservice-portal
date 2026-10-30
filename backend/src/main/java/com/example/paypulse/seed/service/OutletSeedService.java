@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Service
@@ -30,11 +31,9 @@ public class OutletSeedService {
             int outletCount = 2 + random.nextInt(4);
             for (int i = 0; i < outletCount; i++) {
                 String sourceId = "OUT-" + merchant.getSourceId() + "-" + i;
-                if (outletRepository.existsBySourceId(sourceId)) {
-                    outletRepository.findAll().stream()
-                            .filter(o -> sourceId.equals(o.getSourceId()))
-                            .findFirst()
-                            .ifPresent(outlets::add);
+                Optional<Outlet> existing = outletRepository.findBySourceId(sourceId);
+                if (existing.isPresent()) {
+                    outlets.add(existing.get());
                     continue;
                 }
                 Outlet outlet = new Outlet();

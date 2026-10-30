@@ -54,7 +54,7 @@ public class RefreshDatabase {
     private static void runMigrations() {
         Flyway.configure()
                 .dataSource(DATABASE_URL, USER, PASSWORD)
-                .locations("classpath:db/migration", "classpath:db/seed")
+                .locations("classpath:db/migration")
                 .load()
                 .migrate();
     }
