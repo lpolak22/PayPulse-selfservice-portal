@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 
 @Service
@@ -31,6 +32,7 @@ public class JwtActivationTokenService implements ActivationTokenService {
     private static final String ISSUER_SUFFIX = "-activation";
     private static final String TYPE_CLAIM = "type";
     private static final String TYPE_ACTIVATION = "ACTIVATION";
+    private static final String UPDATED_AT_CLAIM = "updatedAt";
 
     private final JwtEncoder jwtEncoder;
     private final NimbusJwtDecoder activationDecoder;
@@ -58,12 +60,14 @@ public class JwtActivationTokenService implements ActivationTokenService {
     @Override
     public String issue(AppUser user) {
         Instant now = clock.instant().truncatedTo(ChronoUnit.SECONDS);
+        LocalDateTime updatedAt = appUserRepository.findUpdatedAt(user.getIdUser()).orElseThrow();
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(issuer)
                 .subject(String.valueOf(user.getIdUser()))
                 .issuedAt(now)
                 .expiresAt(now.plus(activationProperties.tokenTtl()))
                 .claim(TYPE_CLAIM, TYPE_ACTIVATION)
+                .claim(UPDATED_AT_CLAIM, updatedAt.toString())
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
@@ -120,7 +124,6 @@ public class JwtActivationTokenService implements ActivationTokenService {
         if (!Boolean.TRUE.equals(user.getIsFirstLogin()) || user.getStatus() != UserStatus.PENDING_ACTIVATION) {
             return true;
         }
-        Instant changedAt = user.getUpdatedAt().atZone(clock.getZone()).toInstant().truncatedTo(ChronoUnit.SECONDS);
-        return changedAt.isAfter(jwt.getIssuedAt());
+        return !String.valueOf(user.getUpdatedAt()).equals(jwt.getClaimAsString(UPDATED_AT_CLAIM));
     }
 }
