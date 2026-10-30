@@ -25,6 +25,12 @@ public class GlobalExceptionHandler {
         return build(ex.getErrorCode(), ex.getMessage(), List.of());
     }
 
+    @ExceptionHandler(FieldValidationException.class)
+    public ResponseEntity<ErrorResponse> handleFieldValidation(FieldValidationException ex) {
+        ErrorCode code = ex.getErrorCode();
+        return build(code, code.getDefaultMessage(), ex.getFieldErrors());
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         List<ErrorResponse.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
