@@ -135,6 +135,16 @@ public class AppUserServiceImpl implements AppUserService {
         auditLogService.record(AuditAction.USER_DELETED, id, before, null);
     }
 
+    @Override
+    public void resendActivation(Long id) {
+        AppUser user = findUser(id);
+        if (!Boolean.TRUE.equals(user.getIsFirstLogin()) || user.getStatus() != UserStatus.PENDING_ACTIVATION) {
+            throw new ConflictException("Only users who have not completed activation can get a new activation email.");
+        }
+        user.markActivationResent(LocalDateTime.now(clock));
+        activationService.startActivation(saveAndFlush(user));
+    }
+
     private AppUserResponse changeStatus(Long id, UserStatus status, AuditAction action) {
         AppUser user = findUser(id);
         AppUserResponse before = appUserMapper.toResponse(user);

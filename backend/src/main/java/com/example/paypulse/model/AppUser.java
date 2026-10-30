@@ -121,6 +121,10 @@ public class AppUser {
         changeStatus(UserStatus.ACTIVE);
     }
 
+    public void markActivationResent(LocalDateTime resentAt) {
+        this.updatedAt = resentAt;
+    }
+
     public void markDeleted(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
         syncActiveFlag();

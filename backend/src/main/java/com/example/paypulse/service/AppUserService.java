@@ -22,4 +22,6 @@ public interface AppUserService {
     AppUserResponse deactivateUser(Long id);
 
     void deleteUser(Long id);
+
+    void resendActivation(Long id);
 }
