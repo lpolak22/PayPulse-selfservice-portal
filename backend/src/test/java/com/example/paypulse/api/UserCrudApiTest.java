@@ -27,9 +27,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Happy paths of every /api/users route, organisation isolation and the audit trail (FR-001).
- */
 class UserCrudApiTest extends ApiIntegrationTest {
 
     private long organisationId;

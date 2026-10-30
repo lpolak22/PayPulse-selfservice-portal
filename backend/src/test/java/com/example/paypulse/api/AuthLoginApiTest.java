@@ -10,11 +10,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HexFormat;
 import java.util.List;
@@ -27,10 +32,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * POST /api/auth/login: who may log in, which error each case gets, what is stored and what is audited.
- */
 class AuthLoginApiTest extends ApiIntegrationTest {
+
+    @Autowired
+    private JwtDecoder jwtDecoder;
 
     private long organisationId;
     private TestUser admin;
@@ -46,9 +51,19 @@ class AuthLoginApiTest extends ApiIntegrationTest {
         postLogin(admin.email(), UserFixtures.PASSWORD)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.tokenType").value("Bearer"))
-                .andExpect(jsonPath("$.expiresIn").value(900))
+                .andExpect(jsonPath("$.expiresIn").value(jwtProperties.accessTokenTtl().toSeconds()))
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.refreshToken").isNotEmpty());
+    }
+
+    @Test
+    void theAccessTokenCarriesTheConfiguredIssuerAndLifetime() throws Exception {
+        Jwt jwt = jwtDecoder.decode(login(admin).accessToken());
+
+        assertThat(jwt.getSubject()).isEqualTo(String.valueOf(admin.id()));
+        assertThat(jwt.getClaimAsString("iss")).isEqualTo(jwtProperties.issuer());
+        assertThat(jwt.getClaimAsString("role")).isEqualTo("ADMIN");
+        assertThat(Duration.between(jwt.getIssuedAt(), jwt.getExpiresAt())).isEqualTo(jwtProperties.accessTokenTtl());
     }
 
     @Test
@@ -83,6 +98,47 @@ class AuthLoginApiTest extends ApiIntegrationTest {
     }
 
     @Test
+    void passwordIsNotTrimmed() throws Exception {
+        expectError(postLogin(admin.email(), " " + UserFixtures.PASSWORD + " "), 401, "INVALID_CREDENTIALS");
+    }
+
+    @Test
+    void aVeryLongPasswordIsJustAWrongPassword() throws Exception {
+        expectError(postLogin(admin.email(), "x".repeat(10_000)), 401, "INVALID_CREDENTIALS");
+    }
+
+    @Test
+    void aNulCharacterInTheEmailReturns400WithTheFieldNamed() throws Exception {
+        postLogin("user\u0000@paypulse-test.example", UserFixtures.PASSWORD)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("email"));
+    }
+
+    @Test
+    void aNulCharacterInThePasswordIsJustAWrongPassword() throws Exception {
+        expectError(postLogin(admin.email(), "Test\u0000Password"), 401, "INVALID_CREDENTIALS");
+    }
+
+    @Test
+    void thePasswordHashIsNeverReturned() throws Exception {
+        String hash = (String) fixtures.row(admin.id()).get("password_hash");
+
+        String me = performWithToken(login(admin).accessToken(), get("/api/auth/me"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(me).doesNotContain(hash).doesNotContainIgnoringCase("password");
+    }
+
+    @Test
+    void wrongPasswordIssuesNoTokens() throws Exception {
+        postLogin(admin.email(), "Wrong-Password-1").andExpect(status().isUnauthorized());
+
+        assertThat(refreshTokensOf(admin)).isZero();
+    }
+
+    @Test
     void deletedUserCannotLogIn() throws Exception {
         fixtures.markDeleted(admin);
 
@@ -105,6 +161,14 @@ class AuthLoginApiTest extends ApiIntegrationTest {
     }
 
     @Test
+    void pendingUserWithAWrongPasswordLearnsNothingAboutTheStatus() throws Exception {
+        TestUser pending = fixtures.user(organisationId, UserRole.USER, UserStatus.PENDING_ACTIVATION);
+        fixtures.givePassword(pending);
+
+        expectError(postLogin(pending.email(), "Wrong-Password-1"), 401, "INVALID_CREDENTIALS");
+    }
+
+    @Test
     void deactivatedUserIsToldTheAccountIsInactive() throws Exception {
         TestUser inactive = fixtures.user(organisationId, UserRole.ADMIN, UserStatus.INACTIVE);
 
@@ -118,13 +182,15 @@ class AuthLoginApiTest extends ApiIntegrationTest {
         expectError(postLogin(inactive.email(), "Wrong-Password-1"), 401, "INVALID_CREDENTIALS");
     }
 
-    @Test
-    void deactivatedUserIssuesNoTokens() throws Exception {
-        TestUser inactive = fixtures.user(organisationId, UserRole.ADMIN, UserStatus.INACTIVE);
+    @ParameterizedTest
+    @EnumSource(value = UserStatus.class, names = {"INACTIVE", "PENDING_ACTIVATION"})
+    void aUserWhoCannotLogInGetsNoTokens(UserStatus status) throws Exception {
+        TestUser blocked = fixtures.user(organisationId, UserRole.USER, status);
+        fixtures.givePassword(blocked);
 
-        postLogin(inactive.email(), UserFixtures.PASSWORD).andExpect(status().isForbidden());
+        postLogin(blocked.email(), UserFixtures.PASSWORD).andExpect(status().isForbidden());
 
-        assertThat(refreshTokensOf(inactive)).isZero();
+        assertThat(refreshTokensOf(blocked)).isZero();
     }
 
     @ParameterizedTest(name = "email \"{0}\", password \"{1}\"")
@@ -145,6 +211,14 @@ class AuthLoginApiTest extends ApiIntegrationTest {
     }
 
     @Test
+    void missingEmailReturns400WithTheFieldNamed() throws Exception {
+        mockMvc.perform(withJson(post("/api/auth/login"), Map.of("password", UserFixtures.PASSWORD)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("email"));
+    }
+
+    @Test
     void malformedJsonReturns400() throws Exception {
         mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON).content("{\"email\": "))
                 .andExpect(status().isBadRequest())
@@ -155,11 +229,12 @@ class AuthLoginApiTest extends ApiIntegrationTest {
     void invalidRequestsAreNotAuditedAsFailedLogins() throws Exception {
         postLogin(admin.email(), "").andExpect(status().isBadRequest());
 
-        assertThat(auditEntries("LOGIN_FAILED")).isEmpty();
+        assertThat(auditEntries("LOGIN_FAILED", admin)).isEmpty();
     }
 
     @Test
-    void theRefreshTokenIsStoredHashedWithAThirtyMinuteIdleTimeout() throws Exception {
+    void theRefreshTokenIsStoredHashedWithTheConfiguredIdleTimeout() throws Exception {
+        Duration idleTtl = jwtProperties.refreshTokenIdleTtl();
         LocalDateTime before = LocalDateTime.now().withNano(0);
         TokenResponse tokens = login(admin);
 
@@ -168,14 +243,14 @@ class AuthLoginApiTest extends ApiIntegrationTest {
         assertThat(row.get("token_hash")).isEqualTo(sha256(tokens.refreshToken()));
         assertThat(row.get("used_at")).isNull();
         LocalDateTime expiresAt = ((java.sql.Timestamp) row.get("expires_at")).toLocalDateTime();
-        assertThat(expiresAt).isBetween(before.plusMinutes(30), LocalDateTime.now().plusMinutes(30));
+        assertThat(expiresAt).isBetween(before.plus(idleTtl), LocalDateTime.now().plus(idleTtl));
     }
 
     @Test
     void successfulLoginIsAudited() throws Exception {
         login(admin);
 
-        assertThat(auditEntries("LOGIN_SUCCESS")).singleElement()
+        assertThat(auditEntries("LOGIN_SUCCESS", admin)).singleElement()
                 .satisfies(entry -> assertThat(entry).containsEntry("id_user", admin.id())
                         .containsEntry("entity_id", admin.id()));
     }
@@ -184,9 +259,22 @@ class AuthLoginApiTest extends ApiIntegrationTest {
     void failedLoginIsAuditedWithTheReason() throws Exception {
         postLogin(admin.email(), "Wrong-Password-1").andExpect(status().isUnauthorized());
 
-        assertThat(auditEntries("LOGIN_FAILED")).singleElement()
+        assertThat(auditEntries("LOGIN_FAILED", admin)).singleElement()
                 .satisfies(entry -> assertThat(entry).containsEntry("id_user", admin.id())
                         .containsEntry("reason", "INVALID_CREDENTIALS"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({"INACTIVE, ACCOUNT_INACTIVE", "PENDING_ACTIVATION, ACCOUNT_PENDING_ACTIVATION"})
+    void blockedLoginIsAuditedWithTheReason(UserStatus status, String reason) throws Exception {
+        TestUser blocked = fixtures.user(organisationId, UserRole.USER, status);
+        fixtures.givePassword(blocked);
+
+        postLogin(blocked.email(), UserFixtures.PASSWORD).andExpect(status().isForbidden());
+
+        assertThat(auditEntries("LOGIN_FAILED", blocked)).singleElement()
+                .satisfies(entry -> assertThat(entry).containsEntry("id_user", blocked.id())
+                        .containsEntry("reason", reason));
     }
 
     @Test
@@ -201,10 +289,10 @@ class AuthLoginApiTest extends ApiIntegrationTest {
                 .containsEntry("id_user", null).containsEntry("reason", "INVALID_CREDENTIALS"));
     }
 
-    private List<Map<String, Object>> auditEntries(String action) {
+    private List<Map<String, Object>> auditEntries(String action, TestUser user) {
         return jdbc.queryForList("""
                 select id_user, entity_id, new_value ->> 'reason' as reason from audit_log
-                where action = ? and entity_id = ?""", action, admin.id());
+                where action = ? and entity_id = ?""", action, user.id());
     }
 
     private long refreshTokensOf(TestUser user) {

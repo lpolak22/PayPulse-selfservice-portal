@@ -178,9 +178,4 @@ class UserStatusApiTest extends ApiIntegrationTest {
     private List<String> auditActionsFor(TestUser user) {
         return jdbc.queryForList("select action from audit_log where entity_id = ?", String.class, user.id());
     }
-
-    private static void expectInvalidRefreshToken(ResultActions result) throws Exception {
-        result.andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
-    }
 }

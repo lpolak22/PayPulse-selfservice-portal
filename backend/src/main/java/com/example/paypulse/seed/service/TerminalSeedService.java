@@ -33,7 +33,7 @@ public class TerminalSeedService {
         String[] terminalStatuses = {"ACTIVE", "ACTIVE", "ACTIVE", "INACTIVE", "DEACTIVATED"};
 
         for (Outlet outlet : outlets) {
-            int terminalCount = 2 + random.nextInt(3); // 2 to 4
+            int terminalCount = 2 + random.nextInt(3);
             for (int i = 0; i < terminalCount; i++) {
                 String termSourceId = "TRM-" + outlet.getSourceId() + "-" + i;
                 Optional<Terminal> existing = terminalRepository.findBySourceId(termSourceId);

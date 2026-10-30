@@ -9,6 +9,7 @@ public record JwtProperties(
         String secret,
         String issuer,
         Duration accessTokenTtl,
-        Duration refreshTokenIdleTtl
+        Duration refreshTokenIdleTtl,
+        Duration clockSkew
 ) {
 }

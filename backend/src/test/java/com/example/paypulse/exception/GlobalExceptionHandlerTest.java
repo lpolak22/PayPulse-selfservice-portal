@@ -3,11 +3,18 @@ package com.example.paypulse.exception;
 import com.example.paypulse.dto.common.ErrorResponse;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -70,6 +77,44 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void unsupportedMethodReturns405AndNamesTheAllowedMethods() {
+        ResponseEntity<ErrorResponse> response =
+                handler.handleMethodNotAllowed(new HttpRequestMethodNotSupportedException("GET", List.of("POST")));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.METHOD_NOT_ALLOWED);
+        assertThat(response.getBody().code()).isEqualTo("METHOD_NOT_ALLOWED");
+        assertThat(response.getHeaders().getAllow()).containsExactly(HttpMethod.POST);
+    }
+
+    @Test
+    void unsupportedMediaTypeReturns415AndNamesTheAcceptedTypes() {
+        ResponseEntity<ErrorResponse> response = handler.handleUnsupportedMediaType(
+                new HttpMediaTypeNotSupportedException(MediaType.TEXT_PLAIN, List.of(MediaType.APPLICATION_JSON),
+                        HttpMethod.POST));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNSUPPORTED_MEDIA_TYPE);
+        assertThat(response.getBody().code()).isEqualTo("UNSUPPORTED_MEDIA_TYPE");
+        assertThat(response.getHeaders().getAccept()).containsExactly(MediaType.APPLICATION_JSON);
+    }
+
+    @Test
+    void notAcceptableReturns406() {
+        ResponseEntity<ErrorResponse> response = handler.handleNotAcceptable(
+                new HttpMediaTypeNotAcceptableException(List.of(MediaType.APPLICATION_JSON)));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_ACCEPTABLE);
+        assertThat(response.getBody().code()).isEqualTo("NOT_ACCEPTABLE");
+    }
+
+    @Test
+    void everyErrorIsMarkedAsJson() {
+        assertThat(handler.handleAccessDenied(new AccessDeniedException("denied")).getHeaders().getContentType())
+                .isEqualTo(MediaType.APPLICATION_JSON);
+        assertThat(handler.handleMethodNotAllowed(new HttpRequestMethodNotSupportedException("GET", List.of("POST")))
+                .getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_JSON);
+    }
+
+    @Test
     void unexpectedExceptionReturns500WithoutLeakingDetails() {
         ResponseEntity<ErrorResponse> response = handler.handleUnexpected(new IllegalStateException("db password"));
 
@@ -80,6 +125,5 @@ class GlobalExceptionHandlerTest {
 
     @SuppressWarnings("unused")
     private void dummy(String value) {
-        // Used only to build a MethodParameter for the validation test.
     }
 }

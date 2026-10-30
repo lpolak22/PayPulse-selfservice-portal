@@ -1,5 +1,6 @@
 package com.example.paypulse.support;
 
+import com.example.paypulse.config.JwtProperties;
 import com.example.paypulse.dto.auth.TokenResponse;
 import com.example.paypulse.repository.AppUserRepository;
 import com.example.paypulse.service.AccessTokenService;
@@ -13,6 +14,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,24 +26,16 @@ import tools.jackson.databind.json.JsonMapper;
 import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Base class for API tests: the full application with security, a real PostgreSQL database (see
- * {@link TestDatabase}) and MockMvc. Each test runs in a transaction that is rolled back afterwards.
- */
-@SpringBootTest(properties = {
-        "spring.jpa.show-sql=false",
-        "jwt.secret=" + ApiIntegrationTest.JWT_SECRET
-})
+@SpringBootTest
+@ActiveProfiles("test")
 @AutoConfigureMockMvc
 @Import(RequestBoundaryConfig.class)
 @Transactional
 @Tag("integration")
 public abstract class ApiIntegrationTest {
-
-    /** Signing key used only by the tests; the application reads the real one from JWT_SECRET. */
-    public static final String JWT_SECRET = "paypulse-test-only-jwt-secret-0123456789";
 
     @Autowired
     protected MockMvc mockMvc;
@@ -51,6 +45,9 @@ public abstract class ApiIntegrationTest {
 
     @Autowired
     protected JdbcTemplate jdbc;
+
+    @Autowired
+    protected JwtProperties jwtProperties;
 
     @Autowired
     private AccessTokenService accessTokenService;
@@ -70,10 +67,6 @@ public abstract class ApiIntegrationTest {
         fixtures = new UserFixtures(jdbc);
     }
 
-    /**
-     * Sends the request with a freshly issued access token for {@code user}. The token is issued whatever the
-     * user's status, like a token that was issued before the user was deactivated or deleted.
-     */
     protected ResultActions performAs(TestUser user, MockHttpServletRequestBuilder request) throws Exception {
         return performWithToken(accessToken(user), request);
     }
@@ -95,7 +88,6 @@ public abstract class ApiIntegrationTest {
         return mockMvc.perform(withJson(post("/api/auth/login"), Map.of("email", email, "password", password)));
     }
 
-    /** Logs {@code user} in through the API with the fixture password and returns the issued tokens. */
     protected TokenResponse login(TestUser user) throws Exception {
         String body = postLogin(user.email(), UserFixtures.PASSWORD)
                 .andExpect(status().isOk())
@@ -110,6 +102,15 @@ public abstract class ApiIntegrationTest {
     protected TokenResponse refreshed(ResultActions refreshResult) throws Exception {
         String body = refreshResult.andExpect(status().isOk()).andReturn().getResponse().getContentAsString();
         return jsonMapper.readValue(body, TokenResponse.class);
+    }
+
+    protected ResultActions postLogout(String refreshToken) throws Exception {
+        return mockMvc.perform(withJson(post("/api/auth/logout"), Map.of("refreshToken", refreshToken)));
+    }
+
+    protected static void expectInvalidRefreshToken(ResultActions result) throws Exception {
+        result.andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("INVALID_REFRESH_TOKEN"));
     }
 
     protected long openRefreshTokensOf(TestUser owner) {

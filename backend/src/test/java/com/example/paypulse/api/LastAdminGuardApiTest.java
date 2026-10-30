@@ -19,10 +19,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * An organisation must always keep at least one active Admin: the last one cannot be deleted, deactivated
- * (through PATCH or the deactivate route) or demoted. The API answers 409 LAST_ADMIN and changes nothing.
- */
 class LastAdminGuardApiTest extends ApiIntegrationTest {
 
     private long organisationId;

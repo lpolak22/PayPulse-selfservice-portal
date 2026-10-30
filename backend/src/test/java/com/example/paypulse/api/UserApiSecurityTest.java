@@ -26,14 +26,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Only signed-in, active admins may use /api/users: the User role gets 403, and anonymous requests, invalid
- * tokens and the access tokens of deactivated or deleted users get 401 on every route.
- */
 class UserApiSecurityTest extends ApiIntegrationTest {
 
     @Autowired
@@ -55,6 +52,10 @@ class UserApiSecurityTest extends ApiIntegrationTest {
         return UserRoutes.all();
     }
 
+    static Stream<?> routesForAnActiveTarget() {
+        return UserRoutes.forActiveTarget();
+    }
+
     @Test
     void routeListCoversEveryUserManagementEndpoint() {
         Stream<String> controllerRoutes = handlerMapping.getHandlerMethods().entrySet().stream()
@@ -66,11 +67,18 @@ class UserApiSecurityTest extends ApiIntegrationTest {
     }
 
     @ParameterizedTest(name = "{0}")
-    @MethodSource("routes")
+    @MethodSource("routesForAnActiveTarget")
     void adminIsAllowed(LongFunction<MockHttpServletRequestBuilder> route) throws Exception {
         int status = performAs(admin, route.apply(target.id())).andReturn().getResponse().getStatus();
 
         assertThat(status).isBetween(200, 299);
+    }
+
+    @Test
+    void adminCanResendActivationToAPendingUser() throws Exception {
+        TestUser pending = fixtures.user(organisationId, UserRole.USER, UserStatus.PENDING_ACTIVATION);
+
+        performAs(admin, post("/api/users/{id}/resend-activation", pending.id())).andExpect(status().isNoContent());
     }
 
     @ParameterizedTest(name = "{0}")
@@ -78,7 +86,7 @@ class UserApiSecurityTest extends ApiIntegrationTest {
     void userRoleIsForbidden(LongFunction<MockHttpServletRequestBuilder> route) throws Exception {
         TestUser user = fixtures.user(organisationId, UserRole.USER, UserStatus.ACTIVE);
 
-        performAs(user, route.apply(target.id()))
+        performWithToken(login(user).accessToken(), route.apply(target.id()))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("FORBIDDEN"));
     }

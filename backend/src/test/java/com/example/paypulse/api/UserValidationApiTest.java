@@ -23,9 +23,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Field validation and malformed requests: 400 with the standard error body, and nothing is saved.
- */
 class UserValidationApiTest extends ApiIntegrationTest {
 
     private long organisationId;

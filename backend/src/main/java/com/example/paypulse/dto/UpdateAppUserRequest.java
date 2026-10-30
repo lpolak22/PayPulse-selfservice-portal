@@ -6,9 +6,6 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-/**
- * Partial update: a null field means "leave unchanged".
- */
 public record UpdateAppUserRequest(
         @Pattern(regexp = ValidationPatterns.NOT_BLANK, message = ValidationPatterns.NOT_BLANK_MESSAGE)
         @Size(max = 50) String firstName,

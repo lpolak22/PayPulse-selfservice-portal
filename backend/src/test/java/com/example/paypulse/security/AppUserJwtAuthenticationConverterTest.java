@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -22,9 +23,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * Every request re-reads the user behind the token, so deactivation, deletion and role changes apply at once.
- */
 class AppUserJwtAuthenticationConverterTest {
 
     private static final long USER_ID = 7L;
@@ -77,6 +75,13 @@ class AppUserJwtAuthenticationConverterTest {
         when(repository.findById(USER_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> converter.convert(jwt("ADMIN"))).isInstanceOf(DisabledException.class);
+    }
+
+    @Test
+    void aSubjectThatIsNoUserIdIsRejectedAsAnAuthenticationFailure() {
+        Jwt jwt = Jwt.withTokenValue("token").header("alg", "HS256").subject("not-a-number").build();
+
+        assertThatThrownBy(() -> converter.convert(jwt)).isInstanceOf(BadCredentialsException.class);
     }
 
     private void stored(AppUser user) {
