@@ -9,11 +9,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class RefreshDatabase {
-    private static final String DATABASE_NAME = env("SPRING_DATASOURCE_NAME", "paypulse_db");
+    private static final String DATABASE_URL = env("SPRING_DATASOURCE_URL",
+            "jdbc:postgresql://localhost:5432/paypulse_db");
+    private static final String DATABASE_NAME = databaseName(DATABASE_URL);
     private static final String USER = env("SPRING_DATASOURCE_USERNAME", "postgres");
     private static final String PASSWORD = env("SPRING_DATASOURCE_PASSWORD", "");
-    private static final String DATABASE_URL = env("SPRING_DATASOURCE_URL",
-            "jdbc:postgresql://localhost:5432/" + DATABASE_NAME);
     private static final String SERVER_URL = serverUrl(DATABASE_URL);
 
     public static void main(String[] args) {
@@ -60,10 +60,20 @@ public class RefreshDatabase {
     }
 
     private static String serverUrl(String jdbcUrl) {
-        int queryStart = jdbcUrl.indexOf('?');
-        String withoutQuery = queryStart >= 0 ? jdbcUrl.substring(0, queryStart) : jdbcUrl;
+        String withoutQuery = withoutQuery(jdbcUrl);
         int lastSlash = withoutQuery.lastIndexOf('/');
         return lastSlash > "jdbc:postgresql:".length() ? withoutQuery.substring(0, lastSlash) : withoutQuery;
+    }
+
+    private static String databaseName(String jdbcUrl) {
+        String withoutQuery = withoutQuery(jdbcUrl);
+        int lastSlash = withoutQuery.lastIndexOf('/');
+        return lastSlash >= 0 ? withoutQuery.substring(lastSlash + 1) : withoutQuery;
+    }
+
+    private static String withoutQuery(String jdbcUrl) {
+        int queryStart = jdbcUrl.indexOf('?');
+        return queryStart >= 0 ? jdbcUrl.substring(0, queryStart) : jdbcUrl;
     }
 
     private static String env(String name, String fallback) {

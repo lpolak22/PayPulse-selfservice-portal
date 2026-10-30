@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Profile("seed")
@@ -27,8 +28,9 @@ public class MerchantSeedService {
         };
         for (int i = 0; i < merchantNames.length; i++) {
             String regNum = prefix + String.format("%07d", i + 1000);
-            if (merchantRepository.existsByRegistrationNumber(regNum)) {
-                merchantRepository.findByRegistrationNumber(regNum).ifPresent(merchants::add);
+            Optional<Merchant> existing = merchantRepository.findByRegistrationNumber(regNum);
+            if (existing.isPresent()) {
+                merchants.add(existing.get());
                 continue;
             }
             Merchant merchant = new Merchant();

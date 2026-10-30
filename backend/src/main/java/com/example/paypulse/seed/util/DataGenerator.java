@@ -40,14 +40,25 @@ public class DataGenerator {
     }
 
     public String randomMaskedPan(String brand) {
-        String pan;
-        if ("AMEX".equals(brand)) {
-            pan = "34" + String.format("%013d", Math.abs(random.nextLong() % 10000000000000L));
-            return pan.substring(0, 6) + "*****" + pan.substring(pan.length() - 4);
-        } else {
-            pan = "4".equals(brand) || random.nextBoolean() ? "4" + String.format("%015d", Math.abs(random.nextLong() % 1000000000000000L))
-                    : "5" + String.format("%015d", Math.abs(random.nextLong() % 1000000000000000L));
-            return pan.substring(0, 6) + "******" + pan.substring(pan.length() - 4);
+        return switch (brand) {
+            case "AMEX" -> mask("34" + randomDigits(13));
+            case "DINERS" -> mask("36" + randomDigits(12));
+            case "MASTERCARD" -> mask("5" + randomDigits(15));
+            case "MAESTRO" -> mask("6" + randomDigits(15));
+            default -> mask("4" + randomDigits(15));
+        };
+    }
+
+    private String mask(String pan) {
+        int hidden = pan.length() - 10;
+        return pan.substring(0, 6) + "*".repeat(hidden) + pan.substring(pan.length() - 4);
+    }
+
+    private String randomDigits(int count) {
+        StringBuilder digits = new StringBuilder(count);
+        for (int i = 0; i < count; i++) {
+            digits.append(random.nextInt(10));
         }
+        return digits.toString();
     }
 }

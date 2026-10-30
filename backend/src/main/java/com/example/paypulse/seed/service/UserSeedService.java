@@ -6,8 +6,8 @@ import com.example.paypulse.model.UserRole;
 import com.example.paypulse.model.UserStatus;
 import com.example.paypulse.repository.AppUserRepository;
 import com.example.paypulse.seed.config.SeedProperties;
-import com.example.paypulse.seed.util.PasswordUtil;
 import org.springframework.context.annotation.Profile;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,16 +15,16 @@ import org.springframework.transaction.annotation.Transactional;
 @Profile("seed")
 public class UserSeedService {
     private final AppUserRepository appUserRepository;
-    private final PasswordUtil passwordUtil;
+    private final PasswordEncoder passwordEncoder;
     private final SeedProperties seedProperties;
 
     public UserSeedService(
             AppUserRepository appUserRepository,
-            PasswordUtil passwordUtil,
+            PasswordEncoder passwordEncoder,
             SeedProperties seedProperties
     ) {
         this.appUserRepository = appUserRepository;
-        this.passwordUtil = passwordUtil;
+        this.passwordEncoder = passwordEncoder;
         this.seedProperties = seedProperties;
     }
 
@@ -32,6 +32,9 @@ public class UserSeedService {
     public void createUsersForOrganisation(Organisation organisation) {
         String orgSlug = organisation.getName()
                 .toLowerCase()
+                .replace("j.d.o.o.", "")
+                .replace("d.o.o.", "")
+                .trim()
                 .replaceAll("[^a-z0-9]+", "-");
 
         createUser(organisation, "Admin", "One",
@@ -74,7 +77,7 @@ public class UserSeedService {
         }
 
         String hashedPassword = hasPassword
-                ? passwordUtil.hash(seedProperties.getTestPassword())
+                ? passwordEncoder.encode(seedProperties.getTestPassword())
                 : null;
 
         AppUser user = AppUser.createPending(

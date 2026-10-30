@@ -10,7 +10,5 @@ import java.util.Optional;
 public interface MerchantRepository extends JpaRepository<Merchant, Long> {
     Optional<Merchant> findByRegistrationNumber(String registrationNumber);
 
-    boolean existsByRegistrationNumber(String registrationNumber);
-
     boolean existsBySourceId(String sourceId);
 }

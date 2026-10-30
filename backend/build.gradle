@@ -49,6 +49,9 @@ def loadDotEnv = {
 						(value.startsWith("'") && value.endsWith("'")))) {
 			value = value.substring(1, value.length() - 1)
 		}
+		if (System.getenv(key) != null) {
+			return
+		}
 		values[key] = value
 	}
 	values

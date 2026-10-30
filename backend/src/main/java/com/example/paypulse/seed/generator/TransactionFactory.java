@@ -2,7 +2,6 @@ package com.example.paypulse.seed.generator;
 
 import com.example.paypulse.model.Acquirer;
 import com.example.paypulse.model.Terminal;
-import com.example.paypulse.model.Transaction;
 import com.example.paypulse.seed.util.DataGenerator;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -31,8 +30,8 @@ public class TransactionFactory {
 
     private final DataGenerator dataGenerator = new DataGenerator(new Random(98765));
 
-    public Transaction create(Random random, long sequence, List<Terminal> terminals, List<Acquirer> acquirers,
-                              LocalDateTime startDate, LocalDateTime endDate) {
+    public SeedTransaction create(Random random, long sequence, List<Terminal> terminals, List<Acquirer> acquirers,
+                                  LocalDateTime startDate, LocalDateTime endDate) {
         Terminal terminal = terminals.get(random.nextInt(terminals.size()));
         Acquirer acquirer = acquirers.get(random.nextInt(acquirers.size()));
 
@@ -53,14 +52,14 @@ public class TransactionFactory {
         rawData.put("rrn", dataGenerator.randomRrn());
         rawData.put("masked_pan", dataGenerator.randomMaskedPan(brand));
 
-        Transaction transaction = new Transaction();
-        transaction.setTerminal(terminal);
-        transaction.setAcquirer(acquirer);
-        transaction.setSourceId(SOURCE_ID_PREFIX + sequence);
-        transaction.setAmount(BigDecimal.valueOf(random.nextDouble() * 1000 + 1).setScale(2, RoundingMode.HALF_UP));
-        transaction.setCurrency("EUR");
-        transaction.setStatus(STATUSES[random.nextInt(STATUSES.length)]);
-        transaction.setRawData(rawData);
-        return transaction;
+        return new SeedTransaction(
+                terminal.getIdTerminal(),
+                acquirer.getIdAcquirer(),
+                SOURCE_ID_PREFIX + sequence,
+                BigDecimal.valueOf(random.nextDouble() * 1000 + 1).setScale(2, RoundingMode.HALF_UP),
+                "EUR",
+                STATUSES[random.nextInt(STATUSES.length)],
+                rawData
+        );
     }
 }
