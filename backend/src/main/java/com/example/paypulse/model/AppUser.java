@@ -60,6 +60,9 @@ public class AppUser {
     @Column(name = "is_active", nullable = false)
     private boolean active;
 
+    @Column(name = "is_first_login")
+    private Boolean isFirstLogin = true;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -171,5 +174,13 @@ public class AppUser {
 
     public LocalDateTime getDeletedAt() {
         return deletedAt;
+    }
+
+    public Boolean getIsFirstLogin() {
+        return isFirstLogin;
+    }
+
+    public void setIsFirstLogin(Boolean isFirstLogin) {
+        this.isFirstLogin = isFirstLogin;
     }
 }
