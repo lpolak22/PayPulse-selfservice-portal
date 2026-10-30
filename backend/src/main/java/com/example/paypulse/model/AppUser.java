@@ -126,6 +126,16 @@ public class AppUser {
         syncActiveFlag();
     }
 
+    public void completeActivation(String passwordHash) {
+        this.passwordHash = passwordHash;
+        this.isFirstLogin = false;
+        changeStatus(UserStatus.ACTIVE);
+    }
+
+    public void markActivationResent(LocalDateTime resentAt) {
+        this.updatedAt = resentAt;
+    }
+
     public void markDeleted(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
         syncActiveFlag();

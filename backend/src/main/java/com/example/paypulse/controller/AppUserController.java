@@ -144,4 +144,17 @@ public class AppUserController {
     public void deleteUser(@PathVariable Long id) {
         appUserService.deleteUser(id);
     }
+
+    @PostMapping("/{id}/resend-activation")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Resend the activation email",
+            description = "Sends a new activation link. Older links of the user stop working.")
+    @ApiResponse(responseCode = "204", description = "Activation email sent")
+    @ApiResponse(responseCode = "404", description = "NOT_FOUND",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "CONFLICT: the user has already completed activation",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public void resendActivation(@PathVariable Long id) {
+        appUserService.resendActivation(id);
+    }
 }

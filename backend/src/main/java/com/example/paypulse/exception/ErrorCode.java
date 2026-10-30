@@ -16,6 +16,9 @@ public enum ErrorCode {
     ACCOUNT_INACTIVE(HttpStatus.FORBIDDEN, "Your account is deactivated. Please contact your admin."),
     ACCOUNT_PENDING_ACTIVATION(HttpStatus.FORBIDDEN, "Your account is not activated yet. Please use the link from your activation email."),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "The session has expired. Please log in again."),
+    ACTIVATION_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "The activation link is not valid."),
+    ACTIVATION_TOKEN_EXPIRED(HttpStatus.GONE, "The activation link has expired. Please ask your admin for a new one."),
+    ACTIVATION_TOKEN_USED(HttpStatus.GONE, "The activation link has already been used. Please ask your admin for a new one."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
 
     private final HttpStatus status;
