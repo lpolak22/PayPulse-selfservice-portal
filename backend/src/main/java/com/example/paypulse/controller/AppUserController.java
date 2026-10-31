@@ -53,7 +53,8 @@ public class AppUserController {
     }
 
     @PostMapping
-    @Operation(summary = "Create a user", description = "The new user starts in status PENDING_ACTIVATION.")
+    @Operation(summary = "Create a user",
+            description = "The new user starts in status PENDING_ACTIVATION and receives an activation email.")
     @ApiResponse(responseCode = "201", description = "User created")
     @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR (see fieldErrors) or BAD_REQUEST",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
@@ -92,25 +93,68 @@ public class AppUserController {
     }
 
     @PatchMapping("/{id}")
-    @Operation(summary = "Update a user", description = "Only the fields present in the body are changed.")
+    @Operation(summary = "Update a user", description = "Only the fields present in the body are changed. "
+            + "Setting the status to INACTIVE ends the user's sessions like the deactivate route.")
     @ApiResponse(responseCode = "200", description = "The updated user")
     @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR (see fieldErrors) or BAD_REQUEST",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     @ApiResponse(responseCode = "404", description = "NOT_FOUND",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
-    @ApiResponse(responseCode = "409", description = "USER_EMAIL_EXISTS: the email is already used",
+    @ApiResponse(responseCode = "409", description = "USER_EMAIL_EXISTS: the email is already used; "
+            + "LAST_ADMIN: the last active admin cannot be deactivated or demoted; "
+            + "CONFLICT: a user who has not completed activation cannot be set ACTIVE",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public AppUserResponse updateUser(@PathVariable Long id, @Valid @RequestBody UpdateAppUserRequest request) {
         return appUserService.updateUser(id, request);
     }
 
+    @PostMapping("/{id}/activate")
+    @Operation(summary = "Activate a user", description = "Sets the status to ACTIVE (and is_active). "
+            + "A reactivated user logs in with their existing password. Activating an active user changes nothing.")
+    @ApiResponse(responseCode = "200", description = "The activated user")
+    @ApiResponse(responseCode = "404", description = "NOT_FOUND",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "CONFLICT: the user has not completed activation yet",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public AppUserResponse activateUser(@PathVariable Long id) {
+        return appUserService.activateUser(id);
+    }
+
+    @PostMapping("/{id}/deactivate")
+    @Operation(summary = "Deactivate a user", description = "Sets the status to INACTIVE (and is_active), revokes "
+            + "all refresh tokens of the user and rejects their access token on the next request.")
+    @ApiResponse(responseCode = "200", description = "The deactivated user")
+    @ApiResponse(responseCode = "404", description = "NOT_FOUND",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "LAST_ADMIN: the user is the last active admin",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public AppUserResponse deactivateUser(@PathVariable Long id) {
+        return appUserService.deactivateUser(id);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @Operation(summary = "Delete a user", description = "Soft delete: the user is kept but no longer listed.")
+    @Operation(summary = "Delete a user", description = "Soft delete: the user is kept but no longer listed. "
+            + "All refresh tokens of the user are revoked.")
     @ApiResponse(responseCode = "204", description = "User deleted")
     @ApiResponse(responseCode = "404", description = "NOT_FOUND",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "LAST_ADMIN: the user is the last active admin",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public void deleteUser(@PathVariable Long id) {
         appUserService.deleteUser(id);
+    }
+
+    @PostMapping("/{id}/resend-activation")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @Operation(summary = "Resend the activation email",
+            description = "Sends a new activation link. Older links of the user stop working.")
+    @ApiResponse(responseCode = "204", description = "Activation email sent")
+    @ApiResponse(responseCode = "404", description = "NOT_FOUND",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "409", description = "CONFLICT: the user has already completed activation",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public void resendActivation(@PathVariable Long id) {
+        appUserService.resendActivation(id);
     }
 }

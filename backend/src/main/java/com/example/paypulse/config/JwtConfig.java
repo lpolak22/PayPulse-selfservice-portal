@@ -36,7 +36,7 @@ public class JwtConfig {
         return decoder;
     }
 
-    private static SecretKey secretKey(JwtProperties properties) {
+    public static SecretKey secretKey(JwtProperties properties) {
         String secret = properties.secret();
         if (secret == null || secret.length() < MIN_SECRET_LENGTH) {
             throw new IllegalStateException("Environment variable JWT_SECRET must be set and at least " + MIN_SECRET_LENGTH + " characters long");
