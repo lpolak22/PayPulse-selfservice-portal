@@ -1,0 +1,22 @@
+<resources>
+    <string name="activation_title">Postavi lozinku</string>
+    <string name="activation_subtitle">Odaberi lozinku za svoj račun.</string>
+    <string name="activation_password_label">Nova lozinka</string>
+    <string name="activation_confirm_password_label">Ponovi lozinku</string>
+    <string name="activation_rules_title">Lozinka mora imati:</string>
+    <string name="activation_submit">Postavi lozinku</string>
+    <string name="activation_loading">Spremanje lozinke u tijeku</string>
+    <string name="activation_back_to_login">Natrag na prijavu</string>
+    <string name="activation_retry">Pokušaj ponovno</string>
+    <string name="activation_success_notice">Lozinka je postavljena. Prijavi se novom lozinkom.</string>
+
+    <string name="activation_error_mismatch">Lozinke se ne podudaraju.</string>
+    <string name="activation_error_network">Veza nije uspjela. Provjeri internet i pokušaj ponovno.</string>
+    <string name="activation_error_password_policy">Lozinka ne zadovoljava sva pravila.</string>
+    <string name="activation_error_unknown">Nešto nije u redu. Pokušaj ponovno.</string>
+
+    <string name="activation_link_expired">Poveznica je istekla. Zatraži od administratora novu.</string>
+    <string name="activation_link_used">Poveznica je već iskorištena. Zatraži od administratora novu.</string>
+    <string name="activation_link_invalid">Poveznica nije ispravna. Zatraži od administratora novu.</string>
+    <string name="activation_link_check_failed">Provjera poveznice nije uspjela. Provjeri internet i pokušaj ponovno.</string>
+</resources>

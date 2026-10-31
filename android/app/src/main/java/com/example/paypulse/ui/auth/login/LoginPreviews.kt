@@ -1,5 +1,6 @@
 package com.example.paypulse.ui.auth.login
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
@@ -52,6 +53,10 @@ private fun LoginSessionExpiredPreview() = LoginPreview(
 
 @PreviewLightDark
 @Composable
+private fun LoginActivationNoticePreview() = LoginPreview(notice = R.string.activation_success_notice)
+
+@PreviewLightDark
+@Composable
 private fun LoginLoadingPreview() = LoginPreview(
     email = SAMPLE_EMAIL,
     password = SAMPLE_PASSWORD,
@@ -81,7 +86,8 @@ private fun LoginLargeFontPreview() = LoginPreview(
 private fun LoginPreview(
     email: String = "",
     password: String = "",
-    state: LoginUiState = LoginUiState()
+    state: LoginUiState = LoginUiState(),
+    @StringRes notice: Int? = null
 ) {
     PayPulseTheme {
         LoginScreen(
@@ -92,7 +98,8 @@ private fun LoginPreview(
             onPasswordChange = {},
             onPasswordVisibilityToggle = {},
             onLoginClick = {},
-            onForgotPasswordClick = {}
+            onForgotPasswordClick = {},
+            notice = notice
         )
     }
 }

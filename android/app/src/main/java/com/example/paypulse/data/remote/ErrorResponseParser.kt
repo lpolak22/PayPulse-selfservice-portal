@@ -8,14 +8,20 @@ import retrofit2.Response
 
 class ErrorResponseParser(private val json: Json) {
 
-    fun errorCode(exception: HttpException): String? = exception.response()?.let { errorCode(it) }
+    fun errorCode(exception: HttpException): String? = apiError(exception)?.code
 
-    fun errorCode(response: Response<*>): String? {
+    fun errorCode(response: Response<*>): String? = apiError(response)?.code
+
+    fun apiError(exception: HttpException): ApiError? = exception.response()?.let { apiError(it) }
+
+    fun apiError(response: Response<*>): ApiError? {
         val body = response.errorBody()?.string() ?: return null
         return try {
-            json.decodeFromString<ErrorResponseDto>(body).code
+            json.decodeFromString<ErrorResponseDto>(body).toApiError()
         } catch (exception: SerializationException) {
             null
         }
     }
+
+    private fun ErrorResponseDto.toApiError(): ApiError = ApiError(code, fieldErrors.map { it.field })
 }
