@@ -1,0 +1,20 @@
+<resources>
+    <string name="login_title">Dobrodošli u Merchant Portal</string>
+    <string name="login_subtitle">Prijavi se svojom e-mail adresom i lozinkom.</string>
+    <string name="login_email_label">E-mail</string>
+    <string name="login_password_label">Lozinka</string>
+    <string name="login_forgot_password">Zaboravljena lozinka?</string>
+    <string name="login_button">Prijavi se</string>
+    <string name="login_loading">Prijava u tijeku</string>
+    <string name="login_first_login_hint">Prva prijava? Otvori poveznicu za aktivaciju iz e-maila.</string>
+
+    <string name="login_error_email_required">Upiši e-mail adresu.</string>
+    <string name="login_error_email_invalid">E-mail adresa nije ispravna.</string>
+    <string name="login_error_password_required">Upiši lozinku.</string>
+    <string name="login_error_invalid_credentials">Neispravan e-mail ili lozinka.</string>
+    <string name="login_error_account_inactive">Račun je deaktiviran. Obrati se administratoru.</string>
+    <string name="login_error_account_pending_activation">Račun još nije aktiviran. Otvori poveznicu za aktivaciju iz e-maila.</string>
+    <string name="login_error_session_expired">Sesija je istekla. Prijavi se ponovno.</string>
+    <string name="login_error_network">Veza nije uspjela. Provjeri internet i pokušaj ponovno.</string>
+    <string name="login_error_unknown">Nešto nije u redu. Pokušaj ponovno.</string>
+</resources>
