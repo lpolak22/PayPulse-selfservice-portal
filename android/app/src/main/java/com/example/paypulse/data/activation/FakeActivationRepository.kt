@@ -35,27 +35,28 @@ class FakeActivationRepository : ActivationRepository {
     override suspend fun activate(token: String, password: String, confirmPassword: String): ActivationResult {
         delay(FAKE_DELAY_MILLIS)
         if (token == OFFLINE_TOKEN) return ActivationResult.Failure(ActivationError.NETWORK)
+        return mutex.withLock { useToken(token, password, confirmPassword) }
+    }
+
+    private fun useToken(token: String, password: String, confirmPassword: String): ActivationResult {
+        tokenErrorCode(token)?.let { return ActivationResult.Failure(activationErrorFrom(it)) }
         val invalidFields = invalidFields(password, confirmPassword)
         if (invalidFields.isNotEmpty()) {
             return ActivationResult.Failure(activationErrorFrom(ActivationApiContract.CODE_VALIDATION_ERROR, invalidFields))
         }
-        return mutex.withLock { useToken(token) }
+        statusesByToken[token] = ActivationTokenStatus.USED
+        return ActivationResult.Success
+    }
+
+    private fun tokenErrorCode(token: String): String? = when (statusesByToken[token]) {
+        ActivationTokenStatus.VALID -> null
+        ActivationTokenStatus.EXPIRED -> ActivationApiContract.CODE_TOKEN_EXPIRED
+        ActivationTokenStatus.USED -> ActivationApiContract.CODE_TOKEN_USED
+        null -> ActivationApiContract.CODE_TOKEN_INVALID
     }
 
     private fun invalidFields(password: String, confirmPassword: String): List<String> = buildList {
         if (!PasswordPolicy.isSatisfiedBy(password)) add(ActivationApiContract.FIELD_PASSWORD)
         if (password != confirmPassword) add(ActivationApiContract.FIELD_CONFIRM_PASSWORD)
-    }
-
-    private fun useToken(token: String): ActivationResult {
-        val errorCode = when (statusesByToken[token]) {
-            ActivationTokenStatus.VALID -> null
-            ActivationTokenStatus.EXPIRED -> ActivationApiContract.CODE_TOKEN_EXPIRED
-            ActivationTokenStatus.USED -> ActivationApiContract.CODE_TOKEN_USED
-            null -> ActivationApiContract.CODE_TOKEN_INVALID
-        }
-        if (errorCode != null) return ActivationResult.Failure(activationErrorFrom(errorCode))
-        statusesByToken[token] = ActivationTokenStatus.USED
-        return ActivationResult.Success
     }
 }

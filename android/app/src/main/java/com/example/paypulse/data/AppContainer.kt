@@ -2,11 +2,12 @@ package com.example.paypulse.data
 
 import android.content.Context
 import com.example.paypulse.BuildConfig
-import com.example.paypulse.data.activation.FakeActivationRepository
+import com.example.paypulse.data.activation.ApiActivationRepository
 import com.example.paypulse.data.auth.ApiAuthRepository
 import com.example.paypulse.data.auth.EncryptedTokenStorage
 import com.example.paypulse.data.auth.SessionStore
 import com.example.paypulse.data.auth.TokenStorage
+import com.example.paypulse.data.remote.ActivationApi
 import com.example.paypulse.data.remote.AuthApi
 import com.example.paypulse.data.remote.BearerTokenInterceptor
 import com.example.paypulse.data.remote.CurrentUserApi
@@ -36,7 +37,9 @@ object AppContainer {
     private val json: Json by lazy { createApiJson() }
     private val errorResponseParser: ErrorResponseParser by lazy { ErrorResponseParser(json) }
     private val httpClient: OkHttpClient by lazy { createOkHttpClient() }
-    private val authApi: AuthApi by lazy { createRetrofit(BuildConfig.API_BASE_URL, json, httpClient).create() }
+    private val publicRetrofit: Retrofit by lazy { createRetrofit(BuildConfig.API_BASE_URL, json, httpClient) }
+    private val authApi: AuthApi by lazy { publicRetrofit.create() }
+    private val activationApi: ActivationApi by lazy { publicRetrofit.create() }
     private val tokenStorage: TokenStorage by lazy { EncryptedTokenStorage(applicationContext, KeystoreCipher()) }
     private val sessionStore: SessionStore by lazy { SessionStore() }
 
@@ -53,6 +56,8 @@ object AppContainer {
         ApiAuthRepository(authApi, currentUserApi, errorResponseParser, tokenStorage, sessionStore)
     }
 
-    val activationRepository: ActivationRepository by lazy { FakeActivationRepository() }
+    val activationRepository: ActivationRepository by lazy {
+        ApiActivationRepository(activationApi, errorResponseParser)
+    }
     val userRepository: UserRepository by lazy { FakeUserRepository() }
 }
