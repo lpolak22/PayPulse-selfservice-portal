@@ -7,6 +7,7 @@ import com.example.paypulse.dto.UpdateAppUserRequest;
 import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
 import com.example.paypulse.exception.ApiException;
+import com.example.paypulse.exception.ConflictException;
 import com.example.paypulse.exception.ErrorCode;
 import com.example.paypulse.exception.ResourceNotFoundException;
 import com.example.paypulse.exception.UserEmailAlreadyExistsException;
@@ -14,13 +15,17 @@ import com.example.paypulse.mapper.AppUserMapper;
 import com.example.paypulse.model.AppUser;
 import com.example.paypulse.model.AuditAction;
 import com.example.paypulse.model.Organisation;
+import com.example.paypulse.model.UserRole;
 import com.example.paypulse.model.UserStatus;
 import com.example.paypulse.repository.AppUserRepository;
 import com.example.paypulse.repository.AppUserSpecifications;
 import com.example.paypulse.repository.OrganisationRepository;
 import com.example.paypulse.security.CurrentUserProvider;
+import com.example.paypulse.service.ActivationService;
 import com.example.paypulse.service.AppUserService;
 import com.example.paypulse.service.AuditLogService;
+import com.example.paypulse.service.LastAdminGuard;
+import com.example.paypulse.service.RefreshTokenService;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Sort;
@@ -42,6 +47,9 @@ public class AppUserServiceImpl implements AppUserService {
     private final AppUserMapper appUserMapper;
     private final AuditLogService auditLogService;
     private final CurrentUserProvider currentUserProvider;
+    private final LastAdminGuard lastAdminGuard;
+    private final RefreshTokenService refreshTokenService;
+    private final ActivationService activationService;
     private final Clock clock;
 
     public AppUserServiceImpl(AppUserRepository appUserRepository,
@@ -49,12 +57,18 @@ public class AppUserServiceImpl implements AppUserService {
                               AppUserMapper appUserMapper,
                               AuditLogService auditLogService,
                               CurrentUserProvider currentUserProvider,
+                              LastAdminGuard lastAdminGuard,
+                              RefreshTokenService refreshTokenService,
+                              ActivationService activationService,
                               Clock clock) {
         this.appUserRepository = appUserRepository;
         this.organisationRepository = organisationRepository;
         this.appUserMapper = appUserMapper;
         this.auditLogService = auditLogService;
         this.currentUserProvider = currentUserProvider;
+        this.lastAdminGuard = lastAdminGuard;
+        this.refreshTokenService = refreshTokenService;
+        this.activationService = activationService;
         this.clock = clock;
     }
 
@@ -68,6 +82,7 @@ public class AppUserServiceImpl implements AppUserService {
 
         AppUserResponse created = appUserMapper.toResponse(user);
         auditLogService.record(AuditAction.USER_CREATED, user.getIdUser(), null, created);
+        activationService.startActivation(user);
         return created;
     }
 
@@ -99,13 +114,48 @@ public class AppUserServiceImpl implements AppUserService {
     }
 
     @Override
+    public AppUserResponse activateUser(Long id) {
+        return changeStatus(id, UserStatus.ACTIVE, AuditAction.USER_ACTIVATED);
+    }
+
+    @Override
+    public AppUserResponse deactivateUser(Long id) {
+        return changeStatus(id, UserStatus.INACTIVE, AuditAction.USER_DEACTIVATED);
+    }
+
+    @Override
     public void deleteUser(Long id) {
         AppUser user = findUser(id);
+        lastAdminGuard.ensureCanDelete(user);
         AppUserResponse before = appUserMapper.toResponse(user);
 
         user.markDeleted(LocalDateTime.now(clock));
+        refreshTokenService.revokeAllForUser(id);
 
         auditLogService.record(AuditAction.USER_DELETED, id, before, null);
+    }
+
+    @Override
+    public void resendActivation(Long id) {
+        AppUser user = findUser(id);
+        if (!Boolean.TRUE.equals(user.getIsFirstLogin()) || user.getStatus() != UserStatus.PENDING_ACTIVATION) {
+            throw new ConflictException("Only users who have not completed activation can get a new activation email.");
+        }
+        user.markActivationResent(LocalDateTime.now(clock));
+        activationService.startActivation(saveAndFlush(user));
+    }
+
+    private AppUserResponse changeStatus(Long id, UserStatus status, AuditAction action) {
+        AppUser user = findUser(id);
+        AppUserResponse before = appUserMapper.toResponse(user);
+        if (user.getStatus() == status) {
+            return before;
+        }
+        changeStatus(user, status);
+        AppUserResponse after = appUserMapper.toResponse(saveAndFlush(user));
+
+        auditLogService.record(action, id, before, after);
+        return after;
     }
 
     private void applyChanges(AppUser user, UpdateAppUserRequest request) {
@@ -113,7 +163,7 @@ public class AppUserServiceImpl implements AppUserService {
         applyIfPresent(request.firstName(), user::changeFirstName);
         applyIfPresent(request.lastName(), user::changeLastName);
         applyIfPresent(request.phone(), user::changePhone);
-        applyIfPresent(request.role(), user::changeRole);
+        applyIfPresent(request.role(), role -> changeRole(user, role));
         applyIfPresent(request.status(), status -> changeStatus(user, status));
     }
 
@@ -124,11 +174,33 @@ public class AppUserServiceImpl implements AppUserService {
         user.changeEmail(email);
     }
 
+    private void changeRole(AppUser user, UserRole role) {
+        lastAdminGuard.ensureCanChangeRole(user, role);
+        user.changeRole(role);
+    }
+
     private void changeStatus(AppUser user, UserStatus status) {
-        if (status == UserStatus.PENDING_ACTIVATION && user.getStatus() != UserStatus.PENDING_ACTIVATION) {
+        ensureStatusTransitionAllowed(user, status);
+        lastAdminGuard.ensureCanChangeStatus(user, status);
+
+        boolean wasActive = user.isActive();
+        user.changeStatus(status);
+        if (wasActive && !user.isActive()) {
+            refreshTokenService.revokeAllForUser(user.getIdUser());
+        }
+    }
+
+    private static void ensureStatusTransitionAllowed(AppUser user, UserStatus status) {
+        if (status == user.getStatus()) {
+            return;
+        }
+        if (status == UserStatus.PENDING_ACTIVATION) {
             throw new ApiException(ErrorCode.VALIDATION_ERROR, "Status cannot be changed back to PENDING_ACTIVATION.");
         }
-        user.changeStatus(status);
+        if (user.getStatus() == UserStatus.PENDING_ACTIVATION && status == UserStatus.ACTIVE) {
+            throw new ConflictException("The user has not completed activation yet: "
+                    + "the account is activated through the activation email.");
+        }
     }
 
     private AppUser findUser(Long id) {

@@ -35,8 +35,7 @@ public final class AppUserSpecifications {
     }
 
     static Specification<AppUser> belongsToOrganisation(Long organisationId) {
-        return (root, query, builder) ->
-                builder.equal(root.get("organisation").get("idOrganisation"), organisationId);
+        return OrganisationScope.users(organisationId);
     }
 
     static Specification<AppUser> isNotDeleted() {

@@ -53,12 +53,26 @@ public class AppUser {
     @Column(nullable = false, length = 20)
     private UserStatus status;
 
-    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "password_hash", length = 60)
     private String passwordHash;
 
+    @Column(name = "failed_login_count")
+    private Short failedLoginCount = 0;
+
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
     @Column(name = "is_active", nullable = false)
     private boolean active;
+
+    @Column(name = "totp_enabled")
+    private Boolean totpEnabled = false;
+
+    @Column(name = "totp_secret")
+    private String totpSecret;
+
+    @Column(name = "is_first_login")
+    private Boolean isFirstLogin = true;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -112,9 +126,27 @@ public class AppUser {
         syncActiveFlag();
     }
 
+    public void completeActivation(String passwordHash) {
+        this.passwordHash = passwordHash;
+        this.isFirstLogin = false;
+        changeStatus(UserStatus.ACTIVE);
+    }
+
+    public void markActivationResent(LocalDateTime resentAt) {
+        this.updatedAt = resentAt;
+    }
+
     public void markDeleted(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
         syncActiveFlag();
+    }
+
+    public void initializeSeedSecurity(String hashedPassword, boolean firstLogin) {
+        this.passwordHash = hashedPassword;
+        this.isFirstLogin = firstLogin;
+        this.totpEnabled = false;
+        this.failedLoginCount = 0;
+        this.lockedUntil = null;
     }
 
     private void syncActiveFlag() {
@@ -172,4 +204,45 @@ public class AppUser {
     public LocalDateTime getDeletedAt() {
         return deletedAt;
     }
+
+    public Short getFailedLoginCount() {
+        return failedLoginCount;
+    }
+
+    public void setFailedLoginCount(Short failedLoginCount) {
+        this.failedLoginCount = failedLoginCount;
+    }
+
+    public LocalDateTime getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(LocalDateTime lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    public Boolean getTotpEnabled() {
+        return totpEnabled;
+    }
+
+    public void setTotpEnabled(Boolean totpEnabled) {
+        this.totpEnabled = totpEnabled;
+    }
+
+    public String getTotpSecret() {
+        return totpSecret;
+    }
+
+    public void setTotpSecret(String totpSecret) {
+        this.totpSecret = totpSecret;
+    }
+
+    public Boolean getIsFirstLogin() {
+        return isFirstLogin;
+    }
+
+    public void setIsFirstLogin(Boolean isFirstLogin) {
+        this.isFirstLogin = isFirstLogin;
+    }
 }
+
