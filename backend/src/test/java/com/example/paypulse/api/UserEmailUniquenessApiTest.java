@@ -17,9 +17,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * An email may belong to only one undeleted user, compared case-insensitively, across all organisations.
- */
 class UserEmailUniquenessApiTest extends ApiIntegrationTest {
 
     private long organisationId;

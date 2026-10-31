@@ -24,9 +24,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-/**
- * The building blocks that decide who is signed in: a deactivated or deleted user must not authenticate.
- */
 class AppUserSecurityTest {
 
     private static final long ORGANISATION_ID = 10L;

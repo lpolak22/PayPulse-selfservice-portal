@@ -41,7 +41,7 @@ class RefreshTokenServiceImplTest {
 
     private final RefreshTokenRepository repository = mock(RefreshTokenRepository.class);
     private final RefreshTokenServiceImpl service = new RefreshTokenServiceImpl(repository,
-            new JwtProperties("unused", "paypulse", Duration.ofMinutes(15), IDLE_TTL),
+            new JwtProperties("unused", "paypulse", Duration.ofMinutes(15), IDLE_TTL, Duration.ofSeconds(60)),
             Clock.fixed(NOW_INSTANT, ZoneOffset.UTC));
     private final AppUser user = user();
 

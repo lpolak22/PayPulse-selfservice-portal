@@ -14,7 +14,13 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatchers;
+
+import static org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher.pathPattern;
 
 @Configuration
 @EnableWebSecurity
@@ -26,13 +32,18 @@ public class SecurityConfig {
 
     private static final int BCRYPT_STRENGTH = 12;
 
-    private static final String[] OPEN_API_PATHS = {
-            "/api/docs", "/api/docs/**", "/api/swagger-ui/**", "/swagger-ui/**", "/swagger-ui.html"
-    };
-
-    private static final String[] PUBLIC_AUTH_PATHS = {
-            "/api/auth/login", "/api/auth/refresh", "/api/auth/logout", "/api/auth/activation"
-    };
+    private static final RequestMatcher PUBLIC_REQUESTS = RequestMatchers.anyOf(
+            pathPattern("/api/docs"),
+            pathPattern("/api/docs/**"),
+            pathPattern("/api/swagger-ui/**"),
+            pathPattern("/swagger-ui/**"),
+            pathPattern("/swagger-ui.html"),
+            pathPattern(HttpMethod.POST, "/api/auth/login"),
+            pathPattern(HttpMethod.POST, "/api/auth/refresh"),
+            pathPattern(HttpMethod.POST, "/api/auth/logout"),
+            pathPattern(HttpMethod.POST, "/api/auth/activation"),
+            pathPattern(HttpMethod.GET, "/api/auth/activation/**")
+    );
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http,SecurityErrorResponseWriter errorWriter,AppUserJwtAuthenticationConverter jwtConverter)
@@ -43,17 +54,21 @@ public class SecurityConfig {
                         .authenticationEntryPoint(errorWriter)
                         .accessDeniedHandler(errorWriter))
                 .oauth2ResourceServer(resourceServer -> resourceServer
+                        .bearerTokenResolver(bearerTokenResolver())
                         .authenticationEntryPoint(errorWriter)
                         .accessDeniedHandler(errorWriter)
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtConverter)))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(OPEN_API_PATHS).permitAll()
-                        .requestMatchers(HttpMethod.POST, PUBLIC_AUTH_PATHS).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/auth/activation/**").permitAll()
+                        .requestMatchers(PUBLIC_REQUESTS).permitAll()
                         .requestMatchers("/api/users/**").hasRole(UserRole.ADMIN.name())
                         .anyRequest().authenticated());
 
         return http.build();
+    }
+
+    private static BearerTokenResolver bearerTokenResolver() {
+        BearerTokenResolver resolver = new DefaultBearerTokenResolver();
+        return request -> PUBLIC_REQUESTS.matches(request) ? null : resolver.resolve(request);
     }
 
     @Bean

@@ -4,6 +4,8 @@ import com.example.paypulse.config.JwtConfig;
 import com.example.paypulse.config.JwtProperties;
 import com.example.paypulse.model.UserRole;
 import com.example.paypulse.model.UserStatus;
+import com.example.paypulse.repository.AppUserRepository;
+import com.example.paypulse.service.ActivationTokenService;
 import com.example.paypulse.support.ApiIntegrationTest;
 import com.example.paypulse.support.UserFixtures.TestUser;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,13 +32,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Access tokens on a protected route (GET /api/auth/me): only a valid, unexpired token of an active user works.
- */
 class AccessTokenApiTest extends ApiIntegrationTest {
 
     @Autowired
     private JwtEncoder jwtEncoder;
+
+    @Autowired
+    private ActivationTokenService activationTokenService;
+
+    @Autowired
+    private AppUserRepository appUserRepository;
 
     private long organisationId;
     private TestUser admin;
@@ -77,20 +82,35 @@ class AccessTokenApiTest extends ApiIntegrationTest {
     }
 
     @Test
+    void emptyBearerTokenIsUnauthorized() throws Exception {
+        expectUnauthorized(performWithToken("", get("/api/auth/me")));
+    }
+
+    @Test
     void expiredTokenIsUnauthorized() throws Exception {
-        Instant issuedAt = Instant.now().minus(Duration.ofHours(1));
-        String token = encode(jwtEncoder, claims(user.id(), "paypulse", issuedAt, issuedAt.plus(Duration.ofMinutes(15))));
+        Instant expiresAt = Instant.now().minus(jwtProperties.clockSkew()).minus(Duration.ofMinutes(1));
+        Instant issuedAt = expiresAt.minus(jwtProperties.accessTokenTtl());
+        String token = encode(jwtEncoder, claims(user.id(), jwtProperties.issuer(), issuedAt, expiresAt));
 
         expectUnauthorized(performWithToken(token, get("/api/auth/me")));
     }
 
     @Test
     void tokenSignedWithAnotherSecretIsUnauthorized() throws Exception {
-        JwtProperties other = new JwtProperties("an-attackers-secret-that-is-long-enough-0", "paypulse",
-                Duration.ofMinutes(15), Duration.ofMinutes(30));
-        String token = encode(new JwtConfig().jwtEncoder(other), validClaims(user.id(), "paypulse"));
+        JwtProperties other = new JwtProperties("an-attackers-secret-that-is-long-enough-0", jwtProperties.issuer(),
+                jwtProperties.accessTokenTtl(), jwtProperties.refreshTokenIdleTtl(), jwtProperties.clockSkew());
+        String token = encode(new JwtConfig().jwtEncoder(other), validClaims(user.id(), jwtProperties.issuer()));
 
         expectUnauthorized(performWithToken(token, get("/api/auth/me")));
+    }
+
+    @Test
+    void unsignedTokenIsUnauthorized() throws Exception {
+        Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+        String header = encoder.encodeToString("{\"alg\":\"none\"}".getBytes(StandardCharsets.UTF_8));
+        String payload = login(user).accessToken().split("\\.")[1];
+
+        expectUnauthorized(performWithToken(header + "." + payload + ".", get("/api/auth/me")));
     }
 
     @Test
@@ -100,7 +120,36 @@ class AccessTokenApiTest extends ApiIntegrationTest {
 
     @Test
     void tokenForAUserThatDoesNotExistIsUnauthorized() throws Exception {
-        String token = encode(jwtEncoder, validClaims(Long.MAX_VALUE, "paypulse"));
+        String token = encode(jwtEncoder, validClaims(Long.MAX_VALUE, jwtProperties.issuer()));
+
+        expectUnauthorized(performWithToken(token, get("/api/auth/me")));
+    }
+
+    @Test
+    void tokenWithANonNumericSubjectIsUnauthorized() throws Exception {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder().issuer(jwtProperties.issuer()).subject("not-a-number")
+                .issuedAt(now).expiresAt(now.plus(jwtProperties.accessTokenTtl())).build();
+
+        expectUnauthorized(performWithToken(encode(jwtEncoder, claims), get("/api/auth/me")));
+    }
+
+    @Test
+    void theRoleComesFromTheDatabaseNotFromTheToken() throws Exception {
+        String token = encode(jwtEncoder, validClaims(user.id(), jwtProperties.issuer()));
+
+        performWithToken(token, get("/api/users")).andExpect(status().isForbidden());
+    }
+
+    @Test
+    void refreshTokenIsNotAnAccessToken() throws Exception {
+        expectUnauthorized(performWithToken(login(user).refreshToken(), get("/api/auth/me")));
+    }
+
+    @Test
+    void activationTokenIsNotAnAccessToken() throws Exception {
+        TestUser pending = fixtures.user(organisationId, UserRole.ADMIN, UserStatus.PENDING_ACTIVATION);
+        String token = activationTokenService.issue(appUserRepository.findById(pending.id()).orElseThrow());
 
         expectUnauthorized(performWithToken(token, get("/api/auth/me")));
     }
@@ -163,9 +212,9 @@ class AccessTokenApiTest extends ApiIntegrationTest {
                 .andExpect(header().string(HttpHeaders.WWW_AUTHENTICATE, "Bearer"));
     }
 
-    private static JwtClaimsSet validClaims(long userId, String issuer) {
+    private JwtClaimsSet validClaims(long userId, String issuer) {
         Instant now = Instant.now();
-        return claims(userId, issuer, now, now.plus(Duration.ofMinutes(15)));
+        return claims(userId, issuer, now, now.plus(jwtProperties.accessTokenTtl()));
     }
 
     private static JwtClaimsSet claims(long userId, String issuer, Instant issuedAt, Instant expiresAt) {

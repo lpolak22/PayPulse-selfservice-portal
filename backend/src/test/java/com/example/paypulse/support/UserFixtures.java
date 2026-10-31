@@ -8,13 +8,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Inserts organisations and users straight into the database. Every call creates fresh rows with unique
- * names and emails, so tests never depend on the seed data or on each other.
- */
 public final class UserFixtures {
 
-    /** Password of every fixture user that has one (ACTIVE and INACTIVE users). */
     public static final String PASSWORD = "Test-Password-1";
     private static final String PASSWORD_HASH = new BCryptPasswordEncoder(4).encode(PASSWORD);
 
@@ -47,7 +42,6 @@ public final class UserFixtures {
         return new TestUser(id, email);
     }
 
-    /** Gives the user the fixture password, e.g. a pending user who has not finished activation. */
     public void givePassword(TestUser user) {
         jdbc.update("update app_user set password_hash = ? where id_user = ?", PASSWORD_HASH, user.id());
     }

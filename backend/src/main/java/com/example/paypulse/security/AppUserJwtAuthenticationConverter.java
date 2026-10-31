@@ -4,6 +4,7 @@ import com.example.paypulse.model.AppUser;
 import com.example.paypulse.repository.AppUserRepository;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -22,10 +23,18 @@ public class AppUserJwtAuthenticationConverter implements Converter<Jwt, Abstrac
     @Override
     @Transactional(readOnly = true)
     public AbstractAuthenticationToken convert(Jwt jwt) {
-        AppUser user = appUserRepository.findById(Long.valueOf(jwt.getSubject()))
+        AppUser user = appUserRepository.findById(userId(jwt))
                 .filter(candidate -> candidate.getDeletedAt() == null && candidate.isActive())
                 .orElseThrow(() -> new DisabledException("User is not active"));
         AppUserPrincipal principal = AppUserPrincipal.from(user);
         return UsernamePasswordAuthenticationToken.authenticated(principal, jwt, principal.getAuthorities());
+    }
+
+    private static Long userId(Jwt jwt) {
+        try {
+            return Long.valueOf(jwt.getSubject());
+        } catch (NumberFormatException exception) {
+            throw new BadCredentialsException("Token subject is not a user id");
+        }
     }
 }

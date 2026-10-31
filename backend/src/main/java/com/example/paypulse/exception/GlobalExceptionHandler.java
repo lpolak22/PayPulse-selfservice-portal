@@ -3,10 +3,15 @@ package com.example.paypulse.exception;
 import com.example.paypulse.dto.common.ErrorResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -68,6 +73,22 @@ public class GlobalExceptionHandler {
         return build(code, code.getDefaultMessage(), List.of());
     }
 
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
+        return build(ErrorCode.METHOD_NOT_ALLOWED, ex.getHeaders());
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<ErrorResponse> handleNotAcceptable(HttpMediaTypeNotAcceptableException ex) {
+        ErrorCode code = ErrorCode.NOT_ACCEPTABLE;
+        return build(code, code.getDefaultMessage(), List.of());
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex) {
+        return build(ErrorCode.UNSUPPORTED_MEDIA_TYPE, ex.getHeaders());
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpected(Exception ex) {
         log.error("Unhandled exception", ex);
@@ -78,6 +99,14 @@ public class GlobalExceptionHandler {
     private ResponseEntity<ErrorResponse> build(ErrorCode code, String message,
                                                 List<ErrorResponse.FieldError> fieldErrors) {
         return ResponseEntity.status(code.getStatus())
+                .contentType(MediaType.APPLICATION_JSON)
                 .body(new ErrorResponse(code.name(), message, fieldErrors));
+    }
+
+    private ResponseEntity<ErrorResponse> build(ErrorCode code, HttpHeaders headers) {
+        return ResponseEntity.status(code.getStatus())
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorResponse(code.name(), code.getDefaultMessage(), List.of()));
     }
 }

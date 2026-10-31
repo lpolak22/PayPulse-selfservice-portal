@@ -22,9 +22,6 @@ import java.time.ZoneOffset;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Access tokens issued by {@link JwtAccessTokenService} and checked by the decoder from {@link JwtConfig}.
- */
 class JwtAccessTokenServiceTest {
 
     private static final String SECRET = "unit-test-secret-that-is-long-enough-0123";
@@ -62,6 +59,18 @@ class JwtAccessTokenServiceTest {
     }
 
     @Test
+    void tokenIsAcceptedPastItsExpiryForTheConfiguredClockSkewOnly() {
+        Instant expiredThirtySecondsAgo = Instant.now().minus(TTL).minus(Duration.ofSeconds(30));
+        String token = service(properties, Clock.fixed(expiredThirtySecondsAgo, ZoneOffset.UTC)).issue(user());
+
+        assertThat(decoder.decode(token).getSubject()).isEqualTo("7");
+
+        JwtProperties noSkew = new JwtProperties(SECRET, "paypulse", TTL, Duration.ofMinutes(30), Duration.ZERO);
+        assertThatThrownBy(() -> config.jwtDecoder(noSkew).decode(token))
+                .isInstanceOf(JwtException.class).hasMessageContaining("expired");
+    }
+
+    @Test
     void tokenSignedWithAnotherSecretIsRejected() {
         JwtProperties other = properties("another-secret-that-is-also-long-enough-99", "paypulse");
         String token = new JwtAccessTokenService(config.jwtEncoder(other), other, Clock.systemUTC()).issue(user());
@@ -93,7 +102,7 @@ class JwtAccessTokenServiceTest {
     }
 
     private static JwtProperties properties(String secret, String issuer) {
-        return new JwtProperties(secret, issuer, TTL, Duration.ofMinutes(30));
+        return new JwtProperties(secret, issuer, TTL, Duration.ofMinutes(30), Duration.ofSeconds(60));
     }
 
     private static AppUser user() {
