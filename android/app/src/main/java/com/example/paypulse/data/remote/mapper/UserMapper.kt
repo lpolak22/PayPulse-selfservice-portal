@@ -14,5 +14,6 @@ fun AppUserDto.toUser(): User = User(
     phone = phone,
     role = UserRole.valueOf(role),
     status = UserStatus.valueOf(status),
-    createdAt = LocalDateTime.parse(createdAt)
+    createdAt = LocalDateTime.parse(createdAt),
+    organisationName = organisationName
 )

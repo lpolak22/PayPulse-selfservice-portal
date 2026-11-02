@@ -41,6 +41,7 @@ private object UserRoutes {
 @Composable
 fun UserManagementNavHost(
     currentUserRole: UserRole,
+    onMenuClick: () -> Unit,
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController()
 ) {
@@ -57,7 +58,7 @@ fun UserManagementNavHost(
     )
     val showMessage: (String) -> Unit = { text -> scope.launch { snackbarHostState.showSnackbar(text) } }
     NavHost(navController = navController, startDestination = UserRoutes.LIST, modifier = modifier) {
-        usersListDestination(navController, snackbarHostState)
+        usersListDestination(navController, snackbarHostState, onMenuClick)
         newUserDestination(navController) { showMessage(messages.created) }
         editUserDestination(
             navController = navController,
@@ -69,11 +70,16 @@ fun UserManagementNavHost(
 
 private class UserMessages(val created: String, val saved: String, val deleted: String)
 
-private fun NavGraphBuilder.usersListDestination(navController: NavHostController, snackbarHostState: SnackbarHostState) {
+private fun NavGraphBuilder.usersListDestination(
+    navController: NavHostController,
+    snackbarHostState: SnackbarHostState,
+    onMenuClick: () -> Unit
+) {
     composable(UserRoutes.LIST) {
         UsersListRoute(
             onAddUser = { navController.navigate(UserRoutes.NEW) { launchSingleTop = true } },
             onUserClick = { id -> navController.navigate(UserRoutes.edit(id)) { launchSingleTop = true } },
+            onMenuClick = onMenuClick,
             snackbarHostState = snackbarHostState
         )
     }

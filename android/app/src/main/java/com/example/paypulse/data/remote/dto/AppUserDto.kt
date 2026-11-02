@@ -11,5 +11,6 @@ data class AppUserDto(
     val phone: String? = null,
     val role: String,
     val status: String,
-    val createdAt: String
+    val createdAt: String,
+    val organisationName: String? = null
 )

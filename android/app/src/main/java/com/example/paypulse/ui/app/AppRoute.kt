@@ -10,7 +10,7 @@ import com.example.paypulse.domain.auth.SessionState
 import com.example.paypulse.ui.auth.activation.ActivationRoute
 import com.example.paypulse.ui.auth.login.LoginRoute
 import com.example.paypulse.ui.components.LoadingScreen
-import com.example.paypulse.ui.home.HomeScreen
+import com.example.paypulse.ui.shell.AppShell
 
 @Composable
 fun AppRoute(
@@ -43,7 +43,7 @@ private fun SessionContent(
 ) {
     when (sessionState) {
         SessionState.Checking -> LoadingScreen(modifier = modifier)
-        is SessionState.LoggedIn -> HomeScreen(
+        is SessionState.LoggedIn -> AppShell(
             user = sessionState.user,
             onLogoutClick = onLogoutClick,
             modifier = modifier

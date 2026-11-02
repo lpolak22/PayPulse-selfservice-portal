@@ -12,6 +12,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 fun UsersListRoute(
     onAddUser: () -> Unit,
     onUserClick: (Long) -> Unit,
+    onMenuClick: () -> Unit,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     viewModel: UsersListViewModel = viewModel(factory = UsersListViewModel.Factory)
 ) {
@@ -22,6 +23,7 @@ fun UsersListRoute(
         onQueryChange = viewModel::onQueryChange,
         onAddUser = onAddUser,
         onUserClick = onUserClick,
+        onMenuClick = onMenuClick,
         snackbarHost = { SnackbarHost(snackbarHostState) }
     )
 }

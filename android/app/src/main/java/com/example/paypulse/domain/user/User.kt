@@ -14,7 +14,8 @@ data class User(
     val phone: String?,
     val role: UserRole,
     val status: UserStatus,
-    val createdAt: LocalDateTime
+    val createdAt: LocalDateTime,
+    val organisationName: String? = null
 ) {
     val fullName: String
         get() = "$firstName $lastName"

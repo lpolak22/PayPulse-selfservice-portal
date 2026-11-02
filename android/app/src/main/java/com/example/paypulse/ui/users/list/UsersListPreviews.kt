@@ -23,7 +23,8 @@ private fun PreviewScreen(state: UsersListUiState, query: String = "") {
             query = query,
             onQueryChange = {},
             onAddUser = {},
-            onUserClick = {}
+            onUserClick = {},
+            onMenuClick = {}
         )
     }
 }
