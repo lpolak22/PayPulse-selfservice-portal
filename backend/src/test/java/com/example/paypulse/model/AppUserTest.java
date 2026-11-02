@@ -96,6 +96,33 @@ class AppUserTest {
         assertThat(user.getFailedLoginCount()).isZero();
     }
 
+    @Test
+    void aUserIsLockedOnlyBeforeTheLockEnds() {
+        AppUser user = newUser();
+        LocalDateTime lockedUntil = LocalDateTime.of(2026, 11, 2, 10, 15);
+
+        user.lockUntil(lockedUntil);
+
+        assertThat(user.isLockedAt(lockedUntil.minusSeconds(1))).isTrue();
+        assertThat(user.isLockedAt(lockedUntil)).isFalse();
+        assertThat(user.isLockedAt(lockedUntil.plusMinutes(1))).isFalse();
+    }
+
+    @Test
+    void aNewUserIsNotLocked() {
+        assertThat(newUser().isLockedAt(LocalDateTime.of(2026, 11, 2, 10, 0))).isFalse();
+    }
+
+    @Test
+    void resettingFailedLoginsAlsoClearsTheLock() {
+        AppUser user = newUser();
+        user.lockUntil(LocalDateTime.of(2026, 11, 2, 10, 15));
+
+        user.resetFailedLogins();
+
+        assertThat(user.getLockedUntil()).isNull();
+    }
+
     private static AppUser newUser() {
         return AppUser.createPending(new Organisation(), "Iva", "Babic", "iva@example.com", null, UserRole.USER);
     }

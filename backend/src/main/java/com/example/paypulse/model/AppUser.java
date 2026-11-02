@@ -147,6 +147,15 @@ public class AppUser {
 
     public void resetFailedLogins() {
         this.failedLoginCount = 0;
+        this.lockedUntil = null;
+    }
+
+    public void lockUntil(LocalDateTime lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    public boolean isLockedAt(LocalDateTime now) {
+        return lockedUntil != null && lockedUntil.isAfter(now);
     }
 
     public void initializeSeedSecurity(String hashedPassword, boolean firstLogin) {

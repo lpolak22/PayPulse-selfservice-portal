@@ -23,6 +23,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Service
@@ -37,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
     private final CurrentUserProvider currentUserProvider;
     private final AppUserMapper appUserMapper;
     private final LoginLockoutProperties lockoutProperties;
+    private final Clock clock;
 
     public AuthServiceImpl(AppUserRepository appUserRepository,
                            PasswordEncoder passwordEncoder,
@@ -45,7 +48,8 @@ public class AuthServiceImpl implements AuthService {
                            AuditLogService auditLogService,
                            CurrentUserProvider currentUserProvider,
                            AppUserMapper appUserMapper,
-                           LoginLockoutProperties lockoutProperties) {
+                           LoginLockoutProperties lockoutProperties,
+                           Clock clock) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.accessTokenService = accessTokenService;
@@ -54,13 +58,16 @@ public class AuthServiceImpl implements AuthService {
         this.currentUserProvider = currentUserProvider;
         this.appUserMapper = appUserMapper;
         this.lockoutProperties = lockoutProperties;
+        this.clock = clock;
     }
 
     @Override
     public TokenResponse login(LoginRequest request) {
         AppUser user = appUserRepository.findUndeletedByEmail(request.email().strip())
                 .orElseThrow(() -> invalidCredentials(null, request.email(), lockoutProperties.maxAttempts() - 1));
-        ensureCanLogIn(user, request.password());
+        LocalDateTime now = LocalDateTime.now(clock);
+        ensureNotLocked(user, now);
+        ensureCanLogIn(user, request.password(), now);
         user.resetFailedLogins();
         auditLogService.record(user.getIdUser(), AuditAction.LOGIN_SUCCESS, user.getIdUser(), null, null);
         return issueTokens(user);
@@ -90,10 +97,18 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", current.userId()));
     }
 
-    private void ensureCanLogIn(AppUser user, String password) {
+    private void ensureNotLocked(AppUser user, LocalDateTime now) {
+        if (user.isLockedAt(now)) {
+            throw failedLogin(user.getIdUser(), user.getEmail(), ErrorCode.ACCOUNT_LOCKED);
+        }
+        if (user.getLockedUntil() != null) {
+            user.resetFailedLogins();
+        }
+    }
+
+    private void ensureCanLogIn(AppUser user, String password, LocalDateTime now) {
         if (user.getPasswordHash() == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
-            user.recordFailedLogin();
-            throw invalidCredentials(user.getIdUser(), user.getEmail(), remainingAttempts(user));
+            throw wrongPassword(user, now);
         }
         if (user.getStatus() == UserStatus.PENDING_ACTIVATION) {
             throw failedLogin(user.getIdUser(), user.getEmail(), ErrorCode.ACCOUNT_PENDING_ACTIVATION);
@@ -101,6 +116,17 @@ public class AuthServiceImpl implements AuthService {
         if (!user.isActive()) {
             throw failedLogin(user.getIdUser(), user.getEmail(), ErrorCode.ACCOUNT_INACTIVE);
         }
+    }
+
+    private AuthException wrongPassword(AppUser user, LocalDateTime now) {
+        user.recordFailedLogin();
+        int remaining = remainingAttempts(user);
+        if (remaining > 0) {
+            return invalidCredentials(user.getIdUser(), user.getEmail(), remaining);
+        }
+        user.lockUntil(now.plus(lockoutProperties.lockoutDuration()));
+        auditFailedLogin(user.getIdUser(), user.getEmail(), ErrorCode.INVALID_CREDENTIALS);
+        return new AuthException(ErrorCode.ACCOUNT_LOCKED);
     }
 
     private int remainingAttempts(AppUser user) {

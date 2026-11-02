@@ -32,8 +32,10 @@ import org.mockito.quality.Strictness;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Map;
 import java.util.Optional;
 
@@ -56,6 +58,9 @@ class AuthServiceImplTest {
     private static final String EMAIL = "iva@example.com";
     private static final String PASSWORD = "Correct-Password-1";
     private static final int MAX_ATTEMPTS = 5;
+    private static final Duration LOCKOUT_DURATION = Duration.ofMinutes(15);
+    private static final ZoneId ZONE = ZoneId.of("Europe/Zagreb");
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 2, 10, 0);
     private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder(4);
     private static final String PASSWORD_HASH = PASSWORD_ENCODER.encode(PASSWORD);
 
@@ -76,7 +81,8 @@ class AuthServiceImplTest {
     void setUp() {
         service = new AuthServiceImpl(appUserRepository, PASSWORD_ENCODER, accessTokenService, refreshTokenService,
                 auditLogService, currentUserProvider, new AppUserMapper(),
-                new LoginLockoutProperties(MAX_ATTEMPTS, Duration.ofMinutes(15)));
+                new LoginLockoutProperties(MAX_ATTEMPTS, LOCKOUT_DURATION),
+                Clock.fixed(NOW.atZone(ZONE).toInstant(), ZONE));
         when(accessTokenService.issue(any())).thenReturn("access-token");
         when(accessTokenService.getExpiresInSeconds()).thenReturn(900L);
         when(refreshTokenService.issue(any())).thenReturn("refresh-token");
@@ -183,6 +189,75 @@ class AuthServiceImplTest {
 
         assertThat(remainingAttemptsAfter(new LoginRequest("ghost@example.com", PASSWORD)))
                 .isEqualTo(MAX_ATTEMPTS - 1);
+    }
+
+    @Test
+    void theLastAllowedWrongPasswordLocksTheAccount() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS - 1);
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, "wrong")), ErrorCode.ACCOUNT_LOCKED);
+
+        assertThat(user.getLockedUntil()).isEqualTo(NOW.plus(LOCKOUT_DURATION));
+        verify(auditLogService).record(eq(USER_ID), eq(AuditAction.LOGIN_FAILED), eq(USER_ID), isNull(),
+                eq(Map.of("email", EMAIL, "reason", "INVALID_CREDENTIALS")));
+    }
+
+    @Test
+    void aLockedAccountRejectsTheRightPassword() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.lockUntil(NOW.plusMinutes(1));
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, PASSWORD)), ErrorCode.ACCOUNT_LOCKED);
+
+        verify(accessTokenService, never()).issue(any());
+        verify(refreshTokenService, never()).issue(any());
+    }
+
+    @Test
+    void aLockedAccountDoesNotCountFurtherWrongPasswords() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS);
+        LocalDateTime lockedUntil = NOW.plusMinutes(1);
+        user.lockUntil(lockedUntil);
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, "wrong")), ErrorCode.ACCOUNT_LOCKED);
+
+        assertThat(user.getFailedLoginCount()).isEqualTo((short) MAX_ATTEMPTS);
+        assertThat(user.getLockedUntil()).isEqualTo(lockedUntil);
+    }
+
+    @Test
+    void aRejectedLoginOnALockedAccountIsAuditedWithTheReason() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.lockUntil(NOW.plusMinutes(1));
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, PASSWORD)), ErrorCode.ACCOUNT_LOCKED);
+
+        verify(auditLogService).record(eq(USER_ID), eq(AuditAction.LOGIN_FAILED), eq(USER_ID), isNull(),
+                eq(Map.of("email", EMAIL, "reason", "ACCOUNT_LOCKED")));
+    }
+
+    @Test
+    void theRightPasswordWorksAgainOnceTheLockEnds() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS);
+        user.lockUntil(NOW);
+
+        service.login(new LoginRequest(EMAIL, PASSWORD));
+
+        assertThat(user.getFailedLoginCount()).isZero();
+        assertThat(user.getLockedUntil()).isNull();
+    }
+
+    @Test
+    void anExpiredLockGivesAFullSetOfAttemptsAgain() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS);
+        user.lockUntil(NOW.minusSeconds(1));
+
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(MAX_ATTEMPTS - 1);
+        assertThat(user.getLockedUntil()).isNull();
     }
 
     @Test
@@ -304,6 +379,12 @@ class AuthServiceImplTest {
         ReflectionTestUtils.setField(user, "idUser", USER_ID);
         ReflectionTestUtils.setField(user, "passwordHash", passwordHash);
         return user;
+    }
+
+    private static void failedLogins(AppUser user, int count) {
+        for (int i = 0; i < count; i++) {
+            user.recordFailedLogin();
+        }
     }
 
     private int remainingAttemptsAfter(LoginRequest request) {
