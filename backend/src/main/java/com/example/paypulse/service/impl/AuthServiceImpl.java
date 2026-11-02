@@ -1,10 +1,12 @@
 package com.example.paypulse.service.impl;
 
+import com.example.paypulse.config.LoginLockoutProperties;
 import com.example.paypulse.dto.AppUserResponse;
 import com.example.paypulse.dto.auth.LoginRequest;
 import com.example.paypulse.dto.auth.TokenResponse;
 import com.example.paypulse.exception.AuthException;
 import com.example.paypulse.exception.ErrorCode;
+import com.example.paypulse.exception.InvalidCredentialsException;
 import com.example.paypulse.exception.ResourceNotFoundException;
 import com.example.paypulse.mapper.AppUserMapper;
 import com.example.paypulse.model.AppUser;
@@ -34,6 +36,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuditLogService auditLogService;
     private final CurrentUserProvider currentUserProvider;
     private final AppUserMapper appUserMapper;
+    private final LoginLockoutProperties lockoutProperties;
 
     public AuthServiceImpl(AppUserRepository appUserRepository,
                            PasswordEncoder passwordEncoder,
@@ -41,7 +44,8 @@ public class AuthServiceImpl implements AuthService {
                            RefreshTokenService refreshTokenService,
                            AuditLogService auditLogService,
                            CurrentUserProvider currentUserProvider,
-                           AppUserMapper appUserMapper) {
+                           AppUserMapper appUserMapper,
+                           LoginLockoutProperties lockoutProperties) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
         this.accessTokenService = accessTokenService;
@@ -49,12 +53,13 @@ public class AuthServiceImpl implements AuthService {
         this.auditLogService = auditLogService;
         this.currentUserProvider = currentUserProvider;
         this.appUserMapper = appUserMapper;
+        this.lockoutProperties = lockoutProperties;
     }
 
     @Override
     public TokenResponse login(LoginRequest request) {
         AppUser user = appUserRepository.findUndeletedByEmail(request.email().strip())
-                .orElseThrow(() -> failedLogin(null, request.email(), ErrorCode.INVALID_CREDENTIALS));
+                .orElseThrow(() -> invalidCredentials(null, request.email(), lockoutProperties.maxAttempts() - 1));
         ensureCanLogIn(user, request.password());
         user.resetFailedLogins();
         auditLogService.record(user.getIdUser(), AuditAction.LOGIN_SUCCESS, user.getIdUser(), null, null);
@@ -88,7 +93,7 @@ public class AuthServiceImpl implements AuthService {
     private void ensureCanLogIn(AppUser user, String password) {
         if (user.getPasswordHash() == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
             user.recordFailedLogin();
-            throw failedLogin(user.getIdUser(), user.getEmail(), ErrorCode.INVALID_CREDENTIALS);
+            throw invalidCredentials(user.getIdUser(), user.getEmail(), remainingAttempts(user));
         }
         if (user.getStatus() == UserStatus.PENDING_ACTIVATION) {
             throw failedLogin(user.getIdUser(), user.getEmail(), ErrorCode.ACCOUNT_PENDING_ACTIVATION);
@@ -98,10 +103,23 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+    private int remainingAttempts(AppUser user) {
+        return Math.max(0, lockoutProperties.maxAttempts() - user.getFailedLoginCount());
+    }
+
+    private InvalidCredentialsException invalidCredentials(Long userId, String email, int remainingAttempts) {
+        auditFailedLogin(userId, email, ErrorCode.INVALID_CREDENTIALS);
+        return new InvalidCredentialsException(remainingAttempts);
+    }
+
     private AuthException failedLogin(Long userId, String email, ErrorCode reason) {
+        auditFailedLogin(userId, email, reason);
+        return new AuthException(reason);
+    }
+
+    private void auditFailedLogin(Long userId, String email, ErrorCode reason) {
         Map<String, String> details = Map.of("email", email.strip(), "reason", reason.name());
         auditLogService.record(userId, AuditAction.LOGIN_FAILED, userId, null, details);
-        return new AuthException(reason);
     }
 
     private TokenResponse issueTokens(AppUser user) {

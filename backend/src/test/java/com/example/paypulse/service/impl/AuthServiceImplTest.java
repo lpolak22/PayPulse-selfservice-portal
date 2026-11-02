@@ -1,11 +1,13 @@
 package com.example.paypulse.service.impl;
 
+import com.example.paypulse.config.LoginLockoutProperties;
 import com.example.paypulse.dto.AppUserResponse;
 import com.example.paypulse.dto.auth.LoginRequest;
 import com.example.paypulse.dto.auth.TokenResponse;
 import com.example.paypulse.exception.ApiException;
 import com.example.paypulse.exception.AuthException;
 import com.example.paypulse.exception.ErrorCode;
+import com.example.paypulse.exception.InvalidCredentialsException;
 import com.example.paypulse.exception.ResourceNotFoundException;
 import com.example.paypulse.mapper.AppUserMapper;
 import com.example.paypulse.model.AppUser;
@@ -30,12 +32,14 @@ import org.mockito.quality.Strictness;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -51,6 +55,7 @@ class AuthServiceImplTest {
     private static final long ORGANISATION_ID = 10L;
     private static final String EMAIL = "iva@example.com";
     private static final String PASSWORD = "Correct-Password-1";
+    private static final int MAX_ATTEMPTS = 5;
     private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder(4);
     private static final String PASSWORD_HASH = PASSWORD_ENCODER.encode(PASSWORD);
 
@@ -70,7 +75,8 @@ class AuthServiceImplTest {
     @BeforeEach
     void setUp() {
         service = new AuthServiceImpl(appUserRepository, PASSWORD_ENCODER, accessTokenService, refreshTokenService,
-                auditLogService, currentUserProvider, new AppUserMapper());
+                auditLogService, currentUserProvider, new AppUserMapper(),
+                new LoginLockoutProperties(MAX_ATTEMPTS, Duration.ofMinutes(15)));
         when(accessTokenService.issue(any())).thenReturn("access-token");
         when(accessTokenService.getExpiresInSeconds()).thenReturn(900L);
         when(refreshTokenService.issue(any())).thenReturn("refresh-token");
@@ -142,6 +148,41 @@ class AuthServiceImplTest {
         service.login(new LoginRequest(EMAIL, PASSWORD));
 
         assertThat(user.getFailedLoginCount()).isZero();
+    }
+
+    @Test
+    void aFirstWrongPasswordLeavesOneAttemptLessThanTheMaximum() {
+        existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(MAX_ATTEMPTS - 1);
+    }
+
+    @Test
+    void remainingAttemptsDropByOneWithEachWrongPassword() {
+        existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(4);
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(3);
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(2);
+    }
+
+    @Test
+    void remainingAttemptsStartAgainFromTheMaximumAfterASuccessfulLogin() {
+        existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"));
+        remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"));
+
+        service.login(new LoginRequest(EMAIL, PASSWORD));
+
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(MAX_ATTEMPTS - 1);
+    }
+
+    @Test
+    void unknownEmailReportsTheSameRemainingAttemptsAsAFirstWrongPassword() {
+        when(appUserRepository.findUndeletedByEmail("ghost@example.com")).thenReturn(Optional.empty());
+
+        assertThat(remainingAttemptsAfter(new LoginRequest("ghost@example.com", PASSWORD)))
+                .isEqualTo(MAX_ATTEMPTS - 1);
     }
 
     @Test
@@ -263,6 +304,11 @@ class AuthServiceImplTest {
         ReflectionTestUtils.setField(user, "idUser", USER_ID);
         ReflectionTestUtils.setField(user, "passwordHash", passwordHash);
         return user;
+    }
+
+    private int remainingAttemptsAfter(LoginRequest request) {
+        return catchThrowableOfType(InvalidCredentialsException.class, () -> service.login(request))
+                .getRemainingAttempts();
     }
 
     private static void expectAuthError(ThrowingCallable call, ErrorCode expected) {
