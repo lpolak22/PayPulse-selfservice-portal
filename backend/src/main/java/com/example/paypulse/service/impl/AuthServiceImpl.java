@@ -56,6 +56,7 @@ public class AuthServiceImpl implements AuthService {
         AppUser user = appUserRepository.findUndeletedByEmail(request.email().strip())
                 .orElseThrow(() -> failedLogin(null, request.email(), ErrorCode.INVALID_CREDENTIALS));
         ensureCanLogIn(user, request.password());
+        user.resetFailedLogins();
         auditLogService.record(user.getIdUser(), AuditAction.LOGIN_SUCCESS, user.getIdUser(), null, null);
         return issueTokens(user);
     }
@@ -86,6 +87,7 @@ public class AuthServiceImpl implements AuthService {
 
     private void ensureCanLogIn(AppUser user, String password) {
         if (user.getPasswordHash() == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
+            user.recordFailedLogin();
             throw failedLogin(user.getIdUser(), user.getEmail(), ErrorCode.INVALID_CREDENTIALS);
         }
         if (user.getStatus() == UserStatus.PENDING_ACTIVATION) {

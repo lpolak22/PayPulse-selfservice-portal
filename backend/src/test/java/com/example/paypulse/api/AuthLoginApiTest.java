@@ -139,6 +139,23 @@ class AuthLoginApiTest extends ApiIntegrationTest {
     }
 
     @Test
+    void eachWrongPasswordIsCountedInTheDatabase() throws Exception {
+        postLogin(admin.email(), "Wrong-Password-1").andExpect(status().isUnauthorized());
+        postLogin(admin.email(), "Wrong-Password-2").andExpect(status().isUnauthorized());
+
+        assertThat(failedLoginCountOf(admin)).isEqualTo(2);
+    }
+
+    @Test
+    void successfulLoginResetsTheStoredFailedLoginCount() throws Exception {
+        postLogin(admin.email(), "Wrong-Password-1").andExpect(status().isUnauthorized());
+
+        login(admin);
+
+        assertThat(failedLoginCountOf(admin)).isZero();
+    }
+
+    @Test
     void deletedUserCannotLogIn() throws Exception {
         fixtures.markDeleted(admin);
 
@@ -293,6 +310,10 @@ class AuthLoginApiTest extends ApiIntegrationTest {
         return jdbc.queryForList("""
                 select id_user, entity_id, new_value ->> 'reason' as reason from audit_log
                 where action = ? and entity_id = ?""", action, user.id());
+    }
+
+    private int failedLoginCountOf(TestUser user) {
+        return ((Number) fixtures.row(user.id()).get("failed_login_count")).intValue();
     }
 
     private long refreshTokensOf(TestUser user) {

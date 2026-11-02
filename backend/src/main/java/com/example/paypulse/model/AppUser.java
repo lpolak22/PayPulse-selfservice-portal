@@ -141,6 +141,14 @@ public class AppUser {
         syncActiveFlag();
     }
 
+    public void recordFailedLogin() {
+        this.failedLoginCount = (short) (failedLoginCount + 1);
+    }
+
+    public void resetFailedLogins() {
+        this.failedLoginCount = 0;
+    }
+
     public void initializeSeedSecurity(String hashedPassword, boolean firstLogin) {
         this.passwordHash = hashedPassword;
         this.isFirstLogin = firstLogin;

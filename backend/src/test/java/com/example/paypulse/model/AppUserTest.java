@@ -71,6 +71,31 @@ class AppUserTest {
         assertThat(user.isActive()).isFalse();
     }
 
+    @Test
+    void aNewUserHasNoFailedLogins() {
+        assertThat(newUser().getFailedLoginCount()).isZero();
+    }
+
+    @Test
+    void eachFailedLoginIncreasesTheCountByOne() {
+        AppUser user = newUser();
+
+        user.recordFailedLogin();
+        user.recordFailedLogin();
+
+        assertThat(user.getFailedLoginCount()).isEqualTo((short) 2);
+    }
+
+    @Test
+    void resettingFailedLoginsSetsTheCountBackToZero() {
+        AppUser user = newUser();
+        user.recordFailedLogin();
+
+        user.resetFailedLogins();
+
+        assertThat(user.getFailedLoginCount()).isZero();
+    }
+
     private static AppUser newUser() {
         return AppUser.createPending(new Organisation(), "Iva", "Babic", "iva@example.com", null, UserRole.USER);
     }

@@ -124,6 +124,37 @@ class AuthServiceImplTest {
     }
 
     @Test
+    void wrongPasswordIncreasesTheFailedLoginCount() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.recordFailedLogin();
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, "wrong")), ErrorCode.INVALID_CREDENTIALS);
+
+        assertThat(user.getFailedLoginCount()).isEqualTo((short) 2);
+    }
+
+    @Test
+    void successfulLoginResetsTheFailedLoginCount() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.recordFailedLogin();
+        user.recordFailedLogin();
+
+        service.login(new LoginRequest(EMAIL, PASSWORD));
+
+        assertThat(user.getFailedLoginCount()).isZero();
+    }
+
+    @Test
+    void rightPasswordOnAnInactiveAccountKeepsTheFailedLoginCount() {
+        AppUser user = existingUser(UserStatus.INACTIVE, PASSWORD_HASH);
+        user.recordFailedLogin();
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, PASSWORD)), ErrorCode.ACCOUNT_INACTIVE);
+
+        assertThat(user.getFailedLoginCount()).isEqualTo((short) 1);
+    }
+
+    @Test
     void userWithoutPasswordCannotLogIn() {
         existingUser(UserStatus.PENDING_ACTIVATION, null);
 
@@ -218,8 +249,10 @@ class AuthServiceImplTest {
         assertThatThrownBy(service::getCurrentUser).isInstanceOf(ResourceNotFoundException.class);
     }
 
-    private void existingUser(UserStatus status, String passwordHash) {
-        when(appUserRepository.findUndeletedByEmail(EMAIL)).thenReturn(Optional.of(user(status, passwordHash)));
+    private AppUser existingUser(UserStatus status, String passwordHash) {
+        AppUser user = user(status, passwordHash);
+        when(appUserRepository.findUndeletedByEmail(EMAIL)).thenReturn(Optional.of(user));
+        return user;
     }
 
     private static AppUser user(UserStatus status, String passwordHash) {
