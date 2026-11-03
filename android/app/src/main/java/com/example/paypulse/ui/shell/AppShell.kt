@@ -49,7 +49,7 @@ fun AppShell(user: User, onLogoutClick: () -> Unit, modifier: Modifier = Modifie
     ) {
         AppShellNavHost(
             navController = navController,
-            userRole = user.role,
+            user = user,
             onMenuClick = { scope.launch { drawerState.open() } }
         )
     }

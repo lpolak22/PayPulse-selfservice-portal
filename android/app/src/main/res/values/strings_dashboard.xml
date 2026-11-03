@@ -1,0 +1,20 @@
+<resources>
+    <string name="dashboard_greeting">Pozdrav, %1$s</string>
+    <string name="dashboard_title">Početna</string>
+    <string name="dashboard_period_today">Danas</string>
+    <string name="dashboard_period_last_7_days">7 dana</string>
+    <string name="dashboard_period_last_30_days">30 dana</string>
+    <string name="dashboard_turnover_title">Ukupni promet · %1$s</string>
+    <string name="dashboard_change_vs_yesterday">%1$s u odnosu na jučer</string>
+    <string name="dashboard_change_vs_last_week">%1$s u odnosu na prošli tjedan</string>
+    <string name="dashboard_change_vs_previous_30_days">%1$s u odnosu na prethodnih 30 dana</string>
+    <string name="dashboard_tile_transactions">Transakcije</string>
+    <string name="dashboard_tile_average_amount">Prosječni iznos</string>
+    <string name="dashboard_tile_success_rate">Uspješnost</string>
+    <string name="dashboard_tile_declined">Odbijene</string>
+    <string name="dashboard_value_missing">–</string>
+    <string name="dashboard_empty">Nema transakcija za odabrano razdoblje.</string>
+    <string name="dashboard_error_network">Nema internetske veze. Provjerite vezu i pokušajte ponovno.</string>
+    <string name="dashboard_error_unknown">Podatke trenutno nije moguće učitati.</string>
+    <string name="dashboard_retry">Pokušaj ponovno</string>
+</resources>
