@@ -40,8 +40,20 @@ class DashboardViewModel(
     fun onPeriodSelected(period: DashboardPeriod) {
         if (period == _uiState.value.period) return
         savedStateHandle[PERIOD_KEY] = period
-        _uiState.update { it.copy(period = period) }
+        _uiState.update { it.copy(period = period, selection = DashboardSelection()) }
         load()
+    }
+
+    fun onTrendSelected(index: Int) {
+        _uiState.update { it.copy(selection = it.selection.copy(trend = index)) }
+    }
+
+    fun onBrandSelected(index: Int) {
+        _uiState.update { it.copy(selection = it.selection.copy(brand = index)) }
+    }
+
+    fun onAcquirerSelected(index: Int) {
+        _uiState.update { it.copy(selection = it.selection.copy(acquirer = index)) }
     }
 
     fun onRetry() {

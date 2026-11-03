@@ -26,6 +26,8 @@ import com.example.paypulse.R
 import com.example.paypulse.domain.dashboard.DashboardPeriod
 import com.example.paypulse.ui.components.PayPulseTopBar
 import com.example.paypulse.ui.components.SegmentedSwitch
+import com.example.paypulse.ui.dashboard.charts.DashboardChartCallbacks
+import com.example.paypulse.ui.dashboard.charts.DashboardCharts
 
 @Composable
 fun DashboardScreen(
@@ -34,6 +36,7 @@ fun DashboardScreen(
     onMenuClick: () -> Unit,
     onPeriodSelected: (DashboardPeriod) -> Unit,
     onRetry: () -> Unit,
+    chartCallbacks: DashboardChartCallbacks,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -57,7 +60,7 @@ fun DashboardScreen(
                 label = { stringResource(it.label()) }
             )
             RefreshIndicator(visible = state.isRefreshing)
-            DashboardContent(content = state.content, onRetry = onRetry)
+            DashboardContent(state.content, state.selection, chartCallbacks, onRetry)
         }
     }
 }
@@ -87,12 +90,24 @@ private fun RefreshIndicator(visible: Boolean) {
 }
 
 @Composable
-private fun DashboardContent(content: DashboardContentState, onRetry: () -> Unit) {
+private fun DashboardContent(
+    content: DashboardContentState,
+    selection: DashboardSelection,
+    chartCallbacks: DashboardChartCallbacks,
+    onRetry: () -> Unit
+) {
     when (content) {
         DashboardContentState.Loading -> DashboardLoading()
         is DashboardContentState.Content -> Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             TurnoverCard(summary = content.summary, period = content.period)
             SummaryTiles(summary = content.summary)
+            DashboardCharts(
+                summary = content.summary,
+                period = content.period,
+                selection = selection,
+                callbacks = chartCallbacks,
+                modifier = Modifier.padding(top = 12.dp)
+            )
         }
         DashboardContentState.Empty -> DashboardMessage(text = stringResource(R.string.dashboard_empty))
         is DashboardContentState.Error -> DashboardMessage(

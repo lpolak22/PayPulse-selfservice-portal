@@ -17,4 +17,21 @@
     <string name="dashboard_error_network">Nema internetske veze. Provjerite vezu i pokušajte ponovno.</string>
     <string name="dashboard_error_unknown">Podatke trenutno nije moguće učitati.</string>
     <string name="dashboard_retry">Pokušaj ponovno</string>
+
+    <string name="dashboard_trend_title_days">Promet po danima</string>
+    <string name="dashboard_trend_title_hours">Promet po satima</string>
+    <string name="dashboard_brand_title">Promet po brendu kartice</string>
+    <string name="dashboard_acquirer_title">Promet po acquireru</string>
+    <string name="dashboard_brand_center_label">brendova</string>
+    <string name="dashboard_brand_other">Ostalo</string>
+    <string name="dashboard_brand_visa">Visa</string>
+    <string name="dashboard_brand_mastercard">Mastercard</string>
+    <string name="dashboard_brand_amex">American Express</string>
+    <string name="dashboard_brand_diners">Diners Club</string>
+    <string name="dashboard_brand_maestro">Maestro</string>
+    <string name="dashboard_chart_detail">%1$s · %2$s · Broj transakcija: %3$s</string>
+    <string name="dashboard_chart_share">%1$s %2$s</string>
+    <string name="dashboard_trend_description">%1$s. Najveći promet: %2$s, %3$s. Najmanji promet: %4$s, %5$s.</string>
+    <string name="dashboard_brand_description">%1$s: %2$s</string>
+    <string name="dashboard_acquirer_description">%1$s. Najveći promet: %2$s, %3$s.</string>
 </resources>

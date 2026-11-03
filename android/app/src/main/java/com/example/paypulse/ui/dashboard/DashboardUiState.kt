@@ -7,7 +7,14 @@ import com.example.paypulse.domain.dashboard.DashboardSummary
 data class DashboardUiState(
     val period: DashboardPeriod = DashboardPeriod.DEFAULT,
     val content: DashboardContentState = DashboardContentState.Loading,
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
+    val selection: DashboardSelection = DashboardSelection()
+)
+
+data class DashboardSelection(
+    val trend: Int? = null,
+    val brand: Int? = null,
+    val acquirer: Int? = null
 )
 
 sealed interface DashboardContentState {
