@@ -44,7 +44,7 @@ public class Transaction {
     private String status;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "raw_data", columnDefinition = "jsonb")
+    @Column(name = "raw_data", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> rawData;
 
     public Transaction() {
