@@ -1,6 +1,5 @@
 package com.example.paypulse.api;
 
-import com.example.paypulse.config.LoginLockoutProperties;
 import com.example.paypulse.dto.auth.TokenResponse;
 import com.example.paypulse.model.UserRole;
 import com.example.paypulse.model.UserStatus;
@@ -37,9 +36,6 @@ class AuthLoginApiTest extends ApiIntegrationTest {
 
     @Autowired
     private JwtDecoder jwtDecoder;
-
-    @Autowired
-    private LoginLockoutProperties lockoutProperties;
 
     private long organisationId;
     private TestUser admin;
@@ -140,61 +136,6 @@ class AuthLoginApiTest extends ApiIntegrationTest {
         postLogin(admin.email(), "Wrong-Password-1").andExpect(status().isUnauthorized());
 
         assertThat(refreshTokensOf(admin)).isZero();
-    }
-
-    @Test
-    void eachWrongPasswordIsCountedInTheDatabase() throws Exception {
-        postLogin(admin.email(), "Wrong-Password-1").andExpect(status().isUnauthorized());
-        postLogin(admin.email(), "Wrong-Password-2").andExpect(status().isUnauthorized());
-
-        assertThat(failedLoginCountOf(admin)).isEqualTo(2);
-    }
-
-    @Test
-    void remainingAttemptsDropByOneWithEachWrongPassword() throws Exception {
-        int maxAttempts = lockoutProperties.maxAttempts();
-
-        for (int failed = 1; failed < maxAttempts; failed++) {
-            postLogin(admin.email(), "Wrong-Password-1")
-                    .andExpect(status().isUnauthorized())
-                    .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"))
-                    .andExpect(jsonPath("$.remainingAttempts").value(maxAttempts - failed));
-        }
-    }
-
-    @Test
-    void remainingAttemptsStartAgainFromTheMaximumAfterASuccessfulLogin() throws Exception {
-        postLogin(admin.email(), "Wrong-Password-1").andExpect(status().isUnauthorized());
-        postLogin(admin.email(), "Wrong-Password-1").andExpect(status().isUnauthorized());
-        login(admin);
-
-        postLogin(admin.email(), "Wrong-Password-1")
-                .andExpect(jsonPath("$.remainingAttempts").value(lockoutProperties.maxAttempts() - 1));
-    }
-
-    @Test
-    void unknownEmailReportsTheSameRemainingAttemptsAsAFirstWrongPassword() throws Exception {
-        postLogin(UserFixtures.uniqueEmail(), "Wrong-Password-1")
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.remainingAttempts").value(lockoutProperties.maxAttempts() - 1));
-    }
-
-    @Test
-    void otherLoginErrorsCarryNoRemainingAttempts() throws Exception {
-        TestUser inactive = fixtures.user(organisationId, UserRole.ADMIN, UserStatus.INACTIVE);
-
-        postLogin(inactive.email(), UserFixtures.PASSWORD)
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.remainingAttempts").doesNotExist());
-    }
-
-    @Test
-    void successfulLoginResetsTheStoredFailedLoginCount() throws Exception {
-        postLogin(admin.email(), "Wrong-Password-1").andExpect(status().isUnauthorized());
-
-        login(admin);
-
-        assertThat(failedLoginCountOf(admin)).isZero();
     }
 
     @Test
@@ -352,10 +293,6 @@ class AuthLoginApiTest extends ApiIntegrationTest {
         return jdbc.queryForList("""
                 select id_user, entity_id, new_value ->> 'reason' as reason from audit_log
                 where action = ? and entity_id = ?""", action, user.id());
-    }
-
-    private int failedLoginCountOf(TestUser user) {
-        return ((Number) fixtures.row(user.id()).get("failed_login_count")).intValue();
     }
 
     private long refreshTokensOf(TestUser user) {

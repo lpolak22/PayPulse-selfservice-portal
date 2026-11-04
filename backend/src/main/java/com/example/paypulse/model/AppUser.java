@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "app_user")
-public class AppUser {
+public class AppUser implements LoginLockoutState {
 
     public static final String EMAIL_UNIQUE_INDEX = "ux_app_user_email_lower";
 

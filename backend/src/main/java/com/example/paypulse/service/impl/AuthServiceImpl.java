@@ -11,6 +11,7 @@ import com.example.paypulse.exception.ResourceNotFoundException;
 import com.example.paypulse.mapper.AppUserMapper;
 import com.example.paypulse.model.AppUser;
 import com.example.paypulse.model.AuditAction;
+import com.example.paypulse.model.LoginLockoutState;
 import com.example.paypulse.model.UserStatus;
 import com.example.paypulse.repository.AppUserRepository;
 import com.example.paypulse.security.CurrentUser;
@@ -19,13 +20,16 @@ import com.example.paypulse.service.AccessTokenService;
 import com.example.paypulse.service.AuditLogService;
 import com.example.paypulse.service.AuthService;
 import com.example.paypulse.service.RefreshTokenService;
+import com.example.paypulse.service.UnknownLoginAttemptService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Transactional(noRollbackFor = AuthException.class)
@@ -39,7 +43,9 @@ public class AuthServiceImpl implements AuthService {
     private final CurrentUserProvider currentUserProvider;
     private final AppUserMapper appUserMapper;
     private final LoginLockoutProperties lockoutProperties;
+    private final UnknownLoginAttemptService unknownLoginAttemptService;
     private final Clock clock;
+    private final String placeholderPasswordHash;
 
     public AuthServiceImpl(AppUserRepository appUserRepository,
                            PasswordEncoder passwordEncoder,
@@ -49,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
                            CurrentUserProvider currentUserProvider,
                            AppUserMapper appUserMapper,
                            LoginLockoutProperties lockoutProperties,
+                           UnknownLoginAttemptService unknownLoginAttemptService,
                            Clock clock) {
         this.appUserRepository = appUserRepository;
         this.passwordEncoder = passwordEncoder;
@@ -58,15 +65,18 @@ public class AuthServiceImpl implements AuthService {
         this.currentUserProvider = currentUserProvider;
         this.appUserMapper = appUserMapper;
         this.lockoutProperties = lockoutProperties;
+        this.unknownLoginAttemptService = unknownLoginAttemptService;
         this.clock = clock;
+        this.placeholderPasswordHash = passwordEncoder.encode(UUID.randomUUID().toString());
     }
 
     @Override
     public TokenResponse login(LoginRequest request) {
-        AppUser user = appUserRepository.findUndeletedByEmail(request.email().strip())
-                .orElseThrow(() -> invalidCredentials(null, request.email(), lockoutProperties.maxAttempts() - 1));
+        String email = request.email().strip();
         LocalDateTime now = LocalDateTime.now(clock);
-        ensureNotLocked(user, now);
+        AppUser user = appUserRepository.findUndeletedByEmail(email)
+                .orElseThrow(() -> unknownEmail(email, request.password(), now));
+        ensureNotLocked(LoginTarget.of(user), now);
         ensureCanLogIn(user, request.password(), now);
         user.resetFailedLogins();
         auditLogService.record(user.getIdUser(), AuditAction.LOGIN_SUCCESS, user.getIdUser(), null, null);
@@ -97,18 +107,26 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", current.userId()));
     }
 
-    private void ensureNotLocked(AppUser user, LocalDateTime now) {
-        if (user.isLockedAt(now)) {
-            throw failedLogin(user.getIdUser(), user.getEmail(), ErrorCode.ACCOUNT_LOCKED);
+    private AuthException unknownEmail(String email, String password, LocalDateTime now) {
+        passwordEncoder.matches(password, placeholderPasswordHash);
+        LoginTarget target = new LoginTarget(null, email, unknownLoginAttemptService.forEmail(email));
+        ensureNotLocked(target, now);
+        return wrongPassword(target, now);
+    }
+
+    private void ensureNotLocked(LoginTarget target, LocalDateTime now) {
+        LoginLockoutState lockout = target.lockout();
+        if (lockout.isLockedAt(now)) {
+            throw failedLogin(target.userId(), target.email(), ErrorCode.ACCOUNT_LOCKED);
         }
-        if (user.getLockedUntil() != null) {
-            user.resetFailedLogins();
+        if (lockout.getLockedUntil() != null) {
+            lockout.resetFailedLogins();
         }
     }
 
     private void ensureCanLogIn(AppUser user, String password, LocalDateTime now) {
-        if (user.getPasswordHash() == null || !passwordEncoder.matches(password, user.getPasswordHash())) {
-            throw wrongPassword(user, now);
+        if (!passwordMatches(user, password)) {
+            throw wrongPassword(LoginTarget.of(user), now);
         }
         if (user.getStatus() == UserStatus.PENDING_ACTIVATION) {
             throw failedLogin(user.getIdUser(), user.getEmail(), ErrorCode.ACCOUNT_PENDING_ACTIVATION);
@@ -118,19 +136,35 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private AuthException wrongPassword(AppUser user, LocalDateTime now) {
-        user.recordFailedLogin();
-        int remaining = remainingAttempts(user);
-        if (remaining > 0) {
-            return invalidCredentials(user.getIdUser(), user.getEmail(), remaining);
+    private boolean passwordMatches(AppUser user, String password) {
+        if (user.getPasswordHash() == null) {
+            passwordEncoder.matches(password, placeholderPasswordHash);
+            return false;
         }
-        user.lockUntil(now.plus(lockoutProperties.lockoutDuration()));
-        auditFailedLogin(user.getIdUser(), user.getEmail(), ErrorCode.INVALID_CREDENTIALS);
+        return passwordEncoder.matches(password, user.getPasswordHash());
+    }
+
+    private AuthException wrongPassword(LoginTarget target, LocalDateTime now) {
+        target.lockout().recordFailedLogin();
+        int remaining = remainingAttempts(target.lockout());
+        if (remaining > 0) {
+            return invalidCredentials(target.userId(), target.email(), remaining);
+        }
+        auditFailedLogin(target.userId(), target.email(), ErrorCode.INVALID_CREDENTIALS);
+        lock(target, now);
         return new AuthException(ErrorCode.ACCOUNT_LOCKED);
     }
 
-    private int remainingAttempts(AppUser user) {
-        return Math.max(0, lockoutProperties.maxAttempts() - user.getFailedLoginCount());
+    private void lock(LoginTarget target, LocalDateTime now) {
+        LocalDateTime lockedUntil = now.plus(lockoutProperties.lockoutDuration()).truncatedTo(ChronoUnit.SECONDS);
+        target.lockout().lockUntil(lockedUntil);
+        Map<String, Object> details = Map.of("email", target.email(),
+                "failedAttempts", target.lockout().getFailedLoginCount(), "lockedUntil", lockedUntil.toString());
+        auditLogService.record(target.userId(), AuditAction.ACCOUNT_LOCKED, target.userId(), null, details);
+    }
+
+    private int remainingAttempts(LoginLockoutState lockout) {
+        return Math.max(0, lockoutProperties.maxAttempts() - lockout.getFailedLoginCount());
     }
 
     private InvalidCredentialsException invalidCredentials(Long userId, String email, int remainingAttempts) {
@@ -152,5 +186,12 @@ public class AuthServiceImpl implements AuthService {
         String accessToken = accessTokenService.issue(user);
         String refreshToken = refreshTokenService.issue(user);
         return TokenResponse.bearer(accessToken, refreshToken, accessTokenService.getExpiresInSeconds());
+    }
+
+    private record LoginTarget(Long userId, String email, LoginLockoutState lockout) {
+
+        static LoginTarget of(AppUser user) {
+            return new LoginTarget(user.getIdUser(), user.getEmail(), user);
+        }
     }
 }
