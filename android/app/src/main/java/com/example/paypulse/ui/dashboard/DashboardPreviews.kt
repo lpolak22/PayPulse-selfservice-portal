@@ -14,29 +14,43 @@ import java.time.Instant
 import java.time.ZoneOffset
 
 private val previewClock = Clock.fixed(Instant.parse("2026-11-03T13:00:00Z"), ZoneOffset.UTC)
-private val weekSummary = fakeSummaryFor(DashboardPeriod.LAST_7_DAYS.toDateRange(previewClock), previewClock.instant())
-private val noChartCallbacks = DashboardChartCallbacks({}, {}, {})
-
-@Preview(name = "Light", heightDp = 1500)
-@Preview(name = "Dark", heightDp = 1500, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun DashboardFilledPreview() = DashboardPreview(
-    DashboardUiState(content = DashboardContentState.Content(weekSummary, DashboardPeriod.LAST_7_DAYS))
+private val weekRange = DashboardPeriod.LAST_7_DAYS.toDateRange(previewClock)
+private val weekContent = DashboardContentState.Content(
+    summary = fakeSummaryFor(weekRange, previewClock.instant()),
+    period = DashboardPeriod.LAST_7_DAYS,
+    today = weekRange.to
+)
+private val noActions = DashboardActions(
+    onMenuClick = {},
+    onPeriodSelected = {},
+    onRetry = {},
+    onRefresh = {},
+    onShowAllTransactions = {},
+    charts = DashboardChartCallbacks({}, {}, {})
 )
 
-@Preview(name = "Light", heightDp = 1500)
-@Preview(name = "Dark", heightDp = 1500, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Light", heightDp = 1900)
+@Preview(name = "Dark", heightDp = 1900, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun DashboardFilledPreview() = DashboardPreview(DashboardUiState(content = weekContent))
+
+@Preview(name = "Light", heightDp = 1900)
+@Preview(name = "Dark", heightDp = 1900, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun DashboardSelectedPreview() = DashboardPreview(
-    DashboardUiState(
-        content = DashboardContentState.Content(weekSummary, DashboardPeriod.LAST_7_DAYS),
-        selection = DashboardSelection(trend = 1, brand = 0, acquirer = 2)
-    )
+    DashboardUiState(content = weekContent, selection = DashboardSelection(trend = 1, brand = 0, acquirer = 2))
 )
 
 @PreviewLightDark
 @Composable
-private fun DashboardLoadingPreview() = DashboardPreview(DashboardUiState())
+private fun DashboardErrorBannerPreview() = DashboardPreview(
+    DashboardUiState(period = DashboardPeriod.TODAY, content = weekContent, bannerError = DashboardError.NETWORK)
+)
+
+@Preview(name = "Light", heightDp = 1400)
+@Preview(name = "Dark", heightDp = 1400, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun DashboardSkeletonPreview() = DashboardPreview(DashboardUiState())
 
 @PreviewLightDark
 @Composable
@@ -44,20 +58,19 @@ private fun DashboardEmptyPreview() = DashboardPreview(DashboardUiState(content 
 
 @PreviewLightDark
 @Composable
-private fun DashboardErrorPreview() = DashboardPreview(
+private fun DashboardNetworkErrorPreview() = DashboardPreview(
     DashboardUiState(content = DashboardContentState.Error(DashboardError.NETWORK))
+)
+
+@PreviewLightDark
+@Composable
+private fun DashboardUnknownErrorPreview() = DashboardPreview(
+    DashboardUiState(content = DashboardContentState.Error(DashboardError.UNKNOWN))
 )
 
 @Composable
 private fun DashboardPreview(state: DashboardUiState) {
     PayPulseTheme {
-        DashboardScreen(
-            state = state,
-            firstName = "Ana",
-            onMenuClick = {},
-            onPeriodSelected = {},
-            onRetry = {},
-            chartCallbacks = noChartCallbacks
-        )
+        DashboardScreen(state = state, firstName = "Ana", actions = noActions)
     }
 }

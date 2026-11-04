@@ -19,7 +19,13 @@ fun AppShellNavHost(
     modifier: Modifier = Modifier
 ) {
     NavHost(navController = navController, startDestination = ShellRoute.Home, modifier = modifier) {
-        composable<ShellRoute.Home> { DashboardRoute(firstName = user.firstName, onMenuClick = onMenuClick) }
+        composable<ShellRoute.Home> {
+            DashboardRoute(
+                firstName = user.firstName,
+                onMenuClick = onMenuClick,
+                onShowAllTransactions = { navController.navigateToTopLevel(ShellRoute.Transactions) }
+            )
+        }
         comingSoon<ShellRoute.Merchants>(DrawerItem.MERCHANTS, onMenuClick)
         comingSoon<ShellRoute.Terminals>(DrawerItem.TERMINALS, onMenuClick)
         comingSoon<ShellRoute.Transactions>(DrawerItem.TRANSACTIONS, onMenuClick)

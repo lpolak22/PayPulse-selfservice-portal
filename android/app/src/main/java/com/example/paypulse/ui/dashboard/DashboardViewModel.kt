@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.Clock
+import java.time.LocalDate
 
 private const val PERIOD_KEY = "period"
 
@@ -57,24 +58,31 @@ class DashboardViewModel(
     }
 
     fun onRetry() {
-        load()
+        load(fromPull = false)
     }
 
-    private fun load() {
+    fun onRefresh() {
+        load(fromPull = true)
+    }
+
+    private fun load(fromPull: Boolean = false) {
         loadJob?.cancel()
-        _uiState.update { it.startLoading() }
+        _uiState.update { it.startLoading(fromPull) }
         val period = _uiState.value.period
         loadJob = viewModelScope.launch {
-            val content = repository.getSummary(period.toDateRange(clock)).toContentState(period)
-            _uiState.update { it.copy(content = content, isRefreshing = false) }
+            val range = period.toDateRange(clock)
+            val content = repository.getSummary(range).toContentState(period, today = range.to)
+            _uiState.update { it.finishLoading(content) }
         }
     }
 
-    private fun DashboardResult.toContentState(period: DashboardPeriod): DashboardContentState = when (this) {
-        is DashboardResult.Success ->
-            if (summary.hasNoTransactions) DashboardContentState.Empty else DashboardContentState.Content(summary, period)
-        is DashboardResult.Failure -> DashboardContentState.Error(error)
-    }
+    private fun DashboardResult.toContentState(period: DashboardPeriod, today: LocalDate): DashboardContentState =
+        when (this) {
+            is DashboardResult.Success ->
+                if (summary.hasNoTransactions) DashboardContentState.Empty
+                else DashboardContentState.Content(summary, period, today)
+            is DashboardResult.Failure -> DashboardContentState.Error(error)
+        }
 
     companion object {
         val Factory = viewModelFactory {

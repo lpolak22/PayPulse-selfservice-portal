@@ -13,10 +13,25 @@
     <string name="dashboard_tile_success_rate">Uspješnost</string>
     <string name="dashboard_tile_declined">Odbijene</string>
     <string name="dashboard_value_missing">–</string>
-    <string name="dashboard_empty">Nema transakcija za odabrano razdoblje.</string>
-    <string name="dashboard_error_network">Nema internetske veze. Provjerite vezu i pokušajte ponovno.</string>
-    <string name="dashboard_error_unknown">Podatke trenutno nije moguće učitati.</string>
+    <string name="dashboard_empty_title">Nema transakcija za odabrano razdoblje</string>
+    <string name="dashboard_empty_hint">Odaberi drugo razdoblje.</string>
+    <string name="dashboard_error_network_title">Nema internetske veze</string>
+    <string name="dashboard_error_network_body">Provjeri vezu s internetom i pokušaj ponovno.</string>
+    <string name="dashboard_error_unknown_title">Nešto je pošlo po zlu</string>
+    <string name="dashboard_error_unknown_body">Pokušaj ponovno za nekoliko trenutaka.</string>
+    <string name="dashboard_banner_network">Nema internetske veze. Prikazani su zadnji učitani podaci.</string>
+    <string name="dashboard_banner_unknown">Podaci se nisu osvježili. Prikazani su zadnji učitani podaci.</string>
     <string name="dashboard_retry">Pokušaj ponovno</string>
+
+    <string name="dashboard_latest_transactions_title">Zadnje transakcije</string>
+    <string name="dashboard_show_all">Prikaži sve</string>
+    <string name="dashboard_transaction_card">%1$s •••• %2$s</string>
+    <string name="dashboard_transaction_place_time">%1$s · %2$s</string>
+    <string name="dashboard_transaction_description">%1$s, kartica %2$s, %3$s, %4$s, %5$s, %6$s</string>
+    <string name="dashboard_status_approved">Odobreno</string>
+    <string name="dashboard_status_declined">Odbijeno</string>
+    <string name="dashboard_status_refunded">Vraćeno</string>
+    <string name="dashboard_status_cancelled">Poništeno</string>
 
     <string name="dashboard_trend_title_days">Promet po danima</string>
     <string name="dashboard_trend_title_hours">Promet po satima</string>

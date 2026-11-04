@@ -33,7 +33,9 @@ private val DarkColorScheme = darkColorScheme(
     primary = Red300,
     onPrimary = Grey900,
     primaryContainer = Red950,
-    onPrimaryContainer = Red50
+    onPrimaryContainer = Red50,
+    tertiary = Green300,
+    onTertiary = Grey900
 )
 
 @Composable

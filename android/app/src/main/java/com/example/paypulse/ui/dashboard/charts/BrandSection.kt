@@ -1,6 +1,5 @@
 package com.example.paypulse.ui.dashboard.charts
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +18,7 @@ import com.example.paypulse.ui.components.charts.ChartLegend
 import com.example.paypulse.ui.components.charts.DonutChart
 import com.example.paypulse.ui.components.charts.DonutSlice
 import com.example.paypulse.ui.components.charts.LegendItem
+import com.example.paypulse.ui.dashboard.label
 
 private class SegmentColor(val color: Color, val outlined: Boolean = false)
 
@@ -83,13 +83,4 @@ private fun brandDescription(title: String, chart: BrandChart): String {
         stringResource(R.string.dashboard_chart_share, detail.label, CroatianFormat.wholePercent(chart.percents[i]))
     }
     return stringResource(R.string.dashboard_brand_description, title, shares.joinToString(", "))
-}
-
-@StringRes
-private fun CardBrand.label(): Int = when (this) {
-    CardBrand.VISA -> R.string.dashboard_brand_visa
-    CardBrand.MASTERCARD -> R.string.dashboard_brand_mastercard
-    CardBrand.AMEX -> R.string.dashboard_brand_amex
-    CardBrand.DINERS -> R.string.dashboard_brand_diners
-    CardBrand.MAESTRO -> R.string.dashboard_brand_maestro
 }

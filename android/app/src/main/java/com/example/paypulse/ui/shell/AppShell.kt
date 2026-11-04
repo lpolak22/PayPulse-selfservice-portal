@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.navigation.NavDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.paypulse.domain.user.User
@@ -57,11 +56,3 @@ fun AppShell(user: User, onLogoutClick: () -> Unit, modifier: Modifier = Modifie
 
 private fun NavDestination.toDrawerItem(): DrawerItem? =
     DrawerItem.entries.firstOrNull { item -> hierarchy.any { it.hasRoute(item.route::class) } }
-
-private fun NavHostController.navigateToTopLevel(route: ShellRoute) {
-    navigate(route) {
-        popUpTo<ShellRoute.Home> { saveState = true }
-        launchSingleTop = true
-        restoreState = true
-    }
-}
