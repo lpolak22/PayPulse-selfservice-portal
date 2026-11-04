@@ -35,12 +35,15 @@ public class DashboardController {
 
     @GetMapping("/summary")
     @Operation(summary = "Get the dashboard summary",
-            description = "Dates are inclusive days in Europe/Zagreb. Without from and to, the last 30 days "
-                    + "including today are used. A single day gives an hourly trend (24 points), a longer range "
+            description = "Dates are inclusive days in Europe/Zagreb. Send both from and to, or neither: without "
+                    + "them the last 30 days including today are used. The range is at most 366 days. "
+                    + "A single day gives an hourly trend (24 points), a longer range "
                     + "a daily trend with one point per day. previousTotalAmount covers the same number of days "
                     + "right before from. latestTransactions are the 5 newest transactions of any status.")
     @ApiResponse(responseCode = "200", description = "The summary")
-    @ApiResponse(responseCode = "400", description = "BAD_REQUEST: a date is not in yyyy-MM-dd format",
+    @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR (see fieldErrors): only one of from and to "
+            + "is sent, from is after to, or the range is longer than 366 days; "
+            + "BAD_REQUEST: a date is not in yyyy-MM-dd format",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public DashboardSummaryResponse getSummary(
             @Parameter(description = "First day, inclusive (yyyy-MM-dd)", example = "2026-10-01")
