@@ -17,6 +17,7 @@ public enum ErrorCode {
     LAST_ADMIN(HttpStatus.CONFLICT, "The last active admin of the organisation cannot be deleted, deactivated or demoted."),
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "Invalid email or password."),
     ACCOUNT_INACTIVE(HttpStatus.FORBIDDEN, "Your account is deactivated. Please contact your admin."),
+    ACCOUNT_LOCKED(HttpStatus.LOCKED, "Your account is locked after too many failed login attempts. Please try again later."),
     ACCOUNT_PENDING_ACTIVATION(HttpStatus.FORBIDDEN, "Your account is not activated yet. Please use the link from your activation email."),
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "The session has expired. Please log in again."),
     ACTIVATION_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "The activation link is not valid."),

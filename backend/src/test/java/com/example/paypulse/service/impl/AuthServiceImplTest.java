@@ -1,16 +1,19 @@
 package com.example.paypulse.service.impl;
 
+import com.example.paypulse.config.LoginLockoutProperties;
 import com.example.paypulse.dto.AppUserResponse;
 import com.example.paypulse.dto.auth.LoginRequest;
 import com.example.paypulse.dto.auth.TokenResponse;
 import com.example.paypulse.exception.ApiException;
 import com.example.paypulse.exception.AuthException;
 import com.example.paypulse.exception.ErrorCode;
+import com.example.paypulse.exception.InvalidCredentialsException;
 import com.example.paypulse.exception.ResourceNotFoundException;
 import com.example.paypulse.mapper.AppUserMapper;
 import com.example.paypulse.model.AppUser;
 import com.example.paypulse.model.AuditAction;
 import com.example.paypulse.model.Organisation;
+import com.example.paypulse.model.UnknownLoginAttempt;
 import com.example.paypulse.model.UserRole;
 import com.example.paypulse.model.UserStatus;
 import com.example.paypulse.repository.AppUserRepository;
@@ -19,6 +22,7 @@ import com.example.paypulse.security.CurrentUserProvider;
 import com.example.paypulse.service.AccessTokenService;
 import com.example.paypulse.service.AuditLogService;
 import com.example.paypulse.service.RefreshTokenService;
+import com.example.paypulse.service.UnknownLoginAttemptService;
 import org.assertj.core.api.ThrowableAssert.ThrowingCallable;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,18 +32,27 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.catchThrowableOfType;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -51,6 +64,10 @@ class AuthServiceImplTest {
     private static final long ORGANISATION_ID = 10L;
     private static final String EMAIL = "iva@example.com";
     private static final String PASSWORD = "Correct-Password-1";
+    private static final int MAX_ATTEMPTS = 5;
+    private static final Duration LOCKOUT_DURATION = Duration.ofMinutes(15);
+    private static final ZoneId ZONE = ZoneId.of("Europe/Zagreb");
+    private static final LocalDateTime NOW = LocalDateTime.of(2026, 11, 2, 10, 0);
     private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder(4);
     private static final String PASSWORD_HASH = PASSWORD_ENCODER.encode(PASSWORD);
 
@@ -64,13 +81,17 @@ class AuthServiceImplTest {
     private AuditLogService auditLogService;
     @Mock
     private CurrentUserProvider currentUserProvider;
+    @Mock
+    private UnknownLoginAttemptService unknownLoginAttemptService;
 
+    private final PasswordEncoder passwordEncoder = spy(PASSWORD_ENCODER);
+    private final Map<String, UnknownLoginAttempt> unknownAttempts = new HashMap<>();
     private AuthServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new AuthServiceImpl(appUserRepository, PASSWORD_ENCODER, accessTokenService, refreshTokenService,
-                auditLogService, currentUserProvider, new AppUserMapper());
+        service = serviceAt(NOW);
+        when(unknownLoginAttemptService.forEmail(any())).thenAnswer(call -> unknownAttempt(call.getArgument(0)));
         when(accessTokenService.issue(any())).thenReturn("access-token");
         when(accessTokenService.getExpiresInSeconds()).thenReturn(900L);
         when(refreshTokenService.issue(any())).thenReturn("refresh-token");
@@ -121,6 +142,246 @@ class AuthServiceImplTest {
         verify(auditLogService).record(eq(USER_ID), eq(AuditAction.LOGIN_FAILED), eq(USER_ID), isNull(),
                 eq(Map.of("email", EMAIL, "reason", "INVALID_CREDENTIALS")));
         verify(refreshTokenService, never()).issue(any());
+    }
+
+    @Test
+    void wrongPasswordIncreasesTheFailedLoginCount() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.recordFailedLogin();
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, "wrong")), ErrorCode.INVALID_CREDENTIALS);
+
+        assertThat(user.getFailedLoginCount()).isEqualTo((short) 2);
+    }
+
+    @Test
+    void successfulLoginResetsTheFailedLoginCount() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.recordFailedLogin();
+        user.recordFailedLogin();
+
+        service.login(new LoginRequest(EMAIL, PASSWORD));
+
+        assertThat(user.getFailedLoginCount()).isZero();
+    }
+
+    @Test
+    void aFirstWrongPasswordLeavesOneAttemptLessThanTheMaximum() {
+        existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(MAX_ATTEMPTS - 1);
+    }
+
+    @Test
+    void remainingAttemptsDropByOneWithEachWrongPassword() {
+        existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(4);
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(3);
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(2);
+    }
+
+    @Test
+    void remainingAttemptsStartAgainFromTheMaximumAfterASuccessfulLogin() {
+        existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"));
+        remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"));
+
+        service.login(new LoginRequest(EMAIL, PASSWORD));
+
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(MAX_ATTEMPTS - 1);
+    }
+
+    @Test
+    void unknownEmailReportsTheSameRemainingAttemptsAsAFirstWrongPassword() {
+        when(appUserRepository.findUndeletedByEmail("ghost@example.com")).thenReturn(Optional.empty());
+
+        assertThat(remainingAttemptsAfter(new LoginRequest("ghost@example.com", PASSWORD)))
+                .isEqualTo(MAX_ATTEMPTS - 1);
+    }
+
+    @Test
+    void anUnknownEmailCountsDownAndLocksLikeARealAccount() {
+        for (int remaining = MAX_ATTEMPTS - 1; remaining >= 1; remaining--) {
+            assertThat(remainingAttemptsAfter(new LoginRequest("ghost@example.com", PASSWORD))).isEqualTo(remaining);
+        }
+
+        expectUnknownEmailLocked("ghost@example.com");
+
+        assertThat(unknownAttempt("ghost@example.com").getLockedUntil()).isEqualTo(NOW.plus(LOCKOUT_DURATION));
+    }
+
+    @Test
+    void aLockedUnknownEmailStaysLockedWithoutCountingFurther() {
+        UnknownLoginAttempt attempt = unknownAttempt("ghost@example.com");
+        attempt.lockUntil(NOW.plusMinutes(1));
+
+        expectUnknownEmailLocked("ghost@example.com");
+
+        assertThat(attempt.getFailedLoginCount()).isZero();
+        assertThat(attempt.getLockedUntil()).isEqualTo(NOW.plusMinutes(1));
+    }
+
+    @Test
+    void anUnknownEmailGetsAFullSetOfAttemptsAgainOnceItsLockEnds() {
+        UnknownLoginAttempt attempt = unknownAttempt("ghost@example.com");
+        for (int i = 0; i < MAX_ATTEMPTS; i++) {
+            attempt.recordFailedLogin();
+        }
+        attempt.lockUntil(NOW);
+
+        assertThat(remainingAttemptsAfter(new LoginRequest("ghost@example.com", PASSWORD)))
+                .isEqualTo(MAX_ATTEMPTS - 1);
+    }
+
+    @Test
+    void eachUnknownEmailHasItsOwnCountdown() {
+        remainingAttemptsAfter(new LoginRequest("ghost@example.com", PASSWORD));
+        remainingAttemptsAfter(new LoginRequest("ghost@example.com", PASSWORD));
+
+        assertThat(remainingAttemptsAfter(new LoginRequest("phantom@example.com", PASSWORD)))
+                .isEqualTo(MAX_ATTEMPTS - 1);
+    }
+
+    @Test
+    void lockingAnUnknownEmailIsAuditedWithoutAUser() {
+        for (int i = 1; i < MAX_ATTEMPTS; i++) {
+            remainingAttemptsAfter(new LoginRequest("ghost@example.com", PASSWORD));
+        }
+
+        expectUnknownEmailLocked("ghost@example.com");
+
+        verify(auditLogService).record(null, AuditAction.ACCOUNT_LOCKED, null, null, Map.of("email",
+                "ghost@example.com", "failedAttempts", (short) MAX_ATTEMPTS,
+                "lockedUntil", NOW.plus(LOCKOUT_DURATION).toString()));
+    }
+
+    @Test
+    void anUnknownEmailStillRunsAPasswordCheck() {
+        expectAuthError(() -> service.login(new LoginRequest("ghost@example.com", PASSWORD)),
+                ErrorCode.INVALID_CREDENTIALS);
+
+        verify(passwordEncoder).matches(eq(PASSWORD), anyString());
+    }
+
+    @Test
+    void aUserWithoutAPasswordStillRunsAPasswordCheck() {
+        existingUser(UserStatus.PENDING_ACTIVATION, null);
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, PASSWORD)), ErrorCode.INVALID_CREDENTIALS);
+
+        verify(passwordEncoder).matches(eq(PASSWORD), anyString());
+    }
+
+    @Test
+    void theLastAllowedWrongPasswordLocksTheAccount() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS - 1);
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, "wrong")), ErrorCode.ACCOUNT_LOCKED);
+
+        assertThat(user.getLockedUntil()).isEqualTo(NOW.plus(LOCKOUT_DURATION));
+        verify(auditLogService).record(eq(USER_ID), eq(AuditAction.LOGIN_FAILED), eq(USER_ID), isNull(),
+                eq(Map.of("email", EMAIL, "reason", "INVALID_CREDENTIALS")));
+    }
+
+    @Test
+    void lockingTheAccountIsAuditedAsAccountLocked() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS - 1);
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, "wrong")), ErrorCode.ACCOUNT_LOCKED);
+
+        verify(auditLogService).record(USER_ID, AuditAction.ACCOUNT_LOCKED, USER_ID, null, Map.of("email", EMAIL,
+                "failedAttempts", (short) MAX_ATTEMPTS, "lockedUntil", NOW.plus(LOCKOUT_DURATION).toString()));
+    }
+
+    @Test
+    void theLockEndIsRoundedDownToWholeSeconds() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS - 1);
+        service = serviceAt(NOW.plusNanos(123_456_789));
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, "wrong")), ErrorCode.ACCOUNT_LOCKED);
+
+        assertThat(user.getLockedUntil()).isEqualTo(NOW.plus(LOCKOUT_DURATION));
+    }
+
+    @Test
+    void aRejectionWhileLockedIsNotAuditedAsANewLock() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.lockUntil(NOW.plusMinutes(1));
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, "wrong")), ErrorCode.ACCOUNT_LOCKED);
+
+        verify(auditLogService, never()).record(any(), eq(AuditAction.ACCOUNT_LOCKED), any(), any(), any());
+    }
+
+    @Test
+    void aLockedAccountRejectsTheRightPassword() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.lockUntil(NOW.plusMinutes(1));
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, PASSWORD)), ErrorCode.ACCOUNT_LOCKED);
+
+        verify(accessTokenService, never()).issue(any());
+        verify(refreshTokenService, never()).issue(any());
+    }
+
+    @Test
+    void aLockedAccountDoesNotCountFurtherWrongPasswords() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS);
+        LocalDateTime lockedUntil = NOW.plusMinutes(1);
+        user.lockUntil(lockedUntil);
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, "wrong")), ErrorCode.ACCOUNT_LOCKED);
+
+        assertThat(user.getFailedLoginCount()).isEqualTo((short) MAX_ATTEMPTS);
+        assertThat(user.getLockedUntil()).isEqualTo(lockedUntil);
+    }
+
+    @Test
+    void aRejectedLoginOnALockedAccountIsAuditedWithTheReason() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.lockUntil(NOW.plusMinutes(1));
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, PASSWORD)), ErrorCode.ACCOUNT_LOCKED);
+
+        verify(auditLogService).record(eq(USER_ID), eq(AuditAction.LOGIN_FAILED), eq(USER_ID), isNull(),
+                eq(Map.of("email", EMAIL, "reason", "ACCOUNT_LOCKED")));
+    }
+
+    @Test
+    void theRightPasswordWorksAgainOnceTheLockEnds() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS);
+        user.lockUntil(NOW);
+
+        service.login(new LoginRequest(EMAIL, PASSWORD));
+
+        assertThat(user.getFailedLoginCount()).isZero();
+        assertThat(user.getLockedUntil()).isNull();
+    }
+
+    @Test
+    void anExpiredLockGivesAFullSetOfAttemptsAgain() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS);
+        user.lockUntil(NOW.minusSeconds(1));
+
+        assertThat(remainingAttemptsAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(MAX_ATTEMPTS - 1);
+        assertThat(user.getLockedUntil()).isNull();
+    }
+
+    @Test
+    void rightPasswordOnAnInactiveAccountKeepsTheFailedLoginCount() {
+        AppUser user = existingUser(UserStatus.INACTIVE, PASSWORD_HASH);
+        user.recordFailedLogin();
+
+        expectAuthError(() -> service.login(new LoginRequest(EMAIL, PASSWORD)), ErrorCode.ACCOUNT_INACTIVE);
+
+        assertThat(user.getFailedLoginCount()).isEqualTo((short) 1);
     }
 
     @Test
@@ -218,8 +479,10 @@ class AuthServiceImplTest {
         assertThatThrownBy(service::getCurrentUser).isInstanceOf(ResourceNotFoundException.class);
     }
 
-    private void existingUser(UserStatus status, String passwordHash) {
-        when(appUserRepository.findUndeletedByEmail(EMAIL)).thenReturn(Optional.of(user(status, passwordHash)));
+    private AppUser existingUser(UserStatus status, String passwordHash) {
+        AppUser user = user(status, passwordHash);
+        when(appUserRepository.findUndeletedByEmail(EMAIL)).thenReturn(Optional.of(user));
+        return user;
     }
 
     private static AppUser user(UserStatus status, String passwordHash) {
@@ -230,6 +493,32 @@ class AuthServiceImplTest {
         ReflectionTestUtils.setField(user, "idUser", USER_ID);
         ReflectionTestUtils.setField(user, "passwordHash", passwordHash);
         return user;
+    }
+
+    private AuthServiceImpl serviceAt(LocalDateTime now) {
+        return new AuthServiceImpl(appUserRepository, passwordEncoder, accessTokenService, refreshTokenService,
+                auditLogService, currentUserProvider, new AppUserMapper(),
+                new LoginLockoutProperties(MAX_ATTEMPTS, LOCKOUT_DURATION), unknownLoginAttemptService,
+                Clock.fixed(now.atZone(ZONE).toInstant(), ZONE));
+    }
+
+    private UnknownLoginAttempt unknownAttempt(String email) {
+        return unknownAttempts.computeIfAbsent(email.strip().toLowerCase(Locale.ROOT), UnknownLoginAttempt::new);
+    }
+
+    private void expectUnknownEmailLocked(String email) {
+        expectAuthError(() -> service.login(new LoginRequest(email, PASSWORD)), ErrorCode.ACCOUNT_LOCKED);
+    }
+
+    private static void failedLogins(AppUser user, int count) {
+        for (int i = 0; i < count; i++) {
+            user.recordFailedLogin();
+        }
+    }
+
+    private int remainingAttemptsAfter(LoginRequest request) {
+        return catchThrowableOfType(InvalidCredentialsException.class, () -> service.login(request))
+                .getRemainingAttempts();
     }
 
     private static void expectAuthError(ThrowingCallable call, ErrorCode expected) {

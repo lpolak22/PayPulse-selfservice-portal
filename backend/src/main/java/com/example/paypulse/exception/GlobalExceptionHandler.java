@@ -30,6 +30,14 @@ public class GlobalExceptionHandler {
         return build(ex.getErrorCode(), ex.getMessage(), List.of());
     }
 
+    @ExceptionHandler(InvalidCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
+        ErrorCode code = ex.getErrorCode();
+        return ResponseEntity.status(code.getStatus())
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(new ErrorResponse(code.name(), ex.getMessage(), List.of(), ex.getRemainingAttempts()));
+    }
+
     @ExceptionHandler(FieldValidationException.class)
     public ResponseEntity<ErrorResponse> handleFieldValidation(FieldValidationException ex) {
         ErrorCode code = ex.getErrorCode();
