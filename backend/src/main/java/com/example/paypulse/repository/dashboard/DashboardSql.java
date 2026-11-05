@@ -14,10 +14,10 @@ final class DashboardSql {
 
     private static final String IN_ORGANISATION_BEFORE_END = """
              WHERE m.id_organisation = :organisationId
-               AND tx_time(t.raw_data) < :end
+               AND t.transaction_at < :end
             """;
 
-    private static final String IN_CURRENT_PERIOD = "tx_time(t.raw_data) >= :start";
+    private static final String IN_CURRENT_PERIOD = "t.transaction_at >= :start";
 
     private static final String COUNTED_IN_PERIOD = IN_ORGANISATION_BEFORE_END
             + " AND " + IN_CURRENT_PERIOD
@@ -32,10 +32,10 @@ final class DashboardSql {
             + " AS previous_total_amount"
             + ORGANISATION_TRANSACTIONS
             + IN_ORGANISATION_BEFORE_END
-            + " AND tx_time(t.raw_data) >= :previousStart";
+            + " AND t.transaction_at >= :previousStart";
 
     static final String TREND = """
-            SELECT date_trunc(CAST(:unit AS text), tx_time(t.raw_data) AT TIME ZONE CAST(:zone AS text)) AS bucket_start,
+            SELECT date_trunc(CAST(:unit AS text), t.transaction_at AT TIME ZONE CAST(:zone AS text)) AS bucket_start,
                    SUM(t.amount) AS amount,
                    COUNT(*) AS count
             """
@@ -66,14 +66,14 @@ final class DashboardSql {
             SELECT t.raw_data ->> 'card_brand' AS card_brand,
                    t.raw_data ->> 'masked_pan' AS masked_pan,
                    o.name AS outlet_name,
-                   tx_time(t.raw_data) AS transaction_at,
+                   t.transaction_at AS transaction_at,
                    t.amount AS amount,
                    t.status AS status
             """
             + ORGANISATION_TRANSACTIONS
             + IN_ORGANISATION_BEFORE_END
             + " AND " + IN_CURRENT_PERIOD
-            + " ORDER BY tx_time(t.raw_data) DESC, t.id_transaction DESC"
+            + " ORDER BY t.transaction_at DESC, t.id_transaction DESC"
             + " LIMIT :limit";
 
     private DashboardSql() {
