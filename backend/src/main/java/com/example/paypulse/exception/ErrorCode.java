@@ -23,6 +23,9 @@ public enum ErrorCode {
     ACTIVATION_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "The activation link is not valid."),
     ACTIVATION_TOKEN_EXPIRED(HttpStatus.GONE, "The activation link has expired. Please ask your admin for a new one."),
     ACTIVATION_TOKEN_USED(HttpStatus.GONE, "The activation link has already been used. Please ask your admin for a new one."),
+    PASSWORD_RESET_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "The password reset link is not valid."),
+    PASSWORD_RESET_TOKEN_EXPIRED(HttpStatus.GONE, "The password reset link has expired. Please request a new one."),
+    PASSWORD_RESET_TOKEN_USED(HttpStatus.GONE, "The password reset link has already been used. Please request a new one."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
 
     private final HttpStatus status;
