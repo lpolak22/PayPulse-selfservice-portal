@@ -7,7 +7,8 @@ public enum AuditAction {
     USER_ACTIVATED("USER"),
     USER_DEACTIVATED("USER"),
     LOGIN_SUCCESS("USER"),
-    LOGIN_FAILED("USER");
+    LOGIN_FAILED("USER"),
+    ACCOUNT_LOCKED("USER");
 
     private final String entityType;
 
