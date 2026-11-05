@@ -23,5 +23,6 @@ class ErrorResponseParser(private val json: Json) {
         }
     }
 
-    private fun ErrorResponseDto.toApiError(): ApiError = ApiError(code, fieldErrors.map { it.field })
+    private fun ErrorResponseDto.toApiError(): ApiError =
+        ApiError(code, fieldErrors.map { it.field }, remainingAttempts, retryAfterMinutes)
 }
