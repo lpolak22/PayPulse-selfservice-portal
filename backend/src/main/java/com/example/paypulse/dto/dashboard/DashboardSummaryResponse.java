@@ -1,5 +1,6 @@
 package com.example.paypulse.dto.dashboard;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
@@ -12,5 +13,5 @@ public record DashboardSummaryResponse(
         List<CardBrandTotalResponse> byCardBrand,
         List<AcquirerTotalResponse> byAcquirer,
         List<LatestTransactionResponse> latestTransactions
-) {
+) implements Serializable {
 }
