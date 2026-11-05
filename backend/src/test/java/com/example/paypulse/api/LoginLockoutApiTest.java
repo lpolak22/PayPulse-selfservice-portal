@@ -54,13 +54,26 @@ class LoginLockoutApiTest extends ApiIntegrationTest {
             postLogin(user.email(), WRONG_PASSWORD)
                     .andExpect(status().isUnauthorized())
                     .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"))
-                    .andExpect(jsonPath("$.remainingAttempts").value(remaining));
+                    .andExpect(jsonPath("$.remainingAttempts").value(remaining))
+                    .andExpect(jsonPath("$.retryAfterMinutes").doesNotExist());
         }
 
         postLogin(user.email(), WRONG_PASSWORD)
                 .andExpect(status().isLocked())
                 .andExpect(jsonPath("$.code").value("ACCOUNT_LOCKED"))
-                .andExpect(jsonPath("$.remainingAttempts").doesNotExist());
+                .andExpect(jsonPath("$.remainingAttempts").doesNotExist())
+                .andExpect(jsonPath("$.retryAfterMinutes").value(lockoutProperties.lockoutDuration().toMinutes()));
+    }
+
+    @Test
+    void aLockedAccountTellsHowManyMinutesAreLeft() throws Exception {
+        lockTheAccount();
+        jdbc.update("update app_user set locked_until = ? where id_user = ?",
+                Timestamp.valueOf(LocalDateTime.now().plusMinutes(3).plusSeconds(30)), user.id());
+
+        postLogin(user.email(), UserFixtures.PASSWORD)
+                .andExpect(status().isLocked())
+                .andExpect(jsonPath("$.retryAfterMinutes").value(4));
     }
 
     @Test
