@@ -1,6 +1,5 @@
 package com.example.paypulse.dto.dashboard;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.Instant;
 
@@ -11,5 +10,5 @@ public record LatestTransactionResponse(
         Instant transactionAt,
         BigDecimal amount,
         String status
-) implements Serializable {
+) {
 }

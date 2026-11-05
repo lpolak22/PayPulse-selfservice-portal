@@ -1,13 +1,11 @@
 package com.example.paypulse.service.impl;
 
-import com.example.paypulse.config.CacheConfig;
 import com.example.paypulse.dto.dashboard.DashboardSummaryResponse;
 import com.example.paypulse.dto.dashboard.TrendResponse;
 import com.example.paypulse.mapper.DashboardMapper;
 import com.example.paypulse.repository.dashboard.DashboardQuery;
 import com.example.paypulse.repository.dashboard.DashboardRepository;
 import com.example.paypulse.service.DashboardPeriod;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,8 +23,6 @@ public class DashboardSummaryCalculator {
         this.dashboardMapper = dashboardMapper;
     }
 
-    @Cacheable(cacheNames = CacheConfig.DASHBOARD_SUMMARY_CACHE,
-            key = "#organisationId + ':' + #period.from() + ':' + #period.to()")
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public DashboardSummaryResponse calculate(long organisationId, DashboardPeriod period) {
         DashboardQuery query = period.toQuery(organisationId);
