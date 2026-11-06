@@ -40,15 +40,28 @@ private fun LoginFieldErrorsPreview() = LoginPreview(
 @Composable
 private fun LoginInvalidCredentialsPreview() = LoginPreview(
     email = SAMPLE_EMAIL,
-    password = SAMPLE_PASSWORD,
-    state = LoginUiState(formError = R.string.login_error_invalid_credentials)
+    state = LoginUiState(formError = LoginFormError.InvalidCredentials(remainingAttempts = 2))
+)
+
+@PreviewLightDark
+@Composable
+private fun LoginLastAttemptPreview() = LoginPreview(
+    email = SAMPLE_EMAIL,
+    state = LoginUiState(formError = LoginFormError.InvalidCredentials(remainingAttempts = 1))
+)
+
+@PreviewLightDark
+@Composable
+private fun LoginAccountLockedPreview() = LoginPreview(
+    email = SAMPLE_EMAIL,
+    state = LoginUiState(formError = LoginFormError.AccountLocked(retryAfterMinutes = 15))
 )
 
 @PreviewLightDark
 @Composable
 private fun LoginSessionExpiredPreview() = LoginPreview(
     email = SAMPLE_EMAIL,
-    state = LoginUiState(formError = R.string.login_error_session_expired)
+    state = LoginUiState(formError = LoginFormError.Message(R.string.login_error_session_expired))
 )
 
 @PreviewLightDark
@@ -70,7 +83,7 @@ private fun LoginSmallPhonePreview() = LoginPreview(
     state = LoginUiState(
         emailError = R.string.login_error_email_invalid,
         passwordError = R.string.login_error_password_required,
-        formError = R.string.login_error_invalid_credentials
+        formError = LoginFormError.InvalidCredentials(remainingAttempts = 3)
     )
 )
 
@@ -78,8 +91,7 @@ private fun LoginSmallPhonePreview() = LoginPreview(
 @Composable
 private fun LoginLargeFontPreview() = LoginPreview(
     email = SAMPLE_EMAIL,
-    password = SAMPLE_PASSWORD,
-    state = LoginUiState(formError = R.string.login_error_invalid_credentials)
+    state = LoginUiState(formError = LoginFormError.AccountLocked(retryAfterMinutes = 15))
 )
 
 @Composable

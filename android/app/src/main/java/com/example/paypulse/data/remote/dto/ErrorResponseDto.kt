@@ -5,5 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ErrorResponseDto(
     val code: String,
-    val fieldErrors: List<FieldErrorDto> = emptyList()
+    val fieldErrors: List<FieldErrorDto> = emptyList(),
+    val remainingAttempts: Int? = null,
+    val retryAfterMinutes: Int? = null
 )

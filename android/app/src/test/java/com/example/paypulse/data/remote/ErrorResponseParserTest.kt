@@ -33,6 +33,14 @@ class ErrorResponseParserTest {
     }
 
     @Test
+    fun remainingAttemptsAndLockMinutes_areRead() {
+        val invalid = parser.apiError(errorResponse("""{"code":"INVALID_CREDENTIALS","message":"x","remainingAttempts":3}"""))
+        val locked = parser.apiError(errorResponse("""{"code":"ACCOUNT_LOCKED","message":"x","retryAfterMinutes":15}"""))
+        assertEquals(ApiError("INVALID_CREDENTIALS", emptyList(), remainingAttempts = 3), invalid)
+        assertEquals(ApiError("ACCOUNT_LOCKED", emptyList(), retryAfterMinutes = 15), locked)
+    }
+
+    @Test
     fun httpException_isRead() {
         val error = parser.apiError(HttpException(errorResponse(VALIDATION_BODY)))
         assertEquals("VALIDATION_ERROR", error?.code)

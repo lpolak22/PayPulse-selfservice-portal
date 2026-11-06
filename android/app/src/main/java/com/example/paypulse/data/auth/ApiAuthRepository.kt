@@ -5,7 +5,7 @@ import com.example.paypulse.data.remote.CurrentUserApi
 import com.example.paypulse.data.remote.ErrorResponseParser
 import com.example.paypulse.data.remote.dto.LoginRequestDto
 import com.example.paypulse.data.remote.dto.RefreshTokenRequestDto
-import com.example.paypulse.data.remote.mapper.loginErrorFromCode
+import com.example.paypulse.data.remote.mapper.loginFailureFrom
 import com.example.paypulse.data.remote.mapper.toAuthTokens
 import com.example.paypulse.data.remote.mapper.toUser
 import com.example.paypulse.domain.auth.AuthRepository
@@ -33,15 +33,15 @@ class ApiAuthRepository(
             sessionStore.end()
             return
         }
-        val error = startSession() ?: return
-        if (sessionState.value == SessionState.Checking) sessionStore.end(error)
+        val failure = startSession() ?: return
+        if (sessionState.value == SessionState.Checking) sessionStore.end(failure.error)
     }
 
     override suspend fun login(email: String, password: String): LoginResult {
-        requestTokens(email, password)?.let { return LoginResult.Failure(it) }
-        val sessionError = startSession() ?: return LoginResult.Success
+        requestTokens(email, password)?.let { return it }
+        val sessionFailure = startSession() ?: return LoginResult.Success
         tokenStorage.clear()
-        return LoginResult.Failure(sessionError)
+        return sessionFailure
     }
 
     override suspend fun logout() {
@@ -57,26 +57,26 @@ class ApiAuthRepository(
         false
     }
 
-    private suspend fun requestTokens(email: String, password: String): LoginError? = loginErrorOrNull {
+    private suspend fun requestTokens(email: String, password: String): LoginResult.Failure? = loginFailureOrNull {
         tokenStorage.save(authApi.login(LoginRequestDto(email, password)).toAuthTokens())
     }
 
-    private suspend fun startSession(): LoginError? = loginErrorOrNull {
+    private suspend fun startSession(): LoginResult.Failure? = loginFailureOrNull {
         sessionStore.start(currentUserApi.me().toUser())
     }
 
-    private suspend fun loginErrorOrNull(request: suspend () -> Unit): LoginError? = try {
+    private suspend fun loginFailureOrNull(request: suspend () -> Unit): LoginResult.Failure? = try {
         request()
         null
     } catch (exception: HttpException) {
-        loginErrorFromCode(errorResponseParser.errorCode(exception))
+        loginFailureFrom(errorResponseParser.apiError(exception))
     } catch (exception: IOException) {
-        LoginError.NETWORK
+        LoginResult.Failure(LoginError.NETWORK)
     } catch (exception: IllegalArgumentException) {
-        LoginError.UNKNOWN
+        LoginResult.Failure(LoginError.UNKNOWN)
     } catch (exception: DateTimeException) {
-        LoginError.UNKNOWN
+        LoginResult.Failure(LoginError.UNKNOWN)
     } catch (exception: GeneralSecurityException) {
-        LoginError.UNKNOWN
+        LoginResult.Failure(LoginError.UNKNOWN)
     }
 }

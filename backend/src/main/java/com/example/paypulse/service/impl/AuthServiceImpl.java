@@ -4,6 +4,7 @@ import com.example.paypulse.config.LoginLockoutProperties;
 import com.example.paypulse.dto.AppUserResponse;
 import com.example.paypulse.dto.auth.LoginRequest;
 import com.example.paypulse.dto.auth.TokenResponse;
+import com.example.paypulse.exception.AccountLockedException;
 import com.example.paypulse.exception.AuthException;
 import com.example.paypulse.exception.ErrorCode;
 import com.example.paypulse.exception.InvalidCredentialsException;
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Map;
@@ -117,7 +119,8 @@ public class AuthServiceImpl implements AuthService {
     private void ensureNotLocked(LoginTarget target, LocalDateTime now) {
         LoginLockoutState lockout = target.lockout();
         if (lockout.isLockedAt(now)) {
-            throw failedLogin(target.userId(), target.email(), ErrorCode.ACCOUNT_LOCKED);
+            auditFailedLogin(target.userId(), target.email(), ErrorCode.ACCOUNT_LOCKED);
+            throw accountLocked(lockout, now);
         }
         if (lockout.getLockedUntil() != null) {
             lockout.resetFailedLogins();
@@ -152,7 +155,7 @@ public class AuthServiceImpl implements AuthService {
         }
         auditFailedLogin(target.userId(), target.email(), ErrorCode.INVALID_CREDENTIALS);
         lock(target, now);
-        return new AuthException(ErrorCode.ACCOUNT_LOCKED);
+        return accountLocked(target.lockout(), now);
     }
 
     private void lock(LoginTarget target, LocalDateTime now) {
@@ -161,6 +164,12 @@ public class AuthServiceImpl implements AuthService {
         Map<String, Object> details = Map.of("email", target.email(),
                 "failedAttempts", target.lockout().getFailedLoginCount(), "lockedUntil", lockedUntil.toString());
         auditLogService.record(target.userId(), AuditAction.ACCOUNT_LOCKED, target.userId(), null, details);
+    }
+
+    private AccountLockedException accountLocked(LoginLockoutState lockout, LocalDateTime now) {
+        Duration remaining = Duration.between(now, lockout.getLockedUntil());
+        long wholeMinutesRoundedUp = remaining.plusMinutes(1).minusNanos(1).toMinutes();
+        return new AccountLockedException(Math.max(1, wholeMinutesRoundedUp));
     }
 
     private int remainingAttempts(LoginLockoutState lockout) {

@@ -2,5 +2,9 @@ package com.example.paypulse.domain.auth
 
 sealed interface LoginResult {
     data object Success : LoginResult
-    data class Failure(val error: LoginError) : LoginResult
+    data class Failure(
+        val error: LoginError,
+        val remainingAttempts: Int? = null,
+        val retryAfterMinutes: Int? = null
+    ) : LoginResult
 }

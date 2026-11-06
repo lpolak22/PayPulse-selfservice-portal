@@ -9,12 +9,17 @@ import kotlinx.coroutines.flow.StateFlow
 class StubAuthRepository : AuthRepository {
 
     val session = MutableStateFlow<SessionState>(SessionState.LoggedOut())
+    var loginResult: LoginResult = LoginResult.Success
+    val loginRequests = mutableListOf<Pair<String, String>>()
 
     override val sessionState: StateFlow<SessionState> = session
 
     override suspend fun restoreSession() = Unit
 
-    override suspend fun login(email: String, password: String): LoginResult = LoginResult.Success
+    override suspend fun login(email: String, password: String): LoginResult {
+        loginRequests += email to password
+        return loginResult
+    }
 
     override suspend fun logout() = Unit
 }

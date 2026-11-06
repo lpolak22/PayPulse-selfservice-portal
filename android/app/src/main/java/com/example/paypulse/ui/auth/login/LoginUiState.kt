@@ -7,5 +7,5 @@ data class LoginUiState(
     val isLoading: Boolean = false,
     @param:StringRes val emailError: Int? = null,
     @param:StringRes val passwordError: Int? = null,
-    @param:StringRes val formError: Int? = null
+    val formError: LoginFormError? = null
 )

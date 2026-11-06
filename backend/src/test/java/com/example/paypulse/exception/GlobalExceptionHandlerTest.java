@@ -66,6 +66,17 @@ class GlobalExceptionHandlerTest {
         ResponseEntity<ErrorResponse> response = handler.handleApiException(new LastAdminException());
 
         assertThat(response.getBody().remainingAttempts()).isNull();
+        assertThat(response.getBody().retryAfterMinutes()).isNull();
+    }
+
+    @Test
+    void accountLockedReturns423WithTheMinutesUntilTheLockEnds() {
+        ResponseEntity<ErrorResponse> response = handler.handleAccountLocked(new AccountLockedException(15));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.LOCKED);
+        assertThat(response.getBody().code()).isEqualTo("ACCOUNT_LOCKED");
+        assertThat(response.getBody().retryAfterMinutes()).isEqualTo(15L);
+        assertThat(response.getBody().remainingAttempts()).isNull();
     }
 
     @Test

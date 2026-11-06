@@ -4,6 +4,7 @@ import com.example.paypulse.config.LoginLockoutProperties;
 import com.example.paypulse.dto.AppUserResponse;
 import com.example.paypulse.dto.auth.LoginRequest;
 import com.example.paypulse.dto.auth.TokenResponse;
+import com.example.paypulse.exception.AccountLockedException;
 import com.example.paypulse.exception.ApiException;
 import com.example.paypulse.exception.AuthException;
 import com.example.paypulse.exception.ErrorCode;
@@ -308,6 +309,37 @@ class AuthServiceImplTest {
     }
 
     @Test
+    void theLockingAnswerTellsTheFullLockDurationInMinutes() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        failedLogins(user, MAX_ATTEMPTS - 1);
+
+        assertThat(retryAfterMinutesAfter(new LoginRequest(EMAIL, "wrong"))).isEqualTo(15);
+    }
+
+    @Test
+    void aLockedAnswerRoundsTheRemainingLockTimeUpToWholeMinutes() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.lockUntil(NOW.plusMinutes(3).plusSeconds(1));
+
+        assertThat(retryAfterMinutesAfter(new LoginRequest(EMAIL, PASSWORD))).isEqualTo(4);
+    }
+
+    @Test
+    void aLockEndingWithinTheMinuteIsReportedAsOneMinute() {
+        AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
+        user.lockUntil(NOW.plusSeconds(10));
+
+        assertThat(retryAfterMinutesAfter(new LoginRequest(EMAIL, PASSWORD))).isEqualTo(1);
+    }
+
+    @Test
+    void aLockedUnknownEmailTellsTheRemainingLockTimeToo() {
+        unknownAttempt("ghost@example.com").lockUntil(NOW.plusMinutes(7));
+
+        assertThat(retryAfterMinutesAfter(new LoginRequest("ghost@example.com", PASSWORD))).isEqualTo(7);
+    }
+
+    @Test
     void aRejectionWhileLockedIsNotAuditedAsANewLock() {
         AppUser user = existingUser(UserStatus.ACTIVE, PASSWORD_HASH);
         user.lockUntil(NOW.plusMinutes(1));
@@ -519,6 +551,11 @@ class AuthServiceImplTest {
     private int remainingAttemptsAfter(LoginRequest request) {
         return catchThrowableOfType(InvalidCredentialsException.class, () -> service.login(request))
                 .getRemainingAttempts();
+    }
+
+    private long retryAfterMinutesAfter(LoginRequest request) {
+        return catchThrowableOfType(AccountLockedException.class, () -> service.login(request))
+                .getRetryAfterMinutes();
     }
 
     private static void expectAuthError(ThrowingCallable call, ErrorCode expected) {
