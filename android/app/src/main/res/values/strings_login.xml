@@ -12,7 +12,17 @@
     <string name="login_error_email_invalid">E-mail adresa nije ispravna.</string>
     <string name="login_error_password_required">Upiši lozinku.</string>
     <string name="login_error_invalid_credentials">Neispravan e-mail ili lozinka.</string>
+    <plurals name="login_error_invalid_credentials_remaining">
+        <item quantity="one">Neispravan e-mail ili lozinka. Preostao je %1$d pokušaj.</item>
+        <item quantity="few">Neispravan e-mail ili lozinka. Preostala su %1$d pokušaja.</item>
+        <item quantity="other">Neispravan e-mail ili lozinka. Preostalo je %1$d pokušaja.</item>
+    </plurals>
     <string name="login_error_account_locked">Račun je zaključan zbog previše neuspjelih prijava. Pokušaj ponovno kasnije.</string>
+    <plurals name="login_error_account_locked_minutes">
+        <item quantity="one">Račun je zaključan. Pokušaj ponovno za %1$d minutu.</item>
+        <item quantity="few">Račun je zaključan. Pokušaj ponovno za %1$d minute.</item>
+        <item quantity="other">Račun je zaključan. Pokušaj ponovno za %1$d minuta.</item>
+    </plurals>
     <string name="login_error_account_inactive">Račun je deaktiviran. Obrati se administratoru.</string>
     <string name="login_error_account_pending_activation">Račun još nije aktiviran. Otvori poveznicu za aktivaciju iz e-maila.</string>
     <string name="login_error_session_expired">Sesija je istekla. Prijavi se ponovno.</string>
