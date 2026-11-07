@@ -2,14 +2,19 @@ package com.example.paypulse.service.impl;
 
 import com.example.paypulse.config.PasswordResetProperties;
 import com.example.paypulse.dto.email.EmailMessage;
+import com.example.paypulse.exception.ApiException;
+import com.example.paypulse.exception.ErrorCode;
 import com.example.paypulse.model.AppUser;
 import com.example.paypulse.model.UserStatus;
 import com.example.paypulse.repository.AppUserRepository;
 import com.example.paypulse.service.EmailSender;
 import com.example.paypulse.service.PasswordResetService;
 import com.example.paypulse.service.PasswordResetTokenService;
+import com.example.paypulse.service.RateLimiter;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Locale;
 
 @Service
 @Transactional
@@ -21,23 +26,35 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final PasswordResetTokenService resetTokenService;
     private final EmailSender emailSender;
     private final PasswordResetProperties properties;
+    private final RateLimiter rateLimiter;
 
     public PasswordResetServiceImpl(AppUserRepository appUserRepository,
                                     PasswordResetTokenService resetTokenService,
                                     EmailSender emailSender,
-                                    PasswordResetProperties properties) {
+                                    PasswordResetProperties properties,
+                                    RateLimiter rateLimiter) {
         this.appUserRepository = appUserRepository;
         this.resetTokenService = resetTokenService;
         this.emailSender = emailSender;
         this.properties = properties;
+        this.rateLimiter = rateLimiter;
     }
 
     @Override
     @Transactional(readOnly = true)
-    public void requestReset(String email) {
-        appUserRepository.findUndeletedByEmail(email.trim())
+    public void requestReset(String email, String clientIp) {
+        String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
+        checkRateLimit("ip:" + clientIp, properties.maxRequestsPerIp());
+        checkRateLimit("email:" + normalizedEmail, properties.maxRequestsPerEmail());
+        appUserRepository.findUndeletedByEmail(normalizedEmail)
                 .filter(user -> user.getStatus() == UserStatus.ACTIVE)
                 .ifPresent(this::sendResetEmail);
+    }
+
+    private void checkRateLimit(String key, int limit) {
+        if (!rateLimiter.tryAcquire(key, limit, properties.rateLimitWindow())) {
+            throw new ApiException(ErrorCode.PASSWORD_RESET_RATE_LIMITED);
+        }
     }
 
     private void sendResetEmail(AppUser user) {

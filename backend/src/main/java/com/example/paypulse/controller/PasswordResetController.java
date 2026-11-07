@@ -5,6 +5,7 @@ import com.example.paypulse.dto.auth.PasswordResetRequestResponse;
 import com.example.paypulse.service.PasswordResetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,9 +28,11 @@ public class PasswordResetController {
     @PostMapping("/request")
     @ResponseStatus(HttpStatus.ACCEPTED)
     @Operation(summary = "Request a reset link",
-            description = "Always returns the same response, an email is sent only to an active account.")
-    public PasswordResetRequestResponse requestReset(@Valid @RequestBody PasswordResetRequest request) {
-        passwordResetService.requestReset(request.email());
+            description = "Always returns the same response, an email is sent only to an active account. "
+                    + "Returns 429 after 3 requests per email or 10 per IP address in an hour.")
+    public PasswordResetRequestResponse requestReset(@Valid @RequestBody PasswordResetRequest request,
+                                                     HttpServletRequest httpRequest) {
+        passwordResetService.requestReset(request.email(), httpRequest.getRemoteAddr());
         return PasswordResetRequestResponse.sentIfExists();
     }
 }

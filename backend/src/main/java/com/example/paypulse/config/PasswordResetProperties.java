@@ -7,6 +7,9 @@ import java.time.Duration;
 @ConfigurationProperties(prefix = "password-reset")
 public record PasswordResetProperties(
         Duration tokenTtl,
-        String linkBase
+        String linkBase,
+        int maxRequestsPerEmail,
+        int maxRequestsPerIp,
+        Duration rateLimitWindow
 ) {
 }

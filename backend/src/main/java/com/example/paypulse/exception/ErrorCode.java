@@ -26,6 +26,7 @@ public enum ErrorCode {
     PASSWORD_RESET_TOKEN_INVALID(HttpStatus.BAD_REQUEST, "The password reset link is not valid."),
     PASSWORD_RESET_TOKEN_EXPIRED(HttpStatus.GONE, "The password reset link has expired. Please request a new one."),
     PASSWORD_RESET_TOKEN_USED(HttpStatus.GONE, "The password reset link has already been used. Please request a new one."),
+    PASSWORD_RESET_RATE_LIMITED(HttpStatus.TOO_MANY_REQUESTS, "Too many password reset requests. Please try again later."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "An unexpected error occurred.");
 
     private final HttpStatus status;
