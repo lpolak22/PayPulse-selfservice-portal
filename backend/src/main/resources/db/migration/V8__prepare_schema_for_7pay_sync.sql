@@ -3,6 +3,10 @@ ALTER TABLE transaction
     DROP CONSTRAINT ck_transaction_raw_data_type,
     DROP CONSTRAINT ck_transaction_raw_data_card_brand;
 
+UPDATE transaction
+SET raw_data = jsonb_set(raw_data, '{type}', '"STORNO"')
+WHERE raw_data ->> 'type' = 'VOID';
+
 ALTER TABLE transaction
     ADD CONSTRAINT ck_transaction_raw_data_required_keys
         CHECK (raw_data ->> 'transaction_at' IS NOT NULL
@@ -10,7 +14,7 @@ ALTER TABLE transaction
             AND raw_data ->> 'card_brand' IS NOT NULL),
     ADD CONSTRAINT ck_transaction_raw_data_type
         CHECK (raw_data ->> 'type' IN ('SALE', 'SALE_WITH_INSTALLMENTS', 'REFUND', 'STORNO',
-                                       'TECHNICAL_REVERSAL', 'VOID')),
+                                       'TECHNICAL_REVERSAL')),
     ADD CONSTRAINT ck_transaction_raw_data_card_brand
         CHECK (raw_data ->> 'card_brand' IN ('VISA', 'MASTERCARD', 'MAESTRO', 'DINERS', 'DISCOVER', 'JCB',
                                              'AMEX', 'CLOSED_LOOP_PREPAID', 'CLOSED_LOOP_POSTPAID',
