@@ -60,6 +60,15 @@ public class RestSevenPayClient implements SevenPayClient {
     }
 
     @Override
+    public SevenPayMerchant getMerchantByOib(String oib) {
+        return call(() -> restClient.get()
+                .uri("/merchants/oib/{oib}/details", oib)
+                .accept(MediaType.APPLICATION_JSON)
+                .retrieve()
+                .body(SevenPayMerchant.class));
+    }
+
+    @Override
     public SevenPayPage<SevenPaySalepoint> getSalepoints(int page) {
         return getPage(uri -> pageUri(uri.path("/salepoints"), page, properties.pageSize()),
                 new ParameterizedTypeReference<SevenPayPage<SevenPaySalepoint>>() { });

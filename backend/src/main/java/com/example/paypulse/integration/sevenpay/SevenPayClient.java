@@ -12,6 +12,8 @@ public interface SevenPayClient {
 
     SevenPayPage<SevenPayMerchant> getMerchants(int page);
 
+    SevenPayMerchant getMerchantByOib(String oib);
+
     SevenPayPage<SevenPaySalepoint> getSalepoints(int page);
 
     SevenPayPage<SevenPayTerminal> getTerminals(int page);
