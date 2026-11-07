@@ -42,7 +42,8 @@ public class SecurityConfig {
             pathPattern(HttpMethod.POST, "/api/auth/refresh"),
             pathPattern(HttpMethod.POST, "/api/auth/logout"),
             pathPattern(HttpMethod.POST, "/api/auth/activation"),
-            pathPattern(HttpMethod.GET, "/api/auth/activation/**")
+            pathPattern(HttpMethod.GET, "/api/auth/activation/**"),
+            pathPattern(HttpMethod.POST, "/api/auth/password-reset/request")
     );
 
     @Bean
