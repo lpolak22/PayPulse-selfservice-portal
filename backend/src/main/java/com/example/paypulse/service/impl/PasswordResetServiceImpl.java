@@ -1,16 +1,23 @@
 package com.example.paypulse.service.impl;
 
 import com.example.paypulse.config.PasswordResetProperties;
+import com.example.paypulse.dto.auth.PasswordResetTokenStatus;
+import com.example.paypulse.dto.auth.ResetPasswordRequest;
 import com.example.paypulse.dto.email.EmailMessage;
 import com.example.paypulse.exception.ApiException;
 import com.example.paypulse.exception.ErrorCode;
 import com.example.paypulse.model.AppUser;
+import com.example.paypulse.model.AuditAction;
 import com.example.paypulse.model.UserStatus;
 import com.example.paypulse.repository.AppUserRepository;
+import com.example.paypulse.service.AuditLogService;
 import com.example.paypulse.service.EmailSender;
+import com.example.paypulse.service.NewPasswordValidator;
 import com.example.paypulse.service.PasswordResetService;
 import com.example.paypulse.service.PasswordResetTokenService;
 import com.example.paypulse.service.RateLimiter;
+import com.example.paypulse.service.RefreshTokenService;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,17 +34,29 @@ public class PasswordResetServiceImpl implements PasswordResetService {
     private final EmailSender emailSender;
     private final PasswordResetProperties properties;
     private final RateLimiter rateLimiter;
+    private final NewPasswordValidator newPasswordValidator;
+    private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenService refreshTokenService;
+    private final AuditLogService auditLogService;
 
     public PasswordResetServiceImpl(AppUserRepository appUserRepository,
                                     PasswordResetTokenService resetTokenService,
                                     EmailSender emailSender,
                                     PasswordResetProperties properties,
-                                    RateLimiter rateLimiter) {
+                                    RateLimiter rateLimiter,
+                                    NewPasswordValidator newPasswordValidator,
+                                    PasswordEncoder passwordEncoder,
+                                    RefreshTokenService refreshTokenService,
+                                    AuditLogService auditLogService) {
         this.appUserRepository = appUserRepository;
         this.resetTokenService = resetTokenService;
         this.emailSender = emailSender;
         this.properties = properties;
         this.rateLimiter = rateLimiter;
+        this.newPasswordValidator = newPasswordValidator;
+        this.passwordEncoder = passwordEncoder;
+        this.refreshTokenService = refreshTokenService;
+        this.auditLogService = auditLogService;
     }
 
     @Override
@@ -49,6 +68,21 @@ public class PasswordResetServiceImpl implements PasswordResetService {
         appUserRepository.findUndeletedByEmail(normalizedEmail)
                 .filter(user -> user.getStatus() == UserStatus.ACTIVE)
                 .ifPresent(this::sendResetEmail);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PasswordResetTokenStatus checkToken(String token) {
+        return resetTokenService.statusOf(token);
+    }
+
+    @Override
+    public void resetPassword(ResetPasswordRequest request) {
+        AppUser user = resetTokenService.requireValid(request.token());
+        newPasswordValidator.validate(request.password(), request.confirmPassword());
+        user.resetPassword(passwordEncoder.encode(request.password()));
+        refreshTokenService.revokeAllForUser(user.getIdUser());
+        auditLogService.record(user.getIdUser(), AuditAction.PASSWORD_RESET, user.getIdUser(), null, null);
     }
 
     private void checkRateLimit(String key, int limit) {
