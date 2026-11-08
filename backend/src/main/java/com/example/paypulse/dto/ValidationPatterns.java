@@ -8,8 +8,11 @@ public final class ValidationPatterns {
 
     public static final String NOT_BLANK = "(?s).*\\S.*";
 
+    public static final String OIB = "^\\d{11}$";
+
     public static final String E164_PHONE_MESSAGE = "must be in E.164 format, e.g. +385911234567";
     public static final String NOT_BLANK_MESSAGE = "must not be blank";
+    public static final String OIB_MESSAGE = "must be exactly 11 digits";
 
     private ValidationPatterns() {
     }

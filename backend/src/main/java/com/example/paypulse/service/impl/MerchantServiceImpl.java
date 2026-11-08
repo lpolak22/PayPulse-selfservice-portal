@@ -1,15 +1,22 @@
 package com.example.paypulse.service.impl;
 
+import com.example.paypulse.dto.ValidationPatterns;
+import com.example.paypulse.dto.common.ErrorResponse;
 import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
 import com.example.paypulse.dto.merchant.MerchantResponse;
+import com.example.paypulse.dto.merchant.MerchantSearchCriteria;
+import com.example.paypulse.exception.FieldValidationException;
 import com.example.paypulse.mapper.MerchantMapper;
 import com.example.paypulse.repository.MerchantRepository;
+import com.example.paypulse.repository.MerchantSpecifications;
 import com.example.paypulse.security.CurrentOrganisationScope;
 import com.example.paypulse.service.MerchantService;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class MerchantServiceImpl implements MerchantService {
@@ -30,9 +37,18 @@ public class MerchantServiceImpl implements MerchantService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<MerchantResponse> getMerchants(PageQuery pageQuery) {
+    public PageResponse<MerchantResponse> getMerchants(MerchantSearchCriteria criteria, PageQuery pageQuery) {
+        validateOib(criteria);
         return PageResponse.from(
-                merchantRepository.findAll(organisationScope.merchants(), pageQuery.toPageable(DEFAULT_SORT)),
+                merchantRepository.findAll(MerchantSpecifications.matching(organisationScope.merchants(), criteria),
+                        pageQuery.toPageable(DEFAULT_SORT)),
                 merchantMapper::toResponse);
+    }
+
+    private static void validateOib(MerchantSearchCriteria criteria) {
+        if (criteria.hasOib() && !criteria.oib().strip().matches(ValidationPatterns.OIB)) {
+            throw new FieldValidationException(
+                    List.of(new ErrorResponse.FieldError("oib", ValidationPatterns.OIB_MESSAGE)));
+        }
     }
 }

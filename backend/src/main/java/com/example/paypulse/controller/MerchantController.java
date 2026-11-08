@@ -5,8 +5,10 @@ import com.example.paypulse.dto.common.ErrorResponse;
 import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
 import com.example.paypulse.dto.merchant.MerchantResponse;
+import com.example.paypulse.dto.merchant.MerchantSearchCriteria;
 import com.example.paypulse.service.MerchantService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -15,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -34,7 +37,16 @@ public class MerchantController {
     @GetMapping
     @Operation(summary = "List merchants", description = "Only merchants of the user's organisation. Sorted by name.")
     @ApiResponse(responseCode = "200", description = "One page of merchants")
-    public PageResponse<MerchantResponse> getMerchants(@ParameterObject PageQuery pageQuery) {
-        return merchantService.getMerchants(pageQuery);
+    @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR: oib is not 11 digits",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public PageResponse<MerchantResponse> getMerchants(
+            @Parameter(description = "Case-insensitive match on name, or exact match on ID or OIB")
+            @RequestParam(required = false) String search,
+            @Parameter(description = "Exact OIB, 11 digits")
+            @RequestParam(required = false) String oib,
+            @Parameter(description = "Case-insensitive status, e.g. ACTIVE")
+            @RequestParam(required = false) String status,
+            @ParameterObject PageQuery pageQuery) {
+        return merchantService.getMerchants(new MerchantSearchCriteria(search, oib, status), pageQuery);
     }
 }

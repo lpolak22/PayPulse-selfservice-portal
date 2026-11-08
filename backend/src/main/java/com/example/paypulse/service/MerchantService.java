@@ -3,8 +3,9 @@ package com.example.paypulse.service;
 import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
 import com.example.paypulse.dto.merchant.MerchantResponse;
+import com.example.paypulse.dto.merchant.MerchantSearchCriteria;
 
 public interface MerchantService {
 
-    PageResponse<MerchantResponse> getMerchants(PageQuery pageQuery);
+    PageResponse<MerchantResponse> getMerchants(MerchantSearchCriteria criteria, PageQuery pageQuery);
 }
