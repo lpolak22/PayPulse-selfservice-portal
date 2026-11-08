@@ -66,7 +66,7 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
         viewModelScope.launch {
             when (val result = authRepository.login(email.trim(), password)) {
                 LoginResult.Success -> onLoginSucceeded()
-                is LoginResult.Failure -> onLoginFailed(result.error)
+                is LoginResult.Failure -> onLoginFailed(result)
             }
         }
     }
@@ -76,14 +76,14 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
         _uiState.update { it.copy(isLoading = false, isPasswordVisible = false) }
     }
 
-    private fun onLoginFailed(error: LoginError) {
-        if (error == LoginError.INVALID_CREDENTIALS) password = ""
-        _uiState.update { it.copy(isLoading = false, isPasswordVisible = false, formError = error.toMessage()) }
+    private fun onLoginFailed(failure: LoginResult.Failure) {
+        if (failure.error in PASSWORD_CLEARING_ERRORS) password = ""
+        _uiState.update { it.copy(isLoading = false, isPasswordVisible = false, formError = failure.toFormError()) }
     }
 
     private fun showSessionError(error: LoginError?) {
         if (error == null) return
-        _uiState.update { it.copy(isLoading = false, formError = error.toMessage()) }
+        _uiState.update { it.copy(isLoading = false, formError = error.toFormError()) }
     }
 
     @StringRes
@@ -94,6 +94,8 @@ class LoginViewModel(private val authRepository: AuthRepository) : ViewModel() {
     }
 
     companion object {
+        private val PASSWORD_CLEARING_ERRORS = setOf(LoginError.INVALID_CREDENTIALS, LoginError.ACCOUNT_LOCKED)
+
         val Factory = viewModelFactory {
             initializer { LoginViewModel(AppContainer.authRepository) }
         }

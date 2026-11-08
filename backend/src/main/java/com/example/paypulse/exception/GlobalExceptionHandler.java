@@ -33,9 +33,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentials(InvalidCredentialsException ex) {
         ErrorCode code = ex.getErrorCode();
-        return ResponseEntity.status(code.getStatus())
-                .contentType(MediaType.APPLICATION_JSON)
-                .body(new ErrorResponse(code.name(), ex.getMessage(), List.of(), ex.getRemainingAttempts()));
+        return build(code, ErrorResponse.withRemainingAttempts(code.name(), ex.getMessage(), ex.getRemainingAttempts()));
+    }
+
+    @ExceptionHandler(AccountLockedException.class)
+    public ResponseEntity<ErrorResponse> handleAccountLocked(AccountLockedException ex) {
+        ErrorCode code = ex.getErrorCode();
+        return build(code, ErrorResponse.withRetryAfterMinutes(code.name(), ex.getMessage(), ex.getRetryAfterMinutes()));
     }
 
     @ExceptionHandler(FieldValidationException.class)
@@ -106,9 +110,13 @@ public class GlobalExceptionHandler {
 
     private ResponseEntity<ErrorResponse> build(ErrorCode code, String message,
                                                 List<ErrorResponse.FieldError> fieldErrors) {
+        return build(code, new ErrorResponse(code.name(), message, fieldErrors));
+    }
+
+    private ResponseEntity<ErrorResponse> build(ErrorCode code, ErrorResponse body) {
         return ResponseEntity.status(code.getStatus())
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(new ErrorResponse(code.name(), message, fieldErrors));
+                .body(body);
     }
 
     private ResponseEntity<ErrorResponse> build(ErrorCode code, HttpHeaders headers) {
