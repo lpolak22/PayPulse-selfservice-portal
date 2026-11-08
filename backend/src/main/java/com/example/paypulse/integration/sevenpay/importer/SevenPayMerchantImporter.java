@@ -49,7 +49,7 @@ public class SevenPayMerchantImporter {
                 created++;
             }
         }
-        return new ImportResult("merchants", created, updated);
+        return new ImportResult("merchants", created, updated, 0);
     }
 
     private Collection<SevenPayMerchant> fetchMerchants() {
