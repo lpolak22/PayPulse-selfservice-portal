@@ -27,7 +27,7 @@ public class Terminal {
     private Outlet outlet;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "mcc_code", nullable = false, columnDefinition = "VARCHAR(4)")
+    @JoinColumn(name = "mcc_code", nullable = false, columnDefinition = "VARCHAR(9)")
     private MccCode mccCode;
 
     @Column(name = "source_id", length = 50, unique = true)
