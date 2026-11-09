@@ -13,15 +13,18 @@ public class SevenPayImportService {
     private final OrganisationRepository organisationRepository;
     private final SevenPayMerchantImporter merchantImporter;
     private final SevenPayOutletImporter outletImporter;
+    private final SevenPayTerminalImporter terminalImporter;
     private final SevenPayImportProperties properties;
 
     public SevenPayImportService(OrganisationRepository organisationRepository,
                                  SevenPayMerchantImporter merchantImporter,
                                  SevenPayOutletImporter outletImporter,
+                                 SevenPayTerminalImporter terminalImporter,
                                  SevenPayImportProperties properties) {
         this.organisationRepository = organisationRepository;
         this.merchantImporter = merchantImporter;
         this.outletImporter = outletImporter;
+        this.terminalImporter = terminalImporter;
         this.properties = properties;
     }
 
@@ -31,6 +34,7 @@ public class SevenPayImportService {
                         "Organisation '" + properties.organisation() + "' not found, run the seed first"));
         return List.of(
                 merchantImporter.importMerchants(organisation),
-                outletImporter.importOutlets(organisation));
+                outletImporter.importOutlets(organisation),
+                terminalImporter.importTerminals(organisation));
     }
 }
