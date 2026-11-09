@@ -6,6 +6,7 @@ public enum ErrorCode {
 
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST, "One or more fields are invalid."),
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "The request is malformed or has invalid parameters."),
+    RANGE_TOO_LARGE(HttpStatus.BAD_REQUEST, "The date range must not be longer than 13 months."),
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "Authentication is required."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "You do not have permission to perform this action."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "The requested resource was not found."),
