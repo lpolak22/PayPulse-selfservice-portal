@@ -132,6 +132,11 @@ public class AppUser implements LoginLockoutState {
         changeStatus(UserStatus.ACTIVE);
     }
 
+    public void resetPassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+        resetFailedLogins();
+    }
+
     public void markActivationResent(LocalDateTime resentAt) {
         this.updatedAt = resentAt;
     }
