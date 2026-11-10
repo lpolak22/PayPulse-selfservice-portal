@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.paypulse.R
 import com.example.paypulse.domain.user.User
+import com.example.paypulse.ui.components.PayPulseTopBar
 import com.example.paypulse.ui.components.SearchField
 
 @Composable
@@ -34,11 +35,13 @@ fun UsersListScreen(
     onQueryChange: (String) -> Unit,
     onAddUser: () -> Unit,
     onUserClick: (Long) -> Unit,
+    onMenuClick: () -> Unit,
     snackbarHost: @Composable () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Scaffold(
         modifier = modifier,
+        topBar = { PayPulseTopBar(onMenuClick = onMenuClick) },
         snackbarHost = snackbarHost,
         floatingActionButton = { AddUserButton(onClick = onAddUser) }
     ) { padding ->

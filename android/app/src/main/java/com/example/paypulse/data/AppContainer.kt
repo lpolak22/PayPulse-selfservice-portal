@@ -7,10 +7,12 @@ import com.example.paypulse.data.auth.ApiAuthRepository
 import com.example.paypulse.data.auth.EncryptedTokenStorage
 import com.example.paypulse.data.auth.SessionStore
 import com.example.paypulse.data.auth.TokenStorage
+import com.example.paypulse.data.dashboard.ApiDashboardRepository
 import com.example.paypulse.data.remote.ActivationApi
 import com.example.paypulse.data.remote.AuthApi
 import com.example.paypulse.data.remote.BearerTokenInterceptor
 import com.example.paypulse.data.remote.CurrentUserApi
+import com.example.paypulse.data.remote.DashboardApi
 import com.example.paypulse.data.remote.ErrorResponseParser
 import com.example.paypulse.data.remote.TokenRefreshAuthenticator
 import com.example.paypulse.data.remote.createApiJson
@@ -21,11 +23,13 @@ import com.example.paypulse.data.security.KeystoreCipher
 import com.example.paypulse.data.user.FakeUserRepository
 import com.example.paypulse.domain.activation.ActivationRepository
 import com.example.paypulse.domain.auth.AuthRepository
+import com.example.paypulse.domain.dashboard.DashboardRepository
 import com.example.paypulse.domain.user.UserRepository
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.create
+import java.time.Clock
 
 object AppContainer {
     private lateinit var applicationContext: Context
@@ -51,6 +55,7 @@ object AppContainer {
         createRetrofit(BuildConfig.API_BASE_URL, json, client)
     }
     private val currentUserApi: CurrentUserApi by lazy { authenticatedRetrofit.create() }
+    private val dashboardApi: DashboardApi by lazy { authenticatedRetrofit.create() }
 
     val authRepository: AuthRepository by lazy {
         ApiAuthRepository(authApi, currentUserApi, errorResponseParser, tokenStorage, sessionStore)
@@ -60,4 +65,7 @@ object AppContainer {
         ApiActivationRepository(activationApi, errorResponseParser)
     }
     val userRepository: UserRepository by lazy { FakeUserRepository() }
+
+    val clock: Clock = Clock.systemUTC()
+    val dashboardRepository: DashboardRepository by lazy { ApiDashboardRepository(dashboardApi) }
 }

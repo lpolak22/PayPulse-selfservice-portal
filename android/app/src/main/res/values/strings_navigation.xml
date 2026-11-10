@@ -1,0 +1,18 @@
+<resources>
+    <string name="navigation_open_menu">Otvori izbornik</string>
+    <string name="navigation_section_options">Opcije</string>
+    <string name="navigation_home">Početna</string>
+    <string name="navigation_merchants">Trgovci i prodajna mjesta</string>
+    <string name="navigation_terminals">Terminali</string>
+    <string name="navigation_transactions">Transakcije</string>
+    <string name="navigation_reports">Izvještaji</string>
+    <string name="navigation_users">Korisnici</string>
+    <string name="navigation_info">Info</string>
+    <string name="navigation_support">Podrška</string>
+    <string name="navigation_settings">Postavke</string>
+    <string name="navigation_logout">Odjava</string>
+    <string name="navigation_role_admin">Admin</string>
+    <string name="navigation_role_user">Korisnik</string>
+    <string name="navigation_role_and_organisation">%1$s · %2$s</string>
+    <string name="navigation_coming_soon">Uskoro</string>
+</resources>
