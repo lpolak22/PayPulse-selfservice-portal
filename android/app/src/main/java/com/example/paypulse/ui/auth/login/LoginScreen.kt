@@ -141,9 +141,9 @@ private fun LoginForm(
 }
 
 @Composable
-private fun FormMessage(@StringRes formError: Int?, @StringRes notice: Int?) {
+private fun FormMessage(formError: LoginFormError?, @StringRes notice: Int?) {
     when {
-        formError != null -> MessageBanner(message = stringResource(formError))
+        formError != null -> MessageBanner(message = formError.text())
         notice != null -> MessageBanner(message = stringResource(notice), style = MessageBannerStyle.INFO)
     }
 }

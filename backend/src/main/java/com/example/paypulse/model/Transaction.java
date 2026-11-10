@@ -13,6 +13,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Map;
 
 @Entity
@@ -44,8 +45,11 @@ public class Transaction {
     private String status;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(name = "raw_data", columnDefinition = "jsonb")
+    @Column(name = "raw_data", nullable = false, columnDefinition = "jsonb")
     private Map<String, Object> rawData;
+
+    @Column(name = "transaction_at", insertable = false, updatable = false)
+    private Instant transactionAt;
 
     public Transaction() {
     }
@@ -112,5 +116,9 @@ public class Transaction {
 
     public void setRawData(Map<String, Object> rawData) {
         this.rawData = rawData;
+    }
+
+    public Instant getTransactionAt() {
+        return transactionAt;
     }
 }

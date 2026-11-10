@@ -41,6 +41,9 @@ public class Outlet {
     @Column(name = "postal_code", length = 10)
     private String postalCode;
 
+    @Column(length = 3)
+    private String country;
+
     @Column(length = 16)
     private String phone;
 
@@ -118,6 +121,14 @@ public class Outlet {
 
     public void setPostalCode(String postalCode) {
         this.postalCode = postalCode;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
     }
 
     public String getPhone() {

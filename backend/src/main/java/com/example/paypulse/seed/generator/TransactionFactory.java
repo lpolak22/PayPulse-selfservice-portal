@@ -25,7 +25,7 @@ public class TransactionFactory {
 
     private static final String[] CARD_BRANDS = {"VISA", "MASTERCARD", "AMEX", "DINERS", "MAESTRO"};
     private static final String[] STATUSES = {"APPROVED", "DECLINED", "REFUNDED", "CANCELLED"};
-    private static final String[] TYPES = {"SALE", "REFUND", "VOID"};
+    private static final String[] TYPES = {"SALE", "SALE_WITH_INSTALLMENTS", "REFUND", "STORNO", "TECHNICAL_REVERSAL"};
     private static final String[] SALES_CHANNELS = {"POS", "ECOM", "MOTO", "CONTACTLESS"};
 
     private final DataGenerator dataGenerator = new DataGenerator(new Random(98765));

@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "app_user")
-public class AppUser {
+public class AppUser implements LoginLockoutState {
 
     public static final String EMAIL_UNIQUE_INDEX = "ux_app_user_email_lower";
 
@@ -132,6 +132,11 @@ public class AppUser {
         changeStatus(UserStatus.ACTIVE);
     }
 
+    public void resetPassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+        resetFailedLogins();
+    }
+
     public void markActivationResent(LocalDateTime resentAt) {
         this.updatedAt = resentAt;
     }
@@ -139,6 +144,23 @@ public class AppUser {
     public void markDeleted(LocalDateTime deletedAt) {
         this.deletedAt = deletedAt;
         syncActiveFlag();
+    }
+
+    public void recordFailedLogin() {
+        this.failedLoginCount = (short) (failedLoginCount + 1);
+    }
+
+    public void resetFailedLogins() {
+        this.failedLoginCount = 0;
+        this.lockedUntil = null;
+    }
+
+    public void lockUntil(LocalDateTime lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    public boolean isLockedAt(LocalDateTime now) {
+        return lockedUntil != null && lockedUntil.isAfter(now);
     }
 
     public void initializeSeedSecurity(String hashedPassword, boolean firstLogin) {

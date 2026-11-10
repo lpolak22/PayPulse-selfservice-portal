@@ -52,6 +52,34 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void invalidCredentialsReturn401WithTheRemainingAttempts() {
+        ResponseEntity<ErrorResponse> response =
+                handler.handleInvalidCredentials(new InvalidCredentialsException(3));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody().code()).isEqualTo("INVALID_CREDENTIALS");
+        assertThat(response.getBody().remainingAttempts()).isEqualTo(3);
+    }
+
+    @Test
+    void otherErrorsCarryNoRemainingAttempts() {
+        ResponseEntity<ErrorResponse> response = handler.handleApiException(new LastAdminException());
+
+        assertThat(response.getBody().remainingAttempts()).isNull();
+        assertThat(response.getBody().retryAfterMinutes()).isNull();
+    }
+
+    @Test
+    void accountLockedReturns423WithTheMinutesUntilTheLockEnds() {
+        ResponseEntity<ErrorResponse> response = handler.handleAccountLocked(new AccountLockedException(15));
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.LOCKED);
+        assertThat(response.getBody().code()).isEqualTo("ACCOUNT_LOCKED");
+        assertThat(response.getBody().retryAfterMinutes()).isEqualTo(15L);
+        assertThat(response.getBody().remainingAttempts()).isNull();
+    }
+
+    @Test
     void validationErrorReturns400WithFieldErrors() throws NoSuchMethodException {
         BeanPropertyBindingResult bindingResult = new BeanPropertyBindingResult(new Object(), "request");
         bindingResult.addError(new org.springframework.validation.FieldError(
