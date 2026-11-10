@@ -15,6 +15,7 @@ fun CardBrand.label(): Int = when (this) {
     CardBrand.AMEX -> R.string.dashboard_brand_amex
     CardBrand.DINERS -> R.string.dashboard_brand_diners
     CardBrand.MAESTRO -> R.string.dashboard_brand_maestro
+    CardBrand.OTHER -> R.string.dashboard_brand_other
 }
 
 @StringRes

@@ -31,10 +31,7 @@ import com.example.paypulse.ui.dashboard.label
 fun LatestTransactionRow(row: LatestTransactionRowModel, modifier: Modifier = Modifier) {
     val brand = stringResource(row.brand.label())
     val status = stringResource(row.status.label())
-    val description = stringResource(
-        R.string.dashboard_transaction_description,
-        brand, row.lastDigits, row.outletName, row.time, row.amount, status
-    )
+    val description = rowDescription(row, brand, status)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -46,12 +43,24 @@ fun LatestTransactionRow(row: LatestTransactionRowModel, modifier: Modifier = Mo
     ) {
         CardIcon()
         CardAndPlace(
-            card = stringResource(R.string.dashboard_transaction_card, brand, row.lastDigits),
+            card = row.lastDigits?.let { stringResource(R.string.dashboard_transaction_card, brand, it) } ?: brand,
             place = stringResource(R.string.dashboard_transaction_place_time, row.outletName, row.time),
             modifier = Modifier.weight(1f)
         )
         AmountAndStatus(row = row, status = status)
     }
+}
+
+@Composable
+private fun rowDescription(row: LatestTransactionRowModel, brand: String, status: String): String {
+    val lastDigits = row.lastDigits ?: return stringResource(
+        R.string.dashboard_transaction_description_without_card,
+        brand, row.outletName, row.time, row.amount, status
+    )
+    return stringResource(
+        R.string.dashboard_transaction_description,
+        brand, lastDigits, row.outletName, row.time, row.amount, status
+    )
 }
 
 @Composable

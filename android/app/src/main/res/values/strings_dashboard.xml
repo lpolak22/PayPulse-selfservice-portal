@@ -28,6 +28,7 @@
     <string name="dashboard_transaction_card">%1$s •••• %2$s</string>
     <string name="dashboard_transaction_place_time">%1$s · %2$s</string>
     <string name="dashboard_transaction_description">%1$s, kartica %2$s, %3$s, %4$s, %5$s, %6$s</string>
+    <string name="dashboard_transaction_description_without_card">%1$s, %2$s, %3$s, %4$s, %5$s</string>
     <string name="dashboard_status_approved">Odobreno</string>
     <string name="dashboard_status_declined">Odbijeno</string>
     <string name="dashboard_status_refunded">Vraćeno</string>

@@ -5,7 +5,7 @@ import java.time.Instant
 
 data class LatestTransaction(
     val cardBrand: CardBrand,
-    val maskedPan: String,
+    val maskedPan: String?,
     val outletName: String,
     val transactionAt: Instant,
     val amount: BigDecimal,

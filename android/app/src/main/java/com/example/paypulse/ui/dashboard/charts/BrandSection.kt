@@ -28,7 +28,7 @@ fun BrandSection(totals: List<CardBrandTotal>, selectedIndex: Int?, onSelect: (I
     val otherLabel = stringResource(R.string.dashboard_brand_other)
     val chart = remember(totals, names, otherLabel) { totals.toBrandChart(names::getValue, otherLabel) }
     if (chart.details.isEmpty()) return
-    val palette = segmentPalette()
+    val palette = segmentColors(chart)
     val title = stringResource(R.string.dashboard_brand_title)
     ChartSection(title = title, detail = selectedIndex?.let(chart.details::getOrNull)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -59,6 +59,14 @@ private fun BrandDonut(
         onSliceClick = onSelect,
         contentDescription = brandDescription(title, chart)
     )
+}
+
+@Composable
+private fun segmentColors(chart: BrandChart): List<SegmentColor> {
+    val palette = segmentPalette()
+    return chart.details.indices.map { i ->
+        if (chart.hasOther && i == chart.details.lastIndex) palette.last() else palette[i]
+    }
 }
 
 @Composable

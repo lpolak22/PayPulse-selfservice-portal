@@ -12,7 +12,7 @@ private const val VISIBLE_PAN_DIGITS = 4
 
 data class LatestTransactionRowModel(
     val brand: CardBrand,
-    val lastDigits: String,
+    val lastDigits: String?,
     val outletName: String,
     val time: String,
     val amount: String,
@@ -23,7 +23,7 @@ fun LatestTransaction.toRowModel(today: LocalDate): LatestTransactionRowModel {
     val localTime = transactionAt.atZone(DashboardPeriod.ZONE).toLocalDateTime()
     return LatestTransactionRowModel(
         brand = cardBrand,
-        lastDigits = maskedPan.takeLast(VISIBLE_PAN_DIGITS),
+        lastDigits = maskedPan?.takeIf { it.isNotBlank() }?.takeLast(VISIBLE_PAN_DIGITS),
         outletName = outletName,
         time = if (localTime.toLocalDate() == today) CroatianDateFormat.time(localTime) else CroatianDateFormat.dateTime(localTime),
         amount = CroatianFormat.money(amount),
