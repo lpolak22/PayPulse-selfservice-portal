@@ -2,6 +2,7 @@ package com.example.paypulse.repository.dashboard;
 
 import static com.example.paypulse.repository.dashboard.DashboardRules.COUNTED_TRANSACTION;
 import static com.example.paypulse.repository.dashboard.DashboardRules.DECLINED_TRANSACTION;
+import static com.example.paypulse.repository.dashboard.DashboardRules.EUR_TRANSACTION;
 
 final class DashboardSql {
 
@@ -73,6 +74,7 @@ final class DashboardSql {
             + ORGANISATION_TRANSACTIONS
             + IN_ORGANISATION_BEFORE_END
             + " AND " + IN_CURRENT_PERIOD
+            + " AND " + EUR_TRANSACTION
             + " ORDER BY t.transaction_at DESC, t.id_transaction DESC"
             + " LIMIT :limit";
 
