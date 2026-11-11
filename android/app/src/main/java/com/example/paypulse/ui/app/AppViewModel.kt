@@ -23,7 +23,11 @@ class AppViewModel(private val authRepository: AuthRepository) : ViewModel() {
     private val _loginNotice = MutableStateFlow<Int?>(null)
     val loginNotice: StateFlow<Int?> = _loginNotice.asStateFlow()
 
+    private val _forgotPasswordId = MutableStateFlow<Int?>(null)
+    val forgotPasswordId: StateFlow<Int?> = _forgotPasswordId.asStateFlow()
+
     private var lastActivationId = 0
+    private var lastForgotPasswordId = 0
 
     init {
         viewModelScope.launch { authRepository.restoreSession() }
@@ -45,6 +49,15 @@ class AppViewModel(private val authRepository: AuthRepository) : ViewModel() {
 
     fun onActivationClosed() {
         _activationRequest.value = null
+    }
+
+    fun onForgotPasswordClick() {
+        _loginNotice.value = null
+        _forgotPasswordId.value = ++lastForgotPasswordId
+    }
+
+    fun onForgotPasswordClosed() {
+        _forgotPasswordId.value = null
     }
 
     fun onLogoutClick() {
