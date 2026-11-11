@@ -8,18 +8,22 @@ import com.example.paypulse.data.auth.EncryptedTokenStorage
 import com.example.paypulse.data.auth.SessionStore
 import com.example.paypulse.data.auth.TokenStorage
 import com.example.paypulse.data.dashboard.ApiDashboardRepository
+import com.example.paypulse.data.passwordreset.ApiPasswordResetRepository
 import com.example.paypulse.data.remote.ActivationApi
 import com.example.paypulse.data.remote.AuthApi
 import com.example.paypulse.data.remote.BearerTokenInterceptor
 import com.example.paypulse.data.remote.CurrentUserApi
 import com.example.paypulse.data.remote.DashboardApi
 import com.example.paypulse.data.remote.ErrorResponseParser
+import com.example.paypulse.data.remote.PasswordResetApi
 import com.example.paypulse.data.remote.TokenRefreshAuthenticator
+import com.example.paypulse.data.remote.TransactionApi
 import com.example.paypulse.data.remote.createApiJson
 import com.example.paypulse.data.remote.createOkHttpClient
 import com.example.paypulse.data.remote.createRetrofit
 import com.example.paypulse.data.remote.withTokenAuthentication
 import com.example.paypulse.data.security.KeystoreCipher
+import com.example.paypulse.data.transaction.ApiTransactionRepository
 import com.example.paypulse.data.user.FakeUserRepository
 import com.example.paypulse.domain.activation.ActivationRepository
 import com.example.paypulse.domain.auth.AuthRepository
@@ -46,6 +50,7 @@ object AppContainer {
     private val publicRetrofit: Retrofit by lazy { createRetrofit(BuildConfig.API_BASE_URL, json, httpClient) }
     private val authApi: AuthApi by lazy { publicRetrofit.create() }
     private val activationApi: ActivationApi by lazy { publicRetrofit.create() }
+    private val passwordResetApi: PasswordResetApi by lazy { publicRetrofit.create() }
     private val tokenStorage: TokenStorage by lazy { EncryptedTokenStorage(applicationContext, KeystoreCipher()) }
     private val sessionStore: SessionStore by lazy { SessionStore() }
 
@@ -58,6 +63,7 @@ object AppContainer {
     }
     private val currentUserApi: CurrentUserApi by lazy { authenticatedRetrofit.create() }
     private val dashboardApi: DashboardApi by lazy { authenticatedRetrofit.create() }
+    private val transactionApi: TransactionApi by lazy { authenticatedRetrofit.create() }
 
     val authRepository: AuthRepository by lazy {
         ApiAuthRepository(authApi, currentUserApi, errorResponseParser, tokenStorage, sessionStore)
@@ -66,8 +72,12 @@ object AppContainer {
     val activationRepository: ActivationRepository by lazy {
         ApiActivationRepository(activationApi, errorResponseParser)
     }
+    val passwordResetRepository: PasswordResetRepository by lazy {
+        ApiPasswordResetRepository(passwordResetApi, errorResponseParser)
+    }
     val userRepository: UserRepository by lazy { FakeUserRepository() }
 
     val clock: Clock = Clock.systemUTC()
     val dashboardRepository: DashboardRepository by lazy { ApiDashboardRepository(dashboardApi) }
+    val transactionRepository: TransactionRepository by lazy { ApiTransactionRepository(transactionApi) }
 }
