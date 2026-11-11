@@ -39,12 +39,18 @@ The project is built by team **"sreckovici"** using Scrum. Planning lives in **J
 
 | Area | What it does | Status |
 |---|---|---|
-| 🔐 **Authentication** | Log in with e-mail and password, set your own password on first login, reset a forgotten password | 🚧 Sprint 1 |
-| 👥 **User management** | Admins create, edit, activate, deactivate and delete users. Roles: **Admin** (read/write) and **User** (read-only) | 🚧 Sprint 1 |
-| 📊 **Dashboard** | Interactive turnover charts by card brand (Visa, Mastercard, Maestro…) and by acquirer | 📋 Planned |
-| 🏬 **Merchant hierarchy** | Merchants, sale points (outlets) and terminals with search, filters and details | 📋 Planned |
-| 💸 **Transactions** | Transaction list with advanced filters (date, status, type, card brand, auth code, RRN) and details | 📋 Planned |
+| 🔐 **Authentication** | Log in with e-mail and password, set your own password on first login | ✅ Sprint 1 |
+| ⏳ **Login lockout** | The app shows the attempts left; after 5 failed attempts the account is locked for 15 minutes | ✅ Sprint 2 |
+| 🔁 **Password reset** | Reset a forgotten password through an e-mail link | 🚧 Sprint 2 (backend done, app in progress) |
+| 👥 **User management** | Admins create, edit, activate, deactivate and delete users. Roles: **Admin** (read/write) and **User** (read-only) | ✅ Sprint 1 |
+| 📊 **Dashboard** | Interactive turnover charts by card brand (Visa, Mastercard, Maestro…) and by acquirer | ✅ Sprint 2 |
+| 💸 **Transactions** | Transaction list with advanced filters (date, status, type, card brand, auth code, RRN) | 🚧 Sprint 2 (API and list done, tests in progress) |
+| 🏬 **Merchant hierarchy** | Merchant search and status filter | 🚧 Sprint 2 (backend) |
+| 🏬 **Merchant hierarchy** | Merchant, sale point (outlet) and terminal details and lists | 📋 Sprints 3–5 |
+| 🔄 **7Pay data** | Manual import of merchants, outlets and terminals from the 7Pay API | 🚧 Sprint 2 |
+| 🔄 **7Pay data** | Scheduled sync, including transactions | 📋 Planned |
 | 📄 **Reports** | Daily, weekly and monthly reports with CSV download | 📋 Planned |
+| ⚙️ **Settings** | Light and dark theme, Croatian and English | 📋 Planned |
 
 > There is **no public sign-up**. An Admin creates each account, and the new user sets their own password through an activation e-mail.
 
@@ -75,7 +81,9 @@ flowchart TD
 |---|---|
 | 📱 **Android** | Kotlin, Jetpack Compose, Material 3, MVVM · minSdk 26, targetSdk 37 |
 | ⚙️ **Backend** | Java 21, Spring Boot 4 (Web MVC, Data JPA, Security), Gradle |
-| 🐘 **Database** | PostgreSQL (schema in `backend/src/main/resources/db/db.sql`) |
+| 🐘 **Database** | PostgreSQL, schema created only by **Flyway** migrations (`backend/src/main/resources/db/migration`) |
+| 🔐 **Security** | JWT access tokens (15 min) and rotating refresh tokens; tokens stored encrypted on the phone (Android Keystore) |
+| 📘 **API docs** | OpenAPI / Swagger UI at `/api/docs` |
 | 🛠️ **Tools** | Android Studio, IntelliJ IDEA, pgAdmin, Git + GitHub, Jira, Confluence |
 
 ---
@@ -86,25 +94,31 @@ flowchart TD
 PayPulse-selfservice-portal/
 ├── android/                     📱 Android app (open THIS folder in Android Studio)
 │   └── app/src/main/java/com/example/paypulse/
-│       ├── data/                repositories (fake data now, real API later)
+│       ├── data/                repositories, REST client (remote/), encrypted token storage (security/)
 │       ├── domain/              business rules, e.g. password policy
-│       ├── navigation/          one NavHost for the whole app
 │       └── ui/
+│           ├── app/, shell/     app start, navigation and the main screen frame
 │           ├── theme/           7Pay colors, typography, shapes
-│           ├── components/      shared buttons, text fields…
-│           └── auth/            login/, setpassword/, forgotpassword/
+│           ├── components/      shared buttons, text fields, charts…
+│           ├── auth/            login/, activation/
+│           ├── dashboard/       turnover charts and latest transactions
+│           └── transactions/    transaction list and filters
 │
 ├── backend/                     ⚙️ Spring Boot API (open THIS folder in IntelliJ IDEA)
+│   ├── .env.example             list of environment variables (copy to .env)
 │   └── src/main/
 │       ├── java/com/example/paypulse/
-│       │   ├── config/          security, dev database reset
+│       │   ├── config/          configuration, dev database reset
+│       │   ├── security/        JWT filter and token handling
 │       │   ├── controller/      REST endpoints under /api/...
 │       │   ├── dto/             request/response records
 │       │   ├── mapper/          entity ↔ DTO
 │       │   ├── model/           JPA entities
 │       │   ├── repository/      Spring Data repositories
-│       │   └── service/         business logic (interface + impl)
-│       └── resources/db/db.sql  🗄️ database schema (source of truth)
+│       │   ├── service/         business logic (interface + impl)
+│       │   ├── integration/     7Pay API client and import
+│       │   └── seed/            test data generator
+│       └── resources/db/migration/   🗄️ Flyway migrations V1, V2… (source of truth for the schema)
 │
 └── README.md
 ```
@@ -138,30 +152,23 @@ git switch dev
 ### 3. Database
 
 1. In **pgAdmin**, right-click your server → **Create → Database** → name it `paypulse_db`.
-2. Store your PostgreSQL password in an **environment variable** (never in a file in this repo):
-
-   **Windows (PowerShell):**
-   ```powershell
-   [Environment]::SetEnvironmentVariable("SPRING_DATASOURCE_PASSWORD", 'your-password', "User")
-   ```
-   **macOS / Linux:**
-   ```bash
-   export SPRING_DATASOURCE_PASSWORD='your-password'   # add to ~/.zshrc or ~/.bashrc
-   ```
-3. Restart your terminal and IDEs so they see the new variable.
+2. In `backend/`, copy `.env.example` to `.env` and fill in your values: the PostgreSQL user and password, a `JWT_SECRET` and a `SEED_TEST_PASSWORD`. The Gradle tasks read this file. `.env` is git-ignored, so your secrets never reach the repo.
 
 ### 4. Backend
 
 From the `backend/` folder:
 
 ```bash
-./gradlew refreshDb     # ⚠️ DROPS and recreates the local schema from db/db.sql
-./gradlew bootRun       # starts the API on http://localhost:8080
+./gradlew refreshDb     # ⚠️ DROPS the local schema and runs all Flyway migrations again
+./gradlew seed          # fills the database with test users, merchants, terminals and transactions
+./gradlew bootRun       # starts the API on http://localhost:8080 (Flyway applies new migrations on start)
 ```
 
 On Windows use `.\gradlew.bat` instead of `./gradlew`.
 
-✅ **Check:** open <http://localhost:8080/api/users>. You should get `[]` or a list of users.
+✅ **Check:** open <http://localhost:8080/api/docs>. You should see the Swagger UI with all endpoints. Active seeded users log in with the `SEED_TEST_PASSWORD` from your `.env`.
+
+**Optional: real 7Pay data.** With `SEVENPAY_KEY`, `SEVENPAY_ORGANISATION` and `SEVENPAY_MERCHANT_OIBS` set in `.env`, `./gradlew sevenPayImport` imports merchants, outlets and terminals from the 7Pay UAT API. It can be run again at any time; it updates existing rows and creates no duplicates.
 
 ### 5. Android app
 
