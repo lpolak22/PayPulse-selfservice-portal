@@ -2,6 +2,7 @@
     <string name="app_name">PayPulse</string>
     <string name="app_logo_description">Logo aplikacije</string>
     <string name="loading">Učitavanje</string>
+    <string name="search_clear">Obriši pretragu</string>
 
     <string name="password_show">Prikaži lozinku</string>
     <string name="password_hide">Sakrij lozinku</string>
