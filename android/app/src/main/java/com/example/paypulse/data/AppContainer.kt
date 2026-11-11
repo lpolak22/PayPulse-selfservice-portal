@@ -15,15 +15,18 @@ import com.example.paypulse.data.remote.CurrentUserApi
 import com.example.paypulse.data.remote.DashboardApi
 import com.example.paypulse.data.remote.ErrorResponseParser
 import com.example.paypulse.data.remote.TokenRefreshAuthenticator
+import com.example.paypulse.data.remote.TransactionApi
 import com.example.paypulse.data.remote.createApiJson
 import com.example.paypulse.data.remote.createOkHttpClient
 import com.example.paypulse.data.remote.createRetrofit
 import com.example.paypulse.data.remote.withTokenAuthentication
 import com.example.paypulse.data.security.KeystoreCipher
+import com.example.paypulse.data.transaction.ApiTransactionRepository
 import com.example.paypulse.data.user.FakeUserRepository
 import com.example.paypulse.domain.activation.ActivationRepository
 import com.example.paypulse.domain.auth.AuthRepository
 import com.example.paypulse.domain.dashboard.DashboardRepository
+import com.example.paypulse.domain.transaction.TransactionRepository
 import com.example.paypulse.domain.user.UserRepository
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
@@ -56,6 +59,7 @@ object AppContainer {
     }
     private val currentUserApi: CurrentUserApi by lazy { authenticatedRetrofit.create() }
     private val dashboardApi: DashboardApi by lazy { authenticatedRetrofit.create() }
+    private val transactionApi: TransactionApi by lazy { authenticatedRetrofit.create() }
 
     val authRepository: AuthRepository by lazy {
         ApiAuthRepository(authApi, currentUserApi, errorResponseParser, tokenStorage, sessionStore)
@@ -68,4 +72,5 @@ object AppContainer {
 
     val clock: Clock = Clock.systemUTC()
     val dashboardRepository: DashboardRepository by lazy { ApiDashboardRepository(dashboardApi) }
+    val transactionRepository: TransactionRepository by lazy { ApiTransactionRepository(transactionApi) }
 }
