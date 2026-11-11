@@ -11,6 +11,7 @@ class StubAuthRepository : AuthRepository {
     val session = MutableStateFlow<SessionState>(SessionState.LoggedOut())
     var loginResult: LoginResult = LoginResult.Success
     val loginRequests = mutableListOf<Pair<String, String>>()
+    var logoutCalls = 0
 
     override val sessionState: StateFlow<SessionState> = session
 
@@ -21,5 +22,7 @@ class StubAuthRepository : AuthRepository {
         return loginResult
     }
 
-    override suspend fun logout() = Unit
+    override suspend fun logout() {
+        logoutCalls++
+    }
 }
