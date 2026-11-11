@@ -10,6 +10,7 @@ import com.example.paypulse.domain.auth.SessionState
 import com.example.paypulse.ui.auth.activation.ActivationRoute
 import com.example.paypulse.ui.auth.login.LoginRoute
 import com.example.paypulse.ui.auth.passwordreset.ForgotPasswordRoute
+import com.example.paypulse.ui.auth.passwordreset.ResetPasswordRoute
 import com.example.paypulse.ui.components.LoadingScreen
 import com.example.paypulse.ui.shell.AppShell
 
@@ -22,13 +23,24 @@ fun AppRoute(
     val activationRequest by viewModel.activationRequest.collectAsStateWithLifecycle()
     val loginNotice by viewModel.loginNotice.collectAsStateWithLifecycle()
     val forgotPasswordId by viewModel.forgotPasswordId.collectAsStateWithLifecycle()
+    val passwordResetRequest by viewModel.passwordResetRequest.collectAsStateWithLifecycle()
     val request = activationRequest
+    val resetRequest = passwordResetRequest
     if (request != null) {
         ActivationRoute(
             viewModelKey = "activation-${request.id}",
             token = request.token,
             onActivated = viewModel::onActivationSucceeded,
             onClose = viewModel::onActivationClosed,
+            modifier = modifier
+        )
+    } else if (resetRequest != null) {
+        ResetPasswordRoute(
+            viewModelKey = "password-reset-${resetRequest.id}",
+            token = resetRequest.token,
+            onReset = viewModel::onPasswordResetSucceeded,
+            onRequestNewLink = viewModel::onNewResetLinkRequested,
+            onClose = viewModel::onPasswordResetClosed,
             modifier = modifier
         )
     } else {

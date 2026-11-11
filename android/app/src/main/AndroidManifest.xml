@@ -37,6 +37,9 @@
                 <data
                     android:host="activate"
                     android:scheme="paypulse" />
+                <data
+                    android:host="reset-password"
+                    android:scheme="paypulse" />
             </intent-filter>
         </activity>
     </application>
