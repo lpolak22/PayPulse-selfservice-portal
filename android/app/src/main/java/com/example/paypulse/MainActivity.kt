@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (savedInstanceState == null) appViewModel.onActivationLink(intent?.dataString)
+        if (savedInstanceState == null) appViewModel.onAppLink(intent?.dataString)
         setContent {
             PayPulseTheme {
                 AppRoute(viewModel = appViewModel)
@@ -28,6 +28,6 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        appViewModel.onActivationLink(intent.dataString)
+        appViewModel.onAppLink(intent.dataString)
     }
 }
