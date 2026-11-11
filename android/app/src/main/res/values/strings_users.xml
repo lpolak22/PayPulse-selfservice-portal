@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="users_title">Korisnici</string>
+    <plurals name="users_count">
+        <item quantity="one">%d korisnik</item>
+        <item quantity="few">%d korisnika</item>
+        <item quantity="other">%d korisnika</item>
+    </plurals>
+    <string name="users_menu_description">Izbornik</string>
+    <string name="users_search_hint">Ime, prezime ili e-mail</string>
+    <string name="users_empty">Još nema korisnika.</string>
+    <string name="users_search_empty">Nema korisnika za traženi pojam.</string>
+    <string name="users_add_button">Novi korisnik</string>
+
+    <string name="users_role_admin">Admin</string>
+    <string name="users_role_user">Korisnik</string>
+    <string name="users_status_active">Aktivan</string>
+    <string name="users_status_inactive">Neaktivan</string>
+    <string name="users_status_pending">Čeka aktivaciju</string>
+
+    <string name="users_back_description">Natrag</string>
+    <string name="users_new_title">Novi korisnik</string>
+    <string name="users_edit_title">Uredi korisnika</string>
+    <string name="users_first_name_label">Ime</string>
+    <string name="users_last_name_label">Prezime</string>
+    <string name="users_email_label">E-mail</string>
+    <string name="users_phone_label">Telefon</string>
+    <string name="users_role_label">Uloga</string>
+    <string name="users_role_admin_description">Puna prava: pregled, uređivanje i upravljanje korisnicima</string>
+    <string name="users_role_user_description">Samo pregled podataka, bez izmjena</string>
+    <string name="users_active_label">Aktivan korisnik</string>
+    <string name="users_activation_note">Korisnik će na e-mail dobiti poveznicu za aktivaciju računa i postavljanje lozinke.</string>
+    <string name="users_active_description">Neaktivan korisnik se ne može prijaviti</string>
+    <string name="users_create_button">Kreiraj korisnika</string>
+    <string name="users_save_button">Spremi promjene</string>
+    <string name="users_delete_button">Obriši korisnika</string>
+
+    <string name="users_error_required">Obavezno polje.</string>
+    <string name="users_error_email_invalid">E-mail adresa nije ispravna.</string>
+    <string name="users_error_email_exists">Korisnik s ovom e-mail adresom već postoji.</string>
+    <string name="users_error_phone_invalid">Broj mora počinjati s + i pozivnim brojem države, npr. +385 91 234 5678.</string>
+    <string name="users_error_last_admin">Zadnji administrator ne može biti deaktiviran ni obrisan.</string>
+    <string name="users_error_too_long">Unos je predugačak.</string>
+    <string name="users_error_save_failed">Spremanje nije uspjelo. Pokušaj ponovno.</string>
+    <string name="users_not_found">Korisnik nije pronađen.</string>
+    <string name="users_pending_note">Korisnik još nije aktivirao račun putem poveznice iz e-maila.</string>
+    <string name="users_access_denied">Nemaš ovlasti za upravljanje korisnicima.</string>
+    <string name="users_phone_placeholder">+385 91 234 5678</string>
+    <string name="users_phone_hint">Neobavezno. Upiši s pozivnim brojem države, npr. +385.</string>
+
+    <string name="users_created_message">Korisnik je kreiran.</string>
+    <string name="users_saved_message">Promjene su spremljene.</string>
+    <string name="users_deleted_message">Korisnik je obrisan.</string>
+
+    <string name="users_dialog_title">Važno!</string>
+    <string name="users_deactivate_message">Deaktivacijom se korisnik %1$s više neće moći prijaviti u Merchant Portal. Želiš li nastaviti?</string>
+    <string name="users_deactivate_confirm">Deaktiviraj</string>
+    <string name="users_delete_message">Brisanjem se korisnik %1$s trajno uklanja. Želiš li nastaviti?</string>
+    <string name="users_delete_confirm">Obriši</string>
+    <string name="users_dialog_cancel">Poništi</string>
+</resources>

@@ -17,24 +17,119 @@ repositories {
 	mavenCentral()
 }
 
+def loadDotEnv = {
+	def envFile = file('.env')
+	if (!envFile.exists()) {
+		return [:]
+	}
+
+	def values = [:]
+	envFile.eachLine { rawLine, lineNumber ->
+		def line = rawLine.trim()
+		if (!line || line.startsWith('#')) {
+			return
+		}
+		if (line.startsWith('export ')) {
+			line = line.substring(7).trim()
+		}
+
+		def separator = line.indexOf('=')
+		if (separator <= 0) {
+			throw new GradleException("Invalid .env entry on line ${lineNumber}")
+		}
+
+		def key = line.substring(0, separator).trim()
+		if (!(key ==~ /[A-Za-z_][A-Za-z0-9_]*/)) {
+			throw new GradleException("Invalid .env key on line ${lineNumber}")
+		}
+
+		def value = line.substring(separator + 1).trim()
+		if (value.length() >= 2 &&
+				((value.startsWith('"') && value.endsWith('"')) ||
+						(value.startsWith("'") && value.endsWith("'")))) {
+			value = value.substring(1, value.length() - 1)
+		}
+		if (System.getenv(key) != null) {
+			return
+		}
+		values[key] = value
+	}
+	values
+}
+
+configurations {
+	mockitoAgent
+}
+
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-flyway'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.boot:spring-boot-starter-security-oauth2-resource-server'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:3.2.0'
+	implementation 'org.flywaydb:flyway-database-postgresql'
 	runtimeOnly 'org.postgresql:postgresql'
 	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
 	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testImplementation 'org.testcontainers:testcontainers-junit-jupiter'
+	testImplementation 'org.testcontainers:testcontainers-postgresql'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	mockitoAgent('org.mockito:mockito-core') {
+		transitive = false
+	}
 }
 
 tasks.register('refreshDb', JavaExec) {
 	group = 'database'
-	description = 'Deleting scheme public and executing db.sql'
+	description = 'Recreating schema public and running the Flyway migrations'
 	classpath = sourceSets.main.runtimeClasspath
 	mainClass = 'com.example.paypulse.config.RefreshDatabase'
+	environment loadDotEnv()
 }
 
-tasks.named('test') {
+tasks.register('seed', org.springframework.boot.gradle.tasks.run.BootRun) {
+	group = 'database'
+	description = 'Seed database with test data using seed profile'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.example.paypulse.PaypulseApplication'
+	systemProperty 'spring.profiles.active', 'seed'
+	environment loadDotEnv()
+}
+
+tasks.withType(org.springframework.boot.gradle.tasks.run.BootRun).configureEach {
+	environment loadDotEnv()
+}
+
+tasks.withType(Test).configureEach {
 	useJUnitPlatform()
+	environment loadDotEnv()
+	jvmArgs '-Xshare:off'
+	jvmArgumentProviders.add({ ["-javaagent:${configurations.mockitoAgent.singleFile}"] } as CommandLineArgumentProvider)
+	testLogging {
+		events 'passed', 'skipped', 'failed'
+		exceptionFormat = 'full'
+	}
+}
+
+tasks.register('unitTest', Test) {
+	group = 'verification'
+	description = 'Runs the unit tests (no database needed)'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform {
+		excludeTags 'integration'
+	}
+}
+
+tasks.register('apiTest', Test) {
+	group = 'verification'
+	description = 'Runs the API integration tests against PostgreSQL'
+	testClassesDirs = sourceSets.test.output.classesDirs
+	classpath = sourceSets.test.runtimeClasspath
+	useJUnitPlatform {
+		includeTags 'integration'
+	}
 }

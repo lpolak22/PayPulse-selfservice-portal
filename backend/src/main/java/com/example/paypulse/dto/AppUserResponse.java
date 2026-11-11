@@ -1,5 +1,8 @@
 package com.example.paypulse.dto;
 
+import com.example.paypulse.model.UserRole;
+import com.example.paypulse.model.UserStatus;
+
 import java.time.LocalDateTime;
 
 public record AppUserResponse(
@@ -8,11 +11,12 @@ public record AppUserResponse(
         String lastName,
         String email,
         String phone,
-        String role,
-        String status,
+        UserRole role,
+        UserStatus status,
         boolean active,
         Long organisationId,
         String organisationName,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }

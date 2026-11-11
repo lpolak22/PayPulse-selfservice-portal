@@ -1,50 +1,83 @@
 package com.example.paypulse.config;
 
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import org.flywaydb.core.Flyway;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
 
 public class RefreshDatabase {
+    private static final String DATABASE_URL = env("SPRING_DATASOURCE_URL",
+            "jdbc:postgresql://localhost:5432/paypulse_db");
+    private static final String DATABASE_NAME = databaseName(DATABASE_URL);
+    private static final String USER = env("SPRING_DATASOURCE_USERNAME", "postgres");
+    private static final String PASSWORD = env("SPRING_DATASOURCE_PASSWORD", "");
+    private static final String SERVER_URL = serverUrl(DATABASE_URL);
+
     public static void main(String[] args) {
-        String urlBase = "jdbc:postgresql://localhost:5432/";
-        String targetDb = "paypulse_db";
-        String user = "postgres";
-        String password = ""; // here goes your psql pass
-
         try {
-            try (Connection conn = DriverManager.getConnection(urlBase + "postgres", user, password);
-                 Statement stmt = conn.createStatement()) {
-
-                ResultSet rs = stmt.executeQuery("SELECT 1 FROM pg_database WHERE datname = '" + targetDb + "'");
-                if (!rs.next()) {
-                    System.out.println("DB" + targetDb + " doesn't exist, I'm creating it...");
-                    stmt.executeUpdate("CREATE DATABASE " + targetDb);
-                }
-            }
-
-            System.out.println("Connecting to: " + urlBase + targetDb);
-            try (Connection conn = DriverManager.getConnection(urlBase + targetDb, user, password);
-                 Statement stmt = conn.createStatement()) {
-
-                stmt.executeUpdate("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
-
-                InputStream is = RefreshDatabase.class.getClassLoader().getResourceAsStream("db.sql");
-                if (is == null) {
-                    is = RefreshDatabase.class.getClassLoader().getResourceAsStream("db/db.sql");
-                }
-
-                String sql = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-                stmt.execute(sql);
-                System.out.println("DB succesfully refreshed!");
-            }
+            createDatabaseIfMissing();
+            recreatePublicSchema();
+            runMigrations();
+            System.out.println("DB succesfully refreshed!");
 
         } catch (Exception e) {
             System.err.println("Error at refreshing DB:");
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    private static void createDatabaseIfMissing() throws SQLException {
+        try (Connection conn = DriverManager.getConnection(SERVER_URL + "/postgres", USER, PASSWORD);
+             Statement stmt = conn.createStatement()) {
+
+            ResultSet rs = stmt.executeQuery("SELECT 1 FROM pg_database WHERE datname = '" + DATABASE_NAME + "'");
+            if (!rs.next()) {
+                System.out.println("DB " + DATABASE_NAME + " doesn't exist, I'm creating it...");
+                stmt.executeUpdate("CREATE DATABASE " + DATABASE_NAME);
+            }
+        }
+    }
+
+    private static void recreatePublicSchema() throws SQLException {
+        System.out.println("Connecting to: " + DATABASE_URL);
+        try (Connection conn = DriverManager.getConnection(DATABASE_URL, USER, PASSWORD);
+             Statement stmt = conn.createStatement()) {
+
+            stmt.executeUpdate("DROP SCHEMA public CASCADE; CREATE SCHEMA public;");
+        }
+    }
+
+    private static void runMigrations() {
+        Flyway.configure()
+                .dataSource(DATABASE_URL, USER, PASSWORD)
+                .locations("classpath:db/migration")
+                .load()
+                .migrate();
+    }
+
+    private static String serverUrl(String jdbcUrl) {
+        String withoutQuery = withoutQuery(jdbcUrl);
+        int lastSlash = withoutQuery.lastIndexOf('/');
+        return lastSlash > "jdbc:postgresql:".length() ? withoutQuery.substring(0, lastSlash) : withoutQuery;
+    }
+
+    private static String databaseName(String jdbcUrl) {
+        String withoutQuery = withoutQuery(jdbcUrl);
+        int lastSlash = withoutQuery.lastIndexOf('/');
+        return lastSlash >= 0 ? withoutQuery.substring(lastSlash + 1) : withoutQuery;
+    }
+
+    private static String withoutQuery(String jdbcUrl) {
+        int queryStart = jdbcUrl.indexOf('?');
+        return queryStart >= 0 ? jdbcUrl.substring(0, queryStart) : jdbcUrl;
+    }
+
+    private static String env(String name, String fallback) {
+        String value = System.getenv(name);
+        return value == null || value.isBlank() ? fallback : value;
     }
 }

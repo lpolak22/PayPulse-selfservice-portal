@@ -2,6 +2,8 @@ package com.example.paypulse.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -9,12 +11,18 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "app_user")
-public class AppUser {
+public class AppUser implements LoginLockoutState {
+
+    public static final String EMAIL_UNIQUE_INDEX = "ux_app_user_email_lower";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -37,25 +45,134 @@ public class AppUser {
     @Column(length = 16)
     private String phone;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 50)
-    private String role;
+    private UserRole role;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private String status;
+    private UserStatus status;
 
-    @Column(name = "is_active")
-    private Boolean active;
+    @Column(name = "password_hash", length = 60)
+    private String passwordHash;
 
-    @Column(name = "created_at")
+    @Column(name = "failed_login_count")
+    private Short failedLoginCount = 0;
+
+    @Column(name = "locked_until")
+    private LocalDateTime lockedUntil;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active;
+
+    @Column(name = "totp_enabled")
+    private Boolean totpEnabled = false;
+
+    @Column(name = "totp_secret")
+    private String totpSecret;
+
+    @Column(name = "is_first_login")
+    private Boolean isFirstLogin = true;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     protected AppUser() {
+    }
+
+    public static AppUser createPending(Organisation organisation, String firstName, String lastName,
+                                        String email, String phone, UserRole role) {
+        AppUser user = new AppUser();
+        user.organisation = organisation;
+        user.changeFirstName(firstName);
+        user.changeLastName(lastName);
+        user.changeEmail(email);
+        user.changePhone(phone);
+        user.changeRole(role);
+        user.changeStatus(UserStatus.PENDING_ACTIVATION);
+        return user;
+    }
+
+    public void changeFirstName(String firstName) {
+        this.firstName = firstName.strip();
+    }
+
+    public void changeLastName(String lastName) {
+        this.lastName = lastName.strip();
+    }
+
+    public void changeEmail(String email) {
+        this.email = email.strip();
+    }
+
+    public void changePhone(String phone) {
+        this.phone = phone;
+    }
+
+    public void changeRole(UserRole role) {
+        this.role = role;
+    }
+
+    public void changeStatus(UserStatus status) {
+        this.status = status;
+        syncActiveFlag();
+    }
+
+    public void completeActivation(String passwordHash) {
+        this.passwordHash = passwordHash;
+        this.isFirstLogin = false;
+        changeStatus(UserStatus.ACTIVE);
+    }
+
+    public void resetPassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+        resetFailedLogins();
+    }
+
+    public void markActivationResent(LocalDateTime resentAt) {
+        this.updatedAt = resentAt;
+    }
+
+    public void markDeleted(LocalDateTime deletedAt) {
+        this.deletedAt = deletedAt;
+        syncActiveFlag();
+    }
+
+    public void recordFailedLogin() {
+        this.failedLoginCount = (short) (failedLoginCount + 1);
+    }
+
+    public void resetFailedLogins() {
+        this.failedLoginCount = 0;
+        this.lockedUntil = null;
+    }
+
+    public void lockUntil(LocalDateTime lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    public boolean isLockedAt(LocalDateTime now) {
+        return lockedUntil != null && lockedUntil.isAfter(now);
+    }
+
+    public void initializeSeedSecurity(String hashedPassword, boolean firstLogin) {
+        this.passwordHash = hashedPassword;
+        this.isFirstLogin = firstLogin;
+        this.totpEnabled = false;
+        this.failedLoginCount = 0;
+        this.lockedUntil = null;
+    }
+
+    private void syncActiveFlag() {
+        this.active = status == UserStatus.ACTIVE && deletedAt == null;
     }
 
     public Long getIdUser() {
@@ -82,15 +199,19 @@ public class AppUser {
         return phone;
     }
 
-    public String getRole() {
+    public UserRole getRole() {
         return role;
     }
 
-    public String getStatus() {
+    public UserStatus getStatus() {
         return status;
     }
 
-    public Boolean isActive() {
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public boolean isActive() {
         return active;
     }
 
@@ -105,4 +226,45 @@ public class AppUser {
     public LocalDateTime getDeletedAt() {
         return deletedAt;
     }
+
+    public Short getFailedLoginCount() {
+        return failedLoginCount;
+    }
+
+    public void setFailedLoginCount(Short failedLoginCount) {
+        this.failedLoginCount = failedLoginCount;
+    }
+
+    public LocalDateTime getLockedUntil() {
+        return lockedUntil;
+    }
+
+    public void setLockedUntil(LocalDateTime lockedUntil) {
+        this.lockedUntil = lockedUntil;
+    }
+
+    public Boolean getTotpEnabled() {
+        return totpEnabled;
+    }
+
+    public void setTotpEnabled(Boolean totpEnabled) {
+        this.totpEnabled = totpEnabled;
+    }
+
+    public String getTotpSecret() {
+        return totpSecret;
+    }
+
+    public void setTotpSecret(String totpSecret) {
+        this.totpSecret = totpSecret;
+    }
+
+    public Boolean getIsFirstLogin() {
+        return isFirstLogin;
+    }
+
+    public void setIsFirstLogin(Boolean isFirstLogin) {
+        this.isFirstLogin = isFirstLogin;
+    }
 }
+

@@ -1,10 +1,9 @@
 package com.example.paypulse;
 
+import com.example.paypulse.support.ApiIntegrationTest;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class PaypulseApplicationTests {
+class PaypulseApplicationTests extends ApiIntegrationTest {
 
 	@Test
 	void contextLoads() {
