@@ -1,0 +1,72 @@
+<resources>
+    <string name="transactions_title">Transakcije</string>
+    <plurals name="transactions_count">
+        <item quantity="one">%1$s transakcija</item>
+        <item quantity="few">%1$s transakcije</item>
+        <item quantity="other">%1$s transakcija</item>
+    </plurals>
+    <string name="transactions_day_today">Danas</string>
+    <string name="transactions_day_yesterday">Jučer</string>
+    <string name="transactions_card">%1$s •••• %2$s</string>
+    <string name="transactions_terminal">Terminal %1$s</string>
+    <string name="transactions_row_separator">" · "</string>
+    <string name="transactions_description_separator">", "</string>
+    <string name="transactions_status_unknown">Nepoznato</string>
+    <string name="transactions_open_details">Otvori detalje</string>
+
+    <string name="transactions_empty_title">Nema pronađenih transakcija</string>
+    <string name="transactions_empty_body">Promijeni filtre ili ih poništi.</string>
+    <string name="transactions_clear_filters">Poništi filtre</string>
+    <string name="transactions_retry">Pokušaj ponovno</string>
+    <string name="transactions_error_network_title">Nema internetske veze</string>
+    <string name="transactions_error_network_body">Provjeri vezu s internetom i pokušaj ponovno.</string>
+    <string name="transactions_error_unknown_title">Nešto je pošlo po zlu</string>
+    <string name="transactions_error_unknown_body">Pokušaj ponovno za nekoliko trenutaka.</string>
+    <string name="transactions_error_invalid_filter_title">Filtri nisu ispravni</string>
+    <string name="transactions_error_invalid_filter_body">Razdoblje može biti najviše 13 mjeseci. Promijeni filtre ili ih poništi.</string>
+    <string name="transactions_loading_more">Učitavanje još transakcija</string>
+    <string name="transactions_load_more_failed">Sljedeće transakcije se nisu učitale.</string>
+
+    <string name="transactions_search_placeholder">RRN ili autorizacijski kod</string>
+    <string name="transactions_filters">Filtri</string>
+    <string name="transactions_filters_active">Filtri, aktivnih: %1$d</string>
+    <string name="transactions_remove_filter">Ukloni filtar %1$s</string>
+    <string name="transactions_filter_dates">%1$s – %2$s</string>
+    <string name="transactions_filter_auth_code">Autorizacijski kod: %1$s</string>
+    <string name="transactions_filter_rrn">RRN: %1$s</string>
+
+    <string name="transactions_sheet_title">Filtri</string>
+    <string name="transactions_clear_all">Poništi sve</string>
+    <string name="transactions_show_results">Prikaži rezultate</string>
+    <string name="transactions_section_period">Razdoblje</string>
+    <string name="transactions_section_sort">Sortiranje</string>
+    <string name="transactions_section_status">Status</string>
+    <string name="transactions_section_type">Vrsta</string>
+    <string name="transactions_section_brand">Kartica</string>
+    <string name="transactions_section_channel">Prodajni kanal</string>
+    <string name="transactions_auth_code">Autorizacijski kod</string>
+    <string name="transactions_rrn">RRN</string>
+    <string name="transactions_rrn_hint">12 znamenki</string>
+    <string name="transactions_date_from">Od</string>
+    <string name="transactions_date_to">Do</string>
+    <string name="transactions_date_picker_title">Odaberi razdoblje</string>
+    <string name="transactions_date_picker_confirm">U redu</string>
+    <string name="transactions_date_picker_cancel">Odustani</string>
+
+    <string name="transactions_sort_newest">Najnovije prvo</string>
+    <string name="transactions_sort_oldest">Najstarije prvo</string>
+    <string name="transactions_sort_highest_amount">Najveći iznos</string>
+    <string name="transactions_sort_lowest_amount">Najmanji iznos</string>
+
+    <string name="transactions_type_sale">Prodaja</string>
+    <string name="transactions_type_sale_with_installments">Prodaja na rate</string>
+    <string name="transactions_type_refund">Povrat</string>
+    <string name="transactions_type_storno">Storno</string>
+    <string name="transactions_type_technical_reversal">Tehnički storno</string>
+    <string name="transactions_type_other">Ostalo</string>
+
+    <string name="transactions_channel_pos">POS</string>
+    <string name="transactions_channel_ecom">Internet</string>
+    <string name="transactions_channel_moto">MOTO</string>
+    <string name="transactions_channel_contactless">Beskontaktno</string>
+</resources>
