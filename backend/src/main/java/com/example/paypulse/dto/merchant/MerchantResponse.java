@@ -4,6 +4,7 @@ public record MerchantResponse(
         Long id,
         String name,
         String registrationNumber,
-        String status
+        String status,
+        long outletCount
 ) {
 }

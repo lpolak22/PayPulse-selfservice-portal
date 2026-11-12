@@ -8,15 +8,21 @@ import com.example.paypulse.dto.merchant.MerchantResponse;
 import com.example.paypulse.dto.merchant.MerchantSearchCriteria;
 import com.example.paypulse.exception.FieldValidationException;
 import com.example.paypulse.mapper.MerchantMapper;
+import com.example.paypulse.model.Merchant;
 import com.example.paypulse.repository.MerchantRepository;
 import com.example.paypulse.repository.MerchantSpecifications;
+import com.example.paypulse.repository.OutletCount;
+import com.example.paypulse.repository.OutletRepository;
 import com.example.paypulse.security.CurrentOrganisationScope;
 import com.example.paypulse.service.MerchantService;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class MerchantServiceImpl implements MerchantService {
@@ -24,13 +30,16 @@ public class MerchantServiceImpl implements MerchantService {
     private static final Sort DEFAULT_SORT = Sort.by("name", "idMerchant");
 
     private final MerchantRepository merchantRepository;
+    private final OutletRepository outletRepository;
     private final MerchantMapper merchantMapper;
     private final CurrentOrganisationScope organisationScope;
 
     public MerchantServiceImpl(MerchantRepository merchantRepository,
+                               OutletRepository outletRepository,
                                MerchantMapper merchantMapper,
                                CurrentOrganisationScope organisationScope) {
         this.merchantRepository = merchantRepository;
+        this.outletRepository = outletRepository;
         this.merchantMapper = merchantMapper;
         this.organisationScope = organisationScope;
     }
@@ -39,10 +48,21 @@ public class MerchantServiceImpl implements MerchantService {
     @Transactional(readOnly = true)
     public PageResponse<MerchantResponse> getMerchants(MerchantSearchCriteria criteria, PageQuery pageQuery) {
         validateOib(criteria);
-        return PageResponse.from(
-                merchantRepository.findAll(MerchantSpecifications.matching(organisationScope.merchants(), criteria),
-                        pageQuery.toPageable(DEFAULT_SORT)),
-                merchantMapper::toResponse);
+        Page<Merchant> merchants = merchantRepository.findAll(
+                MerchantSpecifications.matching(organisationScope.merchants(), criteria),
+                pageQuery.toPageable(DEFAULT_SORT));
+        Map<Long, Long> outletCounts = outletCounts(merchants);
+        return PageResponse.from(merchants, merchant ->
+                merchantMapper.toResponse(merchant, outletCounts.getOrDefault(merchant.getIdMerchant(), 0L)));
+    }
+
+    private Map<Long, Long> outletCounts(Page<Merchant> merchants) {
+        if (merchants.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> merchantIds = merchants.map(Merchant::getIdMerchant).getContent();
+        return outletRepository.countByMerchantIds(merchantIds).stream()
+                .collect(Collectors.toMap(OutletCount::merchantId, OutletCount::count));
     }
 
     private static void validateOib(MerchantSearchCriteria criteria) {
