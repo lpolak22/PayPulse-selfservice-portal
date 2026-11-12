@@ -6,6 +6,7 @@ import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
 import com.example.paypulse.dto.merchant.MerchantResponse;
 import com.example.paypulse.dto.merchant.MerchantSearchCriteria;
+import com.example.paypulse.dto.merchant.MerchantSort;
 import com.example.paypulse.exception.FieldValidationException;
 import com.example.paypulse.mapper.MerchantMapper;
 import com.example.paypulse.model.Merchant;
@@ -16,7 +17,6 @@ import com.example.paypulse.repository.OutletRepository;
 import com.example.paypulse.security.CurrentOrganisationScope;
 import com.example.paypulse.service.MerchantService;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,8 +26,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class MerchantServiceImpl implements MerchantService {
-
-    private static final Sort DEFAULT_SORT = Sort.by("name", "idMerchant");
 
     private final MerchantRepository merchantRepository;
     private final OutletRepository outletRepository;
@@ -46,11 +44,12 @@ public class MerchantServiceImpl implements MerchantService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<MerchantResponse> getMerchants(MerchantSearchCriteria criteria, PageQuery pageQuery) {
+    public PageResponse<MerchantResponse> getMerchants(MerchantSearchCriteria criteria, MerchantSort sort,
+                                                       PageQuery pageQuery) {
         validateOib(criteria);
         Page<Merchant> merchants = merchantRepository.findAll(
                 MerchantSpecifications.matching(organisationScope.merchants(), criteria),
-                pageQuery.toPageable(DEFAULT_SORT));
+                pageQuery.toPageable(sort.toSort()));
         Map<Long, Long> outletCounts = outletCounts(merchants);
         return PageResponse.from(merchants, merchant ->
                 merchantMapper.toResponse(merchant, outletCounts.getOrDefault(merchant.getIdMerchant(), 0L)));

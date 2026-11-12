@@ -6,6 +6,7 @@ import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
 import com.example.paypulse.dto.merchant.MerchantResponse;
 import com.example.paypulse.dto.merchant.MerchantSearchCriteria;
+import com.example.paypulse.dto.merchant.MerchantSort;
 import com.example.paypulse.service.MerchantService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -35,9 +36,11 @@ public class MerchantController {
     }
 
     @GetMapping
-    @Operation(summary = "List merchants", description = "Only merchants of the user's organisation. Sorted by name.")
+    @Operation(summary = "List merchants",
+            description = "Only merchants of the user's organisation. Sorted by name unless sort is given.")
     @ApiResponse(responseCode = "200", description = "One page of merchants")
-    @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR: oib is not 11 digits",
+    @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR: oib is not 11 digits; "
+            + "BAD_REQUEST: the sort or direction value is unknown",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public PageResponse<MerchantResponse> getMerchants(
             @Parameter(description = "Case-insensitive match on name, or exact match on ID or OIB")
@@ -46,7 +49,12 @@ public class MerchantController {
             @RequestParam(required = false) String oib,
             @Parameter(description = "Case-insensitive status, e.g. ACTIVE")
             @RequestParam(required = false) String status,
+            @Parameter(schema = @Schema(allowableValues = {"name", "oib", "status"}))
+            @RequestParam(defaultValue = "name") String sort,
+            @Parameter(schema = @Schema(allowableValues = {"asc", "desc"}))
+            @RequestParam(defaultValue = "asc") String direction,
             @ParameterObject PageQuery pageQuery) {
-        return merchantService.getMerchants(new MerchantSearchCriteria(search, oib, status), pageQuery);
+        return merchantService.getMerchants(new MerchantSearchCriteria(search, oib, status),
+                MerchantSort.of(sort, direction), pageQuery);
     }
 }
