@@ -10,7 +10,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +22,8 @@ import java.util.Random;
 public class TransactionFactory {
 
     public static final String SOURCE_ID_PREFIX = "SEED-TXN-";
+
+    private static final ZoneId ZAGREB = ZoneId.of("Europe/Zagreb");
 
     private static final String[] CARD_BRANDS = {"VISA", "MASTERCARD", "AMEX", "DINERS", "MAESTRO"};
     private static final String[] STATUSES = {"APPROVED", "DECLINED", "REFUNDED", "CANCELLED"};
@@ -44,7 +46,7 @@ public class TransactionFactory {
         String channel = SALES_CHANNELS[random.nextInt(SALES_CHANNELS.length)];
 
         Map<String, Object> rawData = new HashMap<>();
-        rawData.put("transaction_at", transactionTime.atOffset(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        rawData.put("transaction_at", transactionTime.atZone(ZAGREB).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
         rawData.put("type", type);
         rawData.put("card_brand", brand);
         rawData.put("sales_channel", channel);

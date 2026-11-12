@@ -7,6 +7,7 @@ import com.example.paypulse.dto.common.PageResponse;
 import com.example.paypulse.dto.merchant.MerchantResponse;
 import com.example.paypulse.dto.merchant.MerchantSearchCriteria;
 import com.example.paypulse.dto.merchant.MerchantSort;
+import com.example.paypulse.dto.merchant.MerchantStatus;
 import com.example.paypulse.exception.FieldValidationException;
 import com.example.paypulse.mapper.MerchantMapper;
 import com.example.paypulse.model.Merchant;
@@ -20,6 +21,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -46,7 +48,7 @@ public class MerchantServiceImpl implements MerchantService {
     @Transactional(readOnly = true)
     public PageResponse<MerchantResponse> getMerchants(MerchantSearchCriteria criteria, MerchantSort sort,
                                                        PageQuery pageQuery) {
-        validateOib(criteria);
+        validateCriteria(criteria);
         Page<Merchant> merchants = merchantRepository.findAll(
                 MerchantSpecifications.matching(organisationScope.merchants(), criteria),
                 pageQuery.toPageable(sort.toSort()));
@@ -64,10 +66,16 @@ public class MerchantServiceImpl implements MerchantService {
                 .collect(Collectors.toMap(OutletCount::merchantId, OutletCount::count));
     }
 
-    private static void validateOib(MerchantSearchCriteria criteria) {
+    private static void validateCriteria(MerchantSearchCriteria criteria) {
+        List<ErrorResponse.FieldError> errors = new ArrayList<>();
         if (criteria.hasOib() && !criteria.oib().strip().matches(ValidationPatterns.OIB)) {
-            throw new FieldValidationException(
-                    List.of(new ErrorResponse.FieldError("oib", ValidationPatterns.OIB_MESSAGE)));
+            errors.add(new ErrorResponse.FieldError("oib", ValidationPatterns.OIB_MESSAGE));
+        }
+        if (criteria.hasStatus() && !MerchantStatus.isValid(criteria.status().strip())) {
+            errors.add(new ErrorResponse.FieldError("status", MerchantStatus.MESSAGE));
+        }
+        if (!errors.isEmpty()) {
+            throw new FieldValidationException(errors);
         }
     }
 }
