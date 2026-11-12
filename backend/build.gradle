@@ -99,6 +99,15 @@ tasks.register('seed', org.springframework.boot.gradle.tasks.run.BootRun) {
 	environment loadDotEnv()
 }
 
+tasks.register('sevenPayImport', org.springframework.boot.gradle.tasks.run.BootRun) {
+	group = 'database'
+	description = 'Import merchants from the 7Pay API into the 7Pay organisation'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.example.paypulse.PaypulseApplication'
+	systemProperty 'spring.profiles.active', 'sevenpay-import'
+	environment loadDotEnv()
+}
+
 tasks.withType(org.springframework.boot.gradle.tasks.run.BootRun).configureEach {
 	environment loadDotEnv()
 }

@@ -9,7 +9,7 @@ import jakarta.persistence.Table;
 @Table(name = "mcc_code")
 public class MccCode {
     @Id
-    @Column(name = "mcc_code", length = 4, columnDefinition = "VARCHAR(4)")
+    @Column(name = "mcc_code", length = 9, columnDefinition = "VARCHAR(9)")
     private String mccCode;
 
     @Column(nullable = false, length = 255)

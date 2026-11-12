@@ -27,6 +27,7 @@ import java.util.List;
 @Profile("seed")
 public class SeedOrchestrator {
     private static final Logger log = LoggerFactory.getLogger(SeedOrchestrator.class);
+    private static final String SEVEN_PAY_ORGANISATION = "7 PAYMENTS d.o.o.";
 
     private final OrganisationSeedService organisationSeedService;
     private final UserSeedService userSeedService;
@@ -63,6 +64,7 @@ public class SeedOrchestrator {
 
         userSeedService.createUsersForOrganisation(org1);
         userSeedService.createUsersForOrganisation(org2);
+        createSevenPayOrganisation();
 
         Acquirer acq1 = acquirerSeedService.createAcquirer("ACQ001", "First Croatian Acquirer d.o.o.");
         Acquirer acq2 = acquirerSeedService.createAcquirer("ACQ002", "Adriatic Payment Services d.o.o.");
@@ -87,5 +89,10 @@ public class SeedOrchestrator {
         transactionGenerator.generateTransactions(terminals, acquirers);
 
         log.info("Seed completed successfully");
+    }
+
+    private void createSevenPayOrganisation() {
+        Organisation organisation = organisationSeedService.createOrganisation(SEVEN_PAY_ORGANISATION);
+        userSeedService.createUsersForOrganisation(organisation);
     }
 }
