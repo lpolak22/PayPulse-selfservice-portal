@@ -23,3 +23,6 @@ local.properties
 !.env.template
 !.env.defaults
 !.env.dist
+
+backend/load-test/results/*
+!backend/load-test/results/.gitkeep
