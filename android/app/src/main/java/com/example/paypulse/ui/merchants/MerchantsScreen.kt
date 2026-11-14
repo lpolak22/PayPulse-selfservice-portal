@@ -14,13 +14,15 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.pluralStringResource
+
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -30,10 +32,12 @@ import com.example.paypulse.R
 import com.example.paypulse.domain.merchant.MerchantError
 import com.example.paypulse.domain.merchant.MerchantStatus
 import com.example.paypulse.ui.components.CroatianFormat
+import com.example.paypulse.ui.components.croatianPluralStringResource
 import com.example.paypulse.ui.components.PayPulseTopBar
 import com.example.paypulse.ui.components.SearchField
 import com.example.paypulse.ui.components.StatusMessage
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MerchantsScreen(
     state: MerchantsUiState,
@@ -45,13 +49,17 @@ fun MerchantsScreen(
         topBar = { PayPulseTopBar(onMenuClick = { onEvent(MerchantsEvent.MenuClicked) }) },
         contentWindowInsets = WindowInsets.safeDrawing
     ) { padding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = state.isRefreshing,
+            onRefresh = { onEvent(MerchantsEvent.Refresh) },
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            MerchantsHeader(state = state, onEvent = onEvent)
-            MerchantsBody(state = state, onEvent = onEvent, modifier = Modifier.weight(1f))
+            Column(modifier = Modifier.fillMaxSize()) {
+                MerchantsHeader(state = state, onEvent = onEvent)
+                MerchantsBody(state = state, onEvent = onEvent, modifier = Modifier.weight(1f))
+            }
         }
     }
 }
@@ -61,6 +69,7 @@ private fun MerchantsHeader(state: MerchantsUiState, onEvent: (MerchantsEvent) -
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
             .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -110,7 +119,7 @@ private fun StatusFilterRow(selected: MerchantStatus?, onSelect: (MerchantStatus
 private fun ResultCount(total: Long) {
     val count = total.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
     Text(
-        text = pluralStringResource(R.plurals.merchants_count, count, CroatianFormat.count(count)),
+        text = croatianPluralStringResource(R.plurals.merchants_count, count, CroatianFormat.count(count)),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = 16.dp)

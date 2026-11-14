@@ -15,8 +15,10 @@ fun PageResponseDto<MerchantDto>.toMerchantPage(): MerchantPage = MerchantPage(
 
 fun MerchantDto.toMerchant(): Merchant = Merchant(
     id = id,
+    merchantId = merchantId?.takeIf { it.isNotBlank() },
     name = name,
     oib = registrationNumber,
     status = MerchantStatus.entries.firstOrNull { it.name.equals(status, ignoreCase = true) },
-    outletCount = outletCount
+    outletCount = outletCount,
+    terminalCount = terminalCount
 )

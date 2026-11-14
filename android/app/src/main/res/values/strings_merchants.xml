@@ -18,12 +18,19 @@
     <string name="merchants_status_unknown">Nepoznato</string>
 
     <string name="merchants_id_label">ID trgovca</string>
+    <string name="merchants_id_missing">—</string>
     <string name="merchants_oib_label">OIB</string>
     <plurals name="merchants_outlet_count">
         <item quantity="one">%1$s prodajno mjesto</item>
         <item quantity="few">%1$s prodajna mjesta</item>
         <item quantity="other">%1$s prodajnih mjesta</item>
     </plurals>
+    <plurals name="merchants_terminal_count">
+        <item quantity="one">%1$s terminal</item>
+        <item quantity="few">%1$s terminala</item>
+        <item quantity="other">%1$s terminala</item>
+    </plurals>
+    <string name="merchants_outlets_and_terminals">%1$s · %2$s</string>
 
     <string name="merchants_empty_title">Nema pronađenih trgovaca</string>
     <string name="merchants_empty_body">Promijeni pretragu ili poništi filtre.</string>

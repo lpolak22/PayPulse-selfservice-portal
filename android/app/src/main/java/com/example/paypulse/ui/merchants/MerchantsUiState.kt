@@ -7,7 +7,8 @@ import com.example.paypulse.domain.merchant.MerchantStatus
 data class MerchantsUiState(
     val searchText: String = "",
     val status: MerchantStatus? = null,
-    val content: MerchantsContent = MerchantsContent.Loading
+    val content: MerchantsContent = MerchantsContent.Loading,
+    val isRefreshing: Boolean = false
 ) {
     val hasFilters: Boolean
         get() = searchText.isNotBlank() || status != null

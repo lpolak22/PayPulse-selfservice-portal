@@ -55,6 +55,7 @@ class MerchantsViewModel(
             is MerchantsEvent.StatusSelected -> applyFilters(_uiState.value.searchText, event.status)
             MerchantsEvent.ClearFilters -> applyFilters(searchText = "", status = null)
             MerchantsEvent.Retry -> retry()
+            MerchantsEvent.Refresh -> refresh()
             MerchantsEvent.LoadMore -> loadMore()
             MerchantsEvent.MenuClicked, is MerchantsEvent.MerchantClicked -> Unit
         }
@@ -84,9 +85,16 @@ class MerchantsViewModel(
         else reload()
     }
 
+    private fun refresh() {
+        searchJob?.cancel()
+        _uiState.update { it.copy(isRefreshing = true) }
+        loadPage(0)
+    }
+
     private fun loadMore() {
-        val content = _uiState.value.content as? MerchantsContent.Loaded ?: return
-        if (content.paging == MerchantsPaging.IDLE) loadNextPage(content)
+        val state = _uiState.value
+        val content = state.content as? MerchantsContent.Loaded ?: return
+        if (content.paging == MerchantsPaging.IDLE && !state.isRefreshing) loadNextPage(content)
     }
 
     private fun loadNextPage(content: MerchantsContent.Loaded) {
@@ -114,23 +122,23 @@ class MerchantsViewModel(
     }
 
     private fun onPageLoaded(page: MerchantPage) {
-        merchants = (merchants + page.items).distinctBy { it.id }
+        merchants = if (page.page == 0) page.items else (merchants + page.items).distinctBy { it.id }
         nextPage = page.page + 1
         val content = if (merchants.isEmpty()) MerchantsContent.Empty else MerchantsContent.Loaded(
             merchants = merchants,
             total = page.total,
             paging = if (page.hasMore) MerchantsPaging.IDLE else MerchantsPaging.END
         )
-        _uiState.update { it.copy(content = content) }
+        _uiState.update { it.copy(content = content, isRefreshing = false) }
     }
 
     private fun onPageFailed(page: Int, error: MerchantError) {
         _uiState.update { state ->
             val content = state.content
             if (page > 0 && content is MerchantsContent.Loaded) {
-                state.copy(content = content.copy(paging = MerchantsPaging.APPEND_ERROR))
+                state.copy(content = content.copy(paging = MerchantsPaging.APPEND_ERROR), isRefreshing = false)
             } else {
-                state.copy(content = MerchantsContent.Error(error))
+                state.copy(content = MerchantsContent.Error(error), isRefreshing = false)
             }
         }
     }

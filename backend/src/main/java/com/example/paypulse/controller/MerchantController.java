@@ -43,7 +43,7 @@ public class MerchantController {
             + "BAD_REQUEST: the sort or direction value is unknown",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public PageResponse<MerchantResponse> getMerchants(
-            @Parameter(description = "Case-insensitive match on name, OIB starting with the given digits, or exact ID")
+            @Parameter(description = "Case-insensitive match on name, 7Pay merchant ID starting with the given text, or OIB starting with the given digits")
             @RequestParam(required = false) String search,
             @Parameter(description = "Exact OIB, 11 digits")
             @RequestParam(required = false) String oib,

@@ -16,7 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.pluralStringResource
+
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -25,6 +25,7 @@ import com.example.paypulse.R
 import com.example.paypulse.domain.merchant.Merchant
 import com.example.paypulse.domain.merchant.MerchantStatus
 import com.example.paypulse.ui.components.CroatianFormat
+import com.example.paypulse.ui.components.croatianPluralStringResource
 
 @Composable
 fun MerchantCard(merchant: Merchant, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -35,9 +36,9 @@ fun MerchantCard(merchant: Merchant, onClick: () -> Unit, modifier: Modifier = M
     ) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             NameAndStatus(name = merchant.name, status = merchant.status)
-            IdAndOib(id = merchant.id, oib = merchant.oib)
+            IdAndOib(merchantId = merchant.merchantId, oib = merchant.oib)
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            OutletCount(count = merchant.outletCount)
+            OutletsAndTerminals(outletCount = merchant.outletCount, terminalCount = merchant.terminalCount)
         }
     }
 }
@@ -70,9 +71,13 @@ fun StatusBadge(status: MerchantStatus?, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun IdAndOib(id: Long, oib: String) {
+private fun IdAndOib(merchantId: String?, oib: String) {
     Row(modifier = Modifier.fillMaxWidth()) {
-        LabeledValue(label = stringResource(R.string.merchants_id_label), value = id.toString(), modifier = Modifier.weight(1f))
+        LabeledValue(
+            label = stringResource(R.string.merchants_id_label),
+            value = merchantId ?: stringResource(R.string.merchants_id_missing),
+            modifier = Modifier.weight(1f)
+        )
         LabeledValue(label = stringResource(R.string.merchants_oib_label), value = oib, modifier = Modifier.weight(1f))
     }
 }
@@ -90,11 +95,14 @@ private fun LabeledValue(label: String, value: String, modifier: Modifier = Modi
 }
 
 @Composable
-private fun OutletCount(count: Long) {
-    val quantity = count.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+private fun OutletsAndTerminals(outletCount: Long, terminalCount: Long) {
+    val outlets = outletCount.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    val terminals = terminalCount.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    val outletText = croatianPluralStringResource(R.plurals.merchants_outlet_count, outlets, CroatianFormat.count(outlets))
+    val terminalText = croatianPluralStringResource(R.plurals.merchants_terminal_count, terminals, CroatianFormat.count(terminals))
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
-            text = pluralStringResource(R.plurals.merchants_outlet_count, quantity, CroatianFormat.count(quantity)),
+            text = stringResource(R.string.merchants_outlets_and_terminals, outletText, terminalText),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f)

@@ -10,5 +10,6 @@ sealed interface MerchantsEvent {
     data class StatusSelected(val status: MerchantStatus?) : MerchantsEvent
     data object ClearFilters : MerchantsEvent
     data object Retry : MerchantsEvent
+    data object Refresh : MerchantsEvent
     data object LoadMore : MerchantsEvent
 }
