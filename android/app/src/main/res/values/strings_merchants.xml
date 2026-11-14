@@ -1,0 +1,41 @@
+<resources>
+    <string name="merchants_title">Trgovci</string>
+    <string name="merchants_search_placeholder">Naziv, ID ili OIB</string>
+    <plurals name="merchants_count">
+        <item quantity="one">%1$s trgovac</item>
+        <item quantity="few">%1$s trgovca</item>
+        <item quantity="other">%1$s trgovaca</item>
+    </plurals>
+
+    <string name="merchants_filter_all">Svi</string>
+    <string name="merchants_filter_active">Aktivni</string>
+    <string name="merchants_filter_deactivated">Deaktivirani</string>
+    <string name="merchants_filter_hold">Na čekanju</string>
+
+    <string name="merchants_status_active">Aktivan</string>
+    <string name="merchants_status_deactivated">Deaktiviran</string>
+    <string name="merchants_status_hold">Na čekanju</string>
+    <string name="merchants_status_unknown">Nepoznato</string>
+
+    <string name="merchants_id_label">ID trgovca</string>
+    <string name="merchants_oib_label">OIB</string>
+    <plurals name="merchants_outlet_count">
+        <item quantity="one">%1$s prodajno mjesto</item>
+        <item quantity="few">%1$s prodajna mjesta</item>
+        <item quantity="other">%1$s prodajnih mjesta</item>
+    </plurals>
+
+    <string name="merchants_empty_title">Nema pronađenih trgovaca</string>
+    <string name="merchants_empty_body">Promijeni pretragu ili poništi filtre.</string>
+    <string name="merchants_empty_no_filters_body">Tvoja organizacija još nema trgovaca.</string>
+    <string name="merchants_clear_filters">Poništi filtre</string>
+    <string name="merchants_retry">Pokušaj ponovno</string>
+    <string name="merchants_error_network_title">Nema internetske veze</string>
+    <string name="merchants_error_network_body">Provjeri vezu s internetom i pokušaj ponovno.</string>
+    <string name="merchants_error_unknown_title">Nešto je pošlo po zlu</string>
+    <string name="merchants_error_unknown_body">Pokušaj ponovno za nekoliko trenutaka.</string>
+    <string name="merchants_error_invalid_filter_title">Pretraga nije ispravna</string>
+    <string name="merchants_error_invalid_filter_body">Promijeni pretragu ili poništi filtre.</string>
+    <string name="merchants_loading_more">Učitavanje još trgovaca</string>
+    <string name="merchants_load_more_failed">Sljedeći trgovci se nisu učitali.</string>
+</resources>
