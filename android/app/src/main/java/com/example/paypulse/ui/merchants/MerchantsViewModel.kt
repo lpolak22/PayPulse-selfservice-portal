@@ -1,6 +1,8 @@
 package com.example.paypulse.ui.merchants
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -21,10 +23,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 private const val SEARCH_DEBOUNCE_MILLIS = 300L
+private const val SEARCH_KEY = "merchants_search"
+private const val STATUS_KEY = "merchants_status"
 
-class MerchantsViewModel(private val repository: MerchantRepository) : ViewModel() {
+class MerchantsViewModel(
+    private val repository: MerchantRepository,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(MerchantsUiState())
+    private val _uiState = MutableStateFlow(
+        MerchantsUiState(
+            searchText = savedStateHandle[SEARCH_KEY] ?: "",
+            status = savedStateHandle.get<String>(STATUS_KEY)?.let { name -> MerchantStatus.entries.find { it.name == name } }
+        )
+    )
     val uiState: StateFlow<MerchantsUiState> = _uiState.asStateFlow()
 
     private var merchants: List<Merchant> = emptyList()
@@ -50,6 +62,7 @@ class MerchantsViewModel(private val repository: MerchantRepository) : ViewModel
 
     private fun onSearchChanged(text: String) {
         _uiState.update { it.copy(searchText = text) }
+        savedStateHandle[SEARCH_KEY] = text
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(SEARCH_DEBOUNCE_MILLIS)
@@ -60,6 +73,8 @@ class MerchantsViewModel(private val repository: MerchantRepository) : ViewModel
     private fun applyFilters(searchText: String, status: MerchantStatus?) {
         searchJob?.cancel()
         _uiState.update { it.copy(searchText = searchText, status = status) }
+        savedStateHandle[SEARCH_KEY] = searchText
+        savedStateHandle[STATUS_KEY] = status?.name
         reload()
     }
 
@@ -122,7 +137,7 @@ class MerchantsViewModel(private val repository: MerchantRepository) : ViewModel
 
     companion object {
         val Factory = viewModelFactory {
-            initializer { MerchantsViewModel(AppContainer.merchantRepository) }
+            initializer { MerchantsViewModel(AppContainer.merchantRepository, createSavedStateHandle()) }
         }
     }
 }

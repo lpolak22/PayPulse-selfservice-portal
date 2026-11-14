@@ -13,6 +13,7 @@ public final class MerchantSpecifications {
 
     private static final char LIKE_ESCAPE = '\\';
     private static final String ID = "^\\d{1,18}$";
+    private static final String DIGITS = "^\\d+$";
 
     private MerchantSpecifications() {
     }
@@ -46,7 +47,9 @@ public final class MerchantSpecifications {
         return (root, query, builder) -> {
             List<Predicate> predicates = new ArrayList<>();
             predicates.add(builder.like(builder.lower(root.get("name")), pattern, LIKE_ESCAPE));
-            predicates.add(builder.equal(root.get("registrationNumber"), search));
+            if (search.matches(DIGITS)) {
+                predicates.add(builder.like(root.get("registrationNumber"), search + "%"));
+            }
             if (search.matches(ID)) {
                 predicates.add(builder.equal(root.get("idMerchant"), Long.parseLong(search)));
             }
