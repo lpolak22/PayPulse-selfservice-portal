@@ -25,7 +25,6 @@ import com.example.paypulse.R
 import com.example.paypulse.domain.merchant.Merchant
 import com.example.paypulse.domain.merchant.MerchantStatus
 import com.example.paypulse.ui.components.CroatianFormat
-import com.example.paypulse.ui.components.croatianPluralStringResource
 
 @Composable
 fun MerchantCard(merchant: Merchant, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -96,10 +95,8 @@ private fun LabeledValue(label: String, value: String, modifier: Modifier = Modi
 
 @Composable
 private fun OutletsAndTerminals(outletCount: Long, terminalCount: Long) {
-    val outlets = outletCount.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-    val terminals = terminalCount.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-    val outletText = croatianPluralStringResource(R.plurals.merchants_outlet_count, outlets, CroatianFormat.count(outlets))
-    val terminalText = croatianPluralStringResource(R.plurals.merchants_terminal_count, terminals, CroatianFormat.count(terminals))
+    val outletText = CroatianFormat.count(outletCount.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+    val terminalText = CroatianFormat.count(terminalCount.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = stringResource(R.string.merchants_outlets_and_terminals, outletText, terminalText),
