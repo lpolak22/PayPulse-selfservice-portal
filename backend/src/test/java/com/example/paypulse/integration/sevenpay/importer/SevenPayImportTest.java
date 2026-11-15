@@ -124,7 +124,7 @@ class SevenPayImportTest extends ApiIntegrationTest {
         ImportResult result = importTerminals();
 
         assertThat(result.created()).isEqualTo(2);
-        assertThat(result.skipped()).isEqualTo(3);
+        assertThat(result.skipped()).isZero();
         assertThat(importedTerminalIds()).containsExactlyInAnyOrder(v1, v2);
     }
 
@@ -149,6 +149,7 @@ class SevenPayImportTest extends ApiIntegrationTest {
     void previouslyImportedTerminalsOfOtherTypesAreRemoved() {
         importMerchantsAndOutlets();
         String oldSaturn = insertTerminal("SATURN 1000 Countertop ECR F3");
+        returnFromSevenPay(oldSaturn, "SATURN 1000 Countertop ECR F3");
         String softPos = addTerminal("SoftPOS V2", "5411");
 
         importTerminals();
@@ -160,6 +161,7 @@ class SevenPayImportTest extends ApiIntegrationTest {
     void terminalOfAnotherTypeIsKeptWhenItHasTransactions() {
         importMerchantsAndOutlets();
         String saturn = insertTerminal("SATURN 1000 Mobile");
+        returnFromSevenPay(saturn, "SATURN 1000 Mobile");
         TransactionFixtures transactions = new TransactionFixtures(jdbc);
         long terminalId = count("select id_terminal from terminal where terminal_id = ?", saturn);
         transactions.add(TestTransaction.approvedEurSale(terminalId, transactions.acquirer(), Instant.now(), "10.00"));
@@ -167,6 +169,18 @@ class SevenPayImportTest extends ApiIntegrationTest {
         importTerminals();
 
         assertThat(importedTerminalIds()).contains(saturn);
+    }
+
+    @Test
+    void terminalThatSevenPayDoesNotReturnIsKeptWhateverItsType() {
+        importMerchantsAndOutlets();
+        String addedByHand = insertTerminal("POS");
+        addTerminal("SoftPOS V1", "5411");
+        addTerminal("SATURN 1000 Mobile", "5411");
+
+        importTerminals();
+
+        assertThat(importedTerminalIds()).contains(addedByHand);
     }
 
     @Test
@@ -228,6 +242,10 @@ class SevenPayImportTest extends ApiIntegrationTest {
         String tid = unique("T");
         client.terminals.add(new SevenPayTerminal(tid, type, "ACTIVE", outletMid, mcc, "EUR", List.of()));
         return tid;
+    }
+
+    private void returnFromSevenPay(String tid, String type) {
+        client.terminals.add(new SevenPayTerminal(tid, type, "ACTIVE", outletMid, "5411", "EUR", List.of()));
     }
 
     private String insertTerminal(String type) {

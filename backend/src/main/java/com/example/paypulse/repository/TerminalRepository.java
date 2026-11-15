@@ -31,8 +31,9 @@ public interface TerminalRepository extends JpaRepository<Terminal, Long>, JpaSp
             where t.id_outlet = o.id_outlet
               and o.id_merchant = m.id_merchant
               and m.id_organisation = :organisationId
-              and lower(replace(t.type, ' ', '')) not in (:types)
+              and t.source_id in (:sourceIds)
               and not exists (select 1 from transaction x where x.id_terminal = t.id_terminal)
             """, nativeQuery = true)
-    int deleteTypesOtherThan(@Param("organisationId") Long organisationId, @Param("types") Collection<String> types);
+    int deleteWithoutTransactions(@Param("organisationId") Long organisationId,
+                                  @Param("sourceIds") Collection<String> sourceIds);
 }

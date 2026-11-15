@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -58,23 +59,21 @@ public class SevenPayTerminalImporter {
                 .collect(Collectors.toMap(Terminal::getSourceId, Function.identity()));
         Map<String, MccCode> mccCodes = new HashMap<>();
         Map<Outcome, Integer> counts = new EnumMap<>(Outcome.class);
+        Set<String> ignoredTids = new HashSet<>();
         for (SevenPayTerminal source : SevenPayPages.fetchAll(sevenPayClient::getTerminals)) {
-            counts.merge(importTerminal(source, outletsByMid, terminalsByTid, mccCodes), 1, Integer::sum);
+            if (isSoftPos(source.terminalType())) {
+                counts.merge(importTerminal(source, outletsByMid, terminalsByTid, mccCodes), 1, Integer::sum);
+            } else {
+                ignoredTids.add(source.tid());
+            }
         }
-        int removed = terminalRepository.deleteTypesOtherThan(organisationId, SOFTPOS_TYPES);
-        if (removed > 0) {
-            log.info("Removed {} imported terminals that are not SoftPOS V1 or V2", removed);
-        }
+        removeIgnoredTerminals(organisationId, ignoredTids);
         return new ImportResult("terminals", counts.getOrDefault(Outcome.CREATED, 0),
                 counts.getOrDefault(Outcome.UPDATED, 0), counts.getOrDefault(Outcome.SKIPPED, 0));
     }
 
     private Outcome importTerminal(SevenPayTerminal source, Map<String, Outlet> outletsByMid,
                                    Map<String, Terminal> terminalsByTid, Map<String, MccCode> mccCodes) {
-        if (!isSoftPos(source.terminalType())) {
-            log.debug("Skipping terminal {}: type {} is not SoftPOS V1 or V2", source.tid(), source.terminalType());
-            return Outcome.SKIPPED;
-        }
         Outlet outlet = outletsByMid.get(source.midReference());
         if (outlet == null) {
             log.warn("Skipping terminal {}: outlet {} is not imported", source.tid(), source.midReference());
@@ -90,6 +89,15 @@ public class SevenPayTerminalImporter {
         apply(terminal, outlet, mccCodes.computeIfAbsent(source.merchantCategoryCode(), this::findOrCreateMcc), source);
         terminalRepository.save(terminal);
         return existing == null ? Outcome.CREATED : Outcome.UPDATED;
+    }
+
+    private void removeIgnoredTerminals(Long organisationId, Set<String> ignoredTids) {
+        if (ignoredTids.isEmpty()) {
+            return;
+        }
+        int removed = terminalRepository.deleteWithoutTransactions(organisationId, ignoredTids);
+        log.info("Ignored {} 7Pay terminals that are not SoftPOS V1 or V2, removed {} earlier imported ones",
+                ignoredTids.size(), removed);
     }
 
     static boolean isSoftPos(String terminalType) {
