@@ -3,6 +3,7 @@ package com.example.paypulse.repository;
 import com.example.paypulse.model.Terminal;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -22,4 +23,16 @@ public interface TerminalRepository extends JpaRepository<Terminal, Long>, JpaSp
     @Query("SELECT new com.example.paypulse.repository.TerminalCount(t.outlet.merchant.idMerchant, COUNT(t)) "
             + "FROM Terminal t WHERE t.outlet.merchant.idMerchant IN :merchantIds GROUP BY t.outlet.merchant.idMerchant")
     List<TerminalCount> countByMerchantIds(@Param("merchantIds") Collection<Long> merchantIds);
+
+    @Modifying(flushAutomatically = true)
+    @Query(value = """
+            delete from terminal t
+            using outlet o, merchant m
+            where t.id_outlet = o.id_outlet
+              and o.id_merchant = m.id_merchant
+              and m.id_organisation = :organisationId
+              and lower(replace(t.type, ' ', '')) not in (:types)
+              and not exists (select 1 from transaction x where x.id_terminal = t.id_terminal)
+            """, nativeQuery = true)
+    int deleteTypesOtherThan(@Param("organisationId") Long organisationId, @Param("types") Collection<String> types);
 }
