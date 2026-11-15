@@ -1,0 +1,151 @@
+package com.example.paypulse.ui.merchants
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.example.paypulse.data.AppContainer
+import com.example.paypulse.domain.merchant.Merchant
+import com.example.paypulse.domain.merchant.MerchantError
+import com.example.paypulse.domain.merchant.MerchantPage
+import com.example.paypulse.domain.merchant.MerchantQuery
+import com.example.paypulse.domain.merchant.MerchantRepository
+import com.example.paypulse.domain.merchant.MerchantResult
+import com.example.paypulse.domain.merchant.MerchantStatus
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+private const val SEARCH_DEBOUNCE_MILLIS = 300L
+private const val SEARCH_KEY = "merchants_search"
+private const val STATUS_KEY = "merchants_status"
+
+class MerchantsViewModel(
+    private val repository: MerchantRepository,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    private val _uiState = MutableStateFlow(
+        MerchantsUiState(
+            searchText = savedStateHandle[SEARCH_KEY] ?: "",
+            status = savedStateHandle.get<String>(STATUS_KEY)?.let { name -> MerchantStatus.entries.find { it.name == name } }
+        )
+    )
+    val uiState: StateFlow<MerchantsUiState> = _uiState.asStateFlow()
+
+    private var merchants: List<Merchant> = emptyList()
+    private var nextPage = 0
+    private var loadJob: Job? = null
+    private var searchJob: Job? = null
+
+    init {
+        reload()
+    }
+
+    fun onEvent(event: MerchantsEvent) {
+        when (event) {
+            is MerchantsEvent.SearchChanged -> onSearchChanged(event.text)
+            MerchantsEvent.SearchCleared -> applyFilters(searchText = "", status = _uiState.value.status)
+            is MerchantsEvent.StatusSelected -> applyFilters(_uiState.value.searchText, event.status)
+            MerchantsEvent.ClearFilters -> applyFilters(searchText = "", status = null)
+            MerchantsEvent.Retry -> retry()
+            MerchantsEvent.Refresh -> refresh()
+            MerchantsEvent.LoadMore -> loadMore()
+            MerchantsEvent.MenuClicked, is MerchantsEvent.MerchantClicked -> Unit
+        }
+    }
+
+    private fun onSearchChanged(text: String) {
+        _uiState.update { it.copy(searchText = text) }
+        savedStateHandle[SEARCH_KEY] = text
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            delay(SEARCH_DEBOUNCE_MILLIS)
+            reload()
+        }
+    }
+
+    private fun applyFilters(searchText: String, status: MerchantStatus?) {
+        searchJob?.cancel()
+        _uiState.update { it.copy(searchText = searchText, status = status) }
+        savedStateHandle[SEARCH_KEY] = searchText
+        savedStateHandle[STATUS_KEY] = status?.name
+        reload()
+    }
+
+    private fun retry() {
+        val content = _uiState.value.content
+        if (content is MerchantsContent.Loaded && content.paging == MerchantsPaging.APPEND_ERROR) loadNextPage(content)
+        else reload()
+    }
+
+    private fun refresh() {
+        searchJob?.cancel()
+        _uiState.update { it.copy(isRefreshing = true) }
+        loadPage(0)
+    }
+
+    private fun loadMore() {
+        val state = _uiState.value
+        val content = state.content as? MerchantsContent.Loaded ?: return
+        if (content.paging == MerchantsPaging.IDLE && !state.isRefreshing) loadNextPage(content)
+    }
+
+    private fun loadNextPage(content: MerchantsContent.Loaded) {
+        _uiState.update { it.copy(content = content.copy(paging = MerchantsPaging.LOADING_MORE)) }
+        loadPage(nextPage)
+    }
+
+    private fun reload() {
+        merchants = emptyList()
+        nextPage = 0
+        _uiState.update { it.copy(content = MerchantsContent.Loading) }
+        loadPage(0)
+    }
+
+    private fun loadPage(page: Int) {
+        loadJob?.cancel()
+        val state = _uiState.value
+        val query = MerchantQuery(search = state.searchText, status = state.status, page = page)
+        loadJob = viewModelScope.launch {
+            when (val result = repository.search(query)) {
+                is MerchantResult.Success -> onPageLoaded(result.page)
+                is MerchantResult.Failure -> onPageFailed(page, result.error)
+            }
+        }
+    }
+
+    private fun onPageLoaded(page: MerchantPage) {
+        merchants = if (page.page == 0) page.items else (merchants + page.items).distinctBy { it.id }
+        nextPage = page.page + 1
+        val content = if (merchants.isEmpty()) MerchantsContent.Empty else MerchantsContent.Loaded(
+            merchants = merchants,
+            total = page.total,
+            paging = if (page.hasMore) MerchantsPaging.IDLE else MerchantsPaging.END
+        )
+        _uiState.update { it.copy(content = content, isRefreshing = false) }
+    }
+
+    private fun onPageFailed(page: Int, error: MerchantError) {
+        _uiState.update { state ->
+            val content = state.content
+            if (page > 0 && content is MerchantsContent.Loaded) {
+                state.copy(content = content.copy(paging = MerchantsPaging.APPEND_ERROR), isRefreshing = false)
+            } else {
+                state.copy(content = MerchantsContent.Error(error), isRefreshing = false)
+            }
+        }
+    }
+
+    companion object {
+        val Factory = viewModelFactory {
+            initializer { MerchantsViewModel(AppContainer.merchantRepository, createSavedStateHandle()) }
+        }
+    }
+}

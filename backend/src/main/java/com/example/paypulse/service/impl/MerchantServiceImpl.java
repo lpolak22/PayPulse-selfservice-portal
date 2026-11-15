@@ -15,6 +15,8 @@ import com.example.paypulse.repository.MerchantRepository;
 import com.example.paypulse.repository.MerchantSpecifications;
 import com.example.paypulse.repository.OutletCount;
 import com.example.paypulse.repository.OutletRepository;
+import com.example.paypulse.repository.TerminalCount;
+import com.example.paypulse.repository.TerminalRepository;
 import com.example.paypulse.security.CurrentOrganisationScope;
 import com.example.paypulse.service.MerchantService;
 import org.springframework.data.domain.Page;
@@ -31,15 +33,18 @@ public class MerchantServiceImpl implements MerchantService {
 
     private final MerchantRepository merchantRepository;
     private final OutletRepository outletRepository;
+    private final TerminalRepository terminalRepository;
     private final MerchantMapper merchantMapper;
     private final CurrentOrganisationScope organisationScope;
 
     public MerchantServiceImpl(MerchantRepository merchantRepository,
                                OutletRepository outletRepository,
+                               TerminalRepository terminalRepository,
                                MerchantMapper merchantMapper,
                                CurrentOrganisationScope organisationScope) {
         this.merchantRepository = merchantRepository;
         this.outletRepository = outletRepository;
+        this.terminalRepository = terminalRepository;
         this.merchantMapper = merchantMapper;
         this.organisationScope = organisationScope;
     }
@@ -52,18 +57,28 @@ public class MerchantServiceImpl implements MerchantService {
         Page<Merchant> merchants = merchantRepository.findAll(
                 MerchantSpecifications.matching(organisationScope.merchants(), criteria),
                 pageQuery.toPageable(sort.toSort()));
-        Map<Long, Long> outletCounts = outletCounts(merchants);
-        return PageResponse.from(merchants, merchant ->
-                merchantMapper.toResponse(merchant, outletCounts.getOrDefault(merchant.getIdMerchant(), 0L)));
+        List<Long> merchantIds = merchants.map(Merchant::getIdMerchant).getContent();
+        Map<Long, Long> outletCounts = outletCounts(merchantIds);
+        Map<Long, Long> terminalCounts = terminalCounts(merchantIds);
+        return PageResponse.from(merchants, merchant -> merchantMapper.toResponse(merchant,
+                outletCounts.getOrDefault(merchant.getIdMerchant(), 0L),
+                terminalCounts.getOrDefault(merchant.getIdMerchant(), 0L)));
     }
 
-    private Map<Long, Long> outletCounts(Page<Merchant> merchants) {
-        if (merchants.isEmpty()) {
+    private Map<Long, Long> outletCounts(List<Long> merchantIds) {
+        if (merchantIds.isEmpty()) {
             return Map.of();
         }
-        List<Long> merchantIds = merchants.map(Merchant::getIdMerchant).getContent();
         return outletRepository.countByMerchantIds(merchantIds).stream()
                 .collect(Collectors.toMap(OutletCount::merchantId, OutletCount::count));
+    }
+
+    private Map<Long, Long> terminalCounts(List<Long> merchantIds) {
+        if (merchantIds.isEmpty()) {
+            return Map.of();
+        }
+        return terminalRepository.countByMerchantIds(merchantIds).stream()
+                .collect(Collectors.toMap(TerminalCount::merchantId, TerminalCount::count));
     }
 
     private static void validateCriteria(MerchantSearchCriteria criteria) {
