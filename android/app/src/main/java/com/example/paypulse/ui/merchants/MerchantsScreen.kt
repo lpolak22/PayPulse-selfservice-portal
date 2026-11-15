@@ -32,7 +32,6 @@ import com.example.paypulse.R
 import com.example.paypulse.domain.merchant.MerchantError
 import com.example.paypulse.domain.merchant.MerchantStatus
 import com.example.paypulse.ui.components.CroatianFormat
-import com.example.paypulse.ui.components.croatianPluralStringResource
 import com.example.paypulse.ui.components.PayPulseTopBar
 import com.example.paypulse.ui.components.SearchField
 import com.example.paypulse.ui.components.StatusMessage
@@ -117,9 +116,9 @@ private fun StatusFilterRow(selected: MerchantStatus?, onSelect: (MerchantStatus
 
 @Composable
 private fun ResultCount(total: Long) {
-    val count = total.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+    val count = CroatianFormat.count(total.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
     Text(
-        text = croatianPluralStringResource(R.plurals.merchants_count, count, CroatianFormat.count(count)),
+        text = stringResource(R.string.merchants_count, count),
         style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(horizontal = 16.dp)
