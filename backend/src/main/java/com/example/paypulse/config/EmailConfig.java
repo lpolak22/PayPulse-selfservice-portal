@@ -4,6 +4,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.thymeleaf.ITemplateEngine;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.templatemode.TemplateMode;
@@ -13,6 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
 @Configuration
+@EnableAsync
 @EnableConfigurationProperties(EmailProperties.class)
 @PropertySource("classpath:email.properties")
 public class EmailConfig {
