@@ -3,7 +3,6 @@ package com.example.paypulse.service.impl;
 import com.example.paypulse.config.PasswordResetProperties;
 import com.example.paypulse.dto.auth.PasswordResetTokenStatus;
 import com.example.paypulse.dto.auth.ResetPasswordRequest;
-import com.example.paypulse.dto.email.EmailMessage;
 import com.example.paypulse.exception.ApiException;
 import com.example.paypulse.exception.ErrorCode;
 import com.example.paypulse.model.AppUser;
@@ -11,7 +10,7 @@ import com.example.paypulse.model.AuditAction;
 import com.example.paypulse.model.UserStatus;
 import com.example.paypulse.repository.AppUserRepository;
 import com.example.paypulse.service.AuditLogService;
-import com.example.paypulse.service.EmailSender;
+import com.example.paypulse.service.EmailService;
 import com.example.paypulse.service.NewPasswordValidator;
 import com.example.paypulse.service.PasswordResetService;
 import com.example.paypulse.service.PasswordResetTokenService;
@@ -22,16 +21,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 @Transactional
 public class PasswordResetServiceImpl implements PasswordResetService {
 
-    private static final String SUBJECT = "Reset your PayPulse password";
+    private static final String TEMPLATE = "password-reset";
 
     private final AppUserRepository appUserRepository;
     private final PasswordResetTokenService resetTokenService;
-    private final EmailSender emailSender;
+    private final EmailService emailService;
     private final PasswordResetProperties properties;
     private final RateLimiter rateLimiter;
     private final NewPasswordValidator newPasswordValidator;
@@ -41,7 +41,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
     public PasswordResetServiceImpl(AppUserRepository appUserRepository,
                                     PasswordResetTokenService resetTokenService,
-                                    EmailSender emailSender,
+                                    EmailService emailService,
                                     PasswordResetProperties properties,
                                     RateLimiter rateLimiter,
                                     NewPasswordValidator newPasswordValidator,
@@ -50,7 +50,7 @@ public class PasswordResetServiceImpl implements PasswordResetService {
                                     AuditLogService auditLogService) {
         this.appUserRepository = appUserRepository;
         this.resetTokenService = resetTokenService;
-        this.emailSender = emailSender;
+        this.emailService = emailService;
         this.properties = properties;
         this.rateLimiter = rateLimiter;
         this.newPasswordValidator = newPasswordValidator;
@@ -93,14 +93,9 @@ public class PasswordResetServiceImpl implements PasswordResetService {
 
     private void sendResetEmail(AppUser user) {
         String link = properties.linkBase() + "?token=" + resetTokenService.issue(user);
-        emailSender.send(new EmailMessage(user.getEmail(), SUBJECT, resetBody(user, link)));
-    }
-
-    private String resetBody(AppUser user, String link) {
-        return "Hi " + user.getFirstName() + ",\n\n"
-                + "we received a request to reset your PayPulse password.\n\n"
-                + "Reset password: " + link + "\n\n"
-                + "The link is valid for " + properties.tokenTtl().toMinutes() + " minutes and can be used only once.\n"
-                + "If you did not ask for this, you can ignore this email.";
+        emailService.send(user.getEmail(), TEMPLATE, Map.of(
+                "firstName", user.getFirstName(),
+                "link", link,
+                "validMinutes", properties.tokenTtl().toMinutes()));
     }
 }
