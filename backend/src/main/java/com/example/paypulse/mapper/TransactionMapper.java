@@ -22,7 +22,7 @@ public class TransactionMapper {
                 row.status(),
                 row.type(),
                 row.cardBrand(),
-                row.maskedPan(),
+                CardMasking.mask(row.maskedPan()),
                 row.salesChannel(),
                 row.outletName(),
                 row.terminalId(),
