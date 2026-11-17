@@ -24,6 +24,10 @@ public interface TerminalRepository extends JpaRepository<Terminal, Long>, JpaSp
             + "FROM Terminal t WHERE t.outlet.merchant.idMerchant IN :merchantIds GROUP BY t.outlet.merchant.idMerchant")
     List<TerminalCount> countByMerchantIds(@Param("merchantIds") Collection<Long> merchantIds);
 
+    @Query("SELECT new com.example.paypulse.repository.OutletTerminalCount(t.outlet.idOutlet, COUNT(t)) "
+            + "FROM Terminal t WHERE t.outlet.idOutlet IN :outletIds GROUP BY t.outlet.idOutlet")
+    List<OutletTerminalCount> countByOutletIds(@Param("outletIds") Collection<Long> outletIds);
+
     @Modifying(flushAutomatically = true)
     @Query(value = """
             delete from terminal t
