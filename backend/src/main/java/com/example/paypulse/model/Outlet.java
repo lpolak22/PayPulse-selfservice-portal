@@ -1,5 +1,6 @@
 package com.example.paypulse.model;
 
+import com.example.paypulse.dto.outlet.OutletStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -17,7 +18,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "outlet")
 public class Outlet {
-    public static final String ACTIVE = "ACTIVE";
+    public static final String ACTIVE = OutletStatus.ACTIVE.name();
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

@@ -37,7 +37,8 @@ public final class OutletSpecifications {
     }
 
     static Specification<Outlet> inCity(String city) {
-        return (root, query, builder) -> builder.equal(root.get("city"), city);
+        return (root, query, builder) ->
+                builder.equal(builder.lower(builder.trim(root.get("city"))), city.toLowerCase(Locale.ROOT));
     }
 
     static Specification<Outlet> hasStatus(String status) {

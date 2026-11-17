@@ -42,14 +42,17 @@ public class OutletController {
     @GetMapping
     @Operation(summary = "List a merchant's outlets", description = "Sorted by outlet name.")
     @ApiResponse(responseCode = "200", description = "One page of outlets")
+    @ApiResponse(responseCode = "400", description = "VALIDATION_ERROR: status is unknown",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public PageResponse<OutletResponse> getOutlets(
             @Parameter(description = "Internal merchant ID (id in the merchant list)")
             @PathVariable Long merchantId,
             @Parameter(description = "Case-insensitive partial match on the outlet name, or the exact 7Pay outlet ID")
             @RequestParam(required = false) String search,
-            @Parameter(description = "Exact city name")
+            @Parameter(description = "City name, ignoring case and surrounding spaces")
             @RequestParam(required = false) String city,
-            @Parameter(description = "Case-insensitive status, e.g. ACTIVE")
+            @Parameter(description = "Case-insensitive status",
+                    schema = @Schema(allowableValues = {"ACTIVE", "DEACTIVATED", "HOLD"}))
             @RequestParam(required = false) String status,
             @ParameterObject PageQuery pageQuery) {
         return outletService.getOutlets(merchantId, new OutletSearchCriteria(search, city, status), pageQuery);

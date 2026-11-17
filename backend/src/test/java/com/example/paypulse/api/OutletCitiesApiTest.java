@@ -43,6 +43,27 @@ class OutletCitiesApiTest extends ApiIntegrationTest {
     }
 
     @Test
+    void sameCityWithDifferentCaseOrSpacesIsListedOnce() throws Exception {
+        outlet(merchantId, "Zagreb ");
+        outlet(merchantId, "ZAGREB");
+        outlet(merchantId, "Zagreb");
+        outlet(merchantId, " Split");
+
+        assertThat(cities(merchantId)).containsExactly("Split", "Zagreb");
+    }
+
+    @Test
+    void citiesAreSortedInCroatianAlphabeticalOrder() throws Exception {
+        outlet(merchantId, "Dubrovnik");
+        outlet(merchantId, "Čakovec");
+        outlet(merchantId, "Cres");
+        outlet(merchantId, "Šibenik");
+        outlet(merchantId, "Split");
+
+        assertThat(cities(merchantId)).containsExactly("Cres", "Čakovec", "Dubrovnik", "Split", "Šibenik");
+    }
+
+    @Test
     void outletsWithoutACityAreLeftOut() throws Exception {
         outlet(merchantId, "Rijeka");
         outlet(merchantId, null);

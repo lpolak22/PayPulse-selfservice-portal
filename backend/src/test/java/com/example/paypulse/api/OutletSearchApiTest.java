@@ -103,6 +103,26 @@ class OutletSearchApiTest extends ApiIntegrationTest {
         assertThat(ids(outlets().param("status", "hold"))).containsExactly(onHold);
     }
 
+    @ParameterizedTest
+    @ValueSource(strings = {"FOO", "ACTVE", "UNKNOWN"})
+    void unknownStatusIsValidationError(String status) throws Exception {
+        performAs(user, outlets().param("status", status))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.fieldErrors[0].field").value("status"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"Zagreb", "ZAGREB", "zagreb", " Zagreb "})
+    void cityFilterIgnoresCaseAndSurroundingSpaces(String city) throws Exception {
+        long padded = outlet("Konzum Ilica", "Zagreb ");
+        long upper = outlet("Konzum Dubrava", "ZAGREB");
+        long plain = outlet("Konzum Trešnjevka", "Zagreb");
+        outlet("Konzum Riva", "Split");
+
+        assertThat(ids(outlets().param("city", city))).containsExactlyInAnyOrder(padded, upper, plain);
+    }
+
     @Test
     void likeWildcardsInSearchAreTreatedAsText() throws Exception {
         outlet("Konzum Ilica", "Zagreb");
