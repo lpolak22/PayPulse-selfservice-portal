@@ -20,4 +20,8 @@ public interface OutletRepository extends JpaRepository<Outlet, Long>, JpaSpecif
     @Query("SELECT new com.example.paypulse.repository.OutletCount(o.merchant.idMerchant, COUNT(o)) "
             + "FROM Outlet o WHERE o.merchant.idMerchant IN :merchantIds GROUP BY o.merchant.idMerchant")
     List<OutletCount> countByMerchantIds(@Param("merchantIds") Collection<Long> merchantIds);
+
+    @Query("SELECT DISTINCT o.city FROM Outlet o WHERE o.merchant.idMerchant = :merchantId "
+            + "AND o.city IS NOT NULL AND TRIM(o.city) <> '' ORDER BY o.city")
+    List<String> findCitiesByMerchantId(@Param("merchantId") Long merchantId);
 }

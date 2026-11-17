@@ -61,6 +61,13 @@ public class OutletServiceImpl implements OutletService {
                 terminalCounts.getOrDefault(outlet.getIdOutlet(), 0L)));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getCities(Long merchantId) {
+        requireVisibleMerchant(merchantId);
+        return outletRepository.findCitiesByMerchantId(merchantId);
+    }
+
     private void requireVisibleMerchant(Long merchantId) {
         Specification<Merchant> visible = organisationScope.merchants()
                 .and((root, query, builder) -> builder.equal(root.get("idMerchant"), merchantId));

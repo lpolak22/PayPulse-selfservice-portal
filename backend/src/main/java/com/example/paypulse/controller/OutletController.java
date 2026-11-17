@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/merchants/{merchantId}/outlets")
 @Tag(name = "Outlets", description = "Outlets of a merchant in the signed-in user's organisation")
@@ -51,5 +53,15 @@ public class OutletController {
             @RequestParam(required = false) String status,
             @ParameterObject PageQuery pageQuery) {
         return outletService.getOutlets(merchantId, new OutletSearchCriteria(search, city, status), pageQuery);
+    }
+
+    @GetMapping("/cities")
+    @Operation(summary = "List the cities of a merchant's outlets",
+            description = "Each city once, sorted by name, for the city filter. Outlets without a city are left out.")
+    @ApiResponse(responseCode = "200", description = "City names")
+    public List<String> getCities(
+            @Parameter(description = "Internal merchant ID (id in the merchant list)")
+            @PathVariable Long merchantId) {
+        return outletService.getCities(merchantId);
     }
 }
