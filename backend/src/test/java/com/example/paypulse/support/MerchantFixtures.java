@@ -35,6 +35,14 @@ public final class MerchantFixtures {
                         """, Long.class, merchantId);
     }
 
+    public long outlet(long merchantId, String name, String sourceId, String city, String status) {
+        return jdbc.queryForObject("""
+                        insert into outlet (id_merchant, source_id, name, address, city, postal_code, status, is_active)
+                        values (?, ?, ?, 'Ulica 1', ?, '10000', ?, ? = 'ACTIVE')
+                        returning id_outlet
+                        """, Long.class, merchantId, sourceId, name, city, status, status);
+    }
+
     public void terminal(long outletId) {
         jdbc.update("insert into mcc_code (mcc_code, description) values (?, 'Test') on conflict do nothing", MCC_CODE);
         jdbc.update("""

@@ -105,6 +105,19 @@ class SevenPayImportTest extends ApiIntegrationTest {
     }
 
     @Test
+    void outletOnHoldIsStoredAsNotActive() {
+        importMerchants();
+        importOutlets();
+        client.salepoints.set(0, new SevenPaySalepoint(outletMid, "Zagreb Centar", merchantOib, "hold", null));
+
+        importOutlets();
+
+        assertThat(row("select status, is_active from outlet where source_id = ?", outletMid))
+                .containsEntry("status", "HOLD")
+                .containsEntry("is_active", false);
+    }
+
+    @Test
     void salepointOfAMerchantThatIsNotImportedIsSkipped() {
         importMerchants();
         client.salepoints.add(new SevenPaySalepoint(unique("MID"), "Strani", oib(), "ACTIVE", null));
