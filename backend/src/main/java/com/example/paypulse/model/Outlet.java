@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "outlet")
 public class Outlet {
+    public static final String ACTIVE = "ACTIVE";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_outlet")
@@ -153,14 +155,11 @@ public class Outlet {
 
     public void setStatus(String status) {
         this.status = status;
+        this.isActive = ACTIVE.equals(status);
     }
 
     public Boolean getIsActive() {
         return isActive;
-    }
-
-    public void setIsActive(Boolean isActive) {
-        this.isActive = isActive;
     }
 
     public LocalDateTime getCreatedAt() {

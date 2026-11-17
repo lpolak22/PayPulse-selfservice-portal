@@ -71,7 +71,6 @@ public class SevenPayOutletImporter {
         outlet.setSourceId(source.mid());
         outlet.setName(source.name());
         outlet.setStatus(status);
-        outlet.setIsActive(SevenPayStatus.ACTIVE.equals(status));
         SevenPayAddress address = source.address();
         if (address != null) {
             outlet.setAddress(address.streetAddressNumber());
