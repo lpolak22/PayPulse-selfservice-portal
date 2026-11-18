@@ -1,0 +1,7 @@
+7pay | PayPulse
+
+[(${content})]
+
+--
+7pay - PayPulse merchant portal
+This is an automated message. Please do not reply to this email.
