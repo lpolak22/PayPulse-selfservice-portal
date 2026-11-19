@@ -1,6 +1,10 @@
 package com.example.paypulse.repository;
 
 import com.example.paypulse.model.Terminal;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -19,6 +23,10 @@ public interface TerminalRepository extends JpaRepository<Terminal, Long>, JpaSp
     boolean existsByTerminalId(String terminalId);
 
     boolean existsBySourceId(String sourceId);
+
+    @Override
+    @EntityGraph(attributePaths = {"outlet", "outlet.merchant"})
+    Page<Terminal> findAll(Specification<Terminal> specification, Pageable pageable);
 
     @Query("SELECT new com.example.paypulse.repository.TerminalCount(t.outlet.merchant.idMerchant, COUNT(t)) "
             + "FROM Terminal t WHERE t.outlet.merchant.idMerchant IN :merchantIds GROUP BY t.outlet.merchant.idMerchant")
