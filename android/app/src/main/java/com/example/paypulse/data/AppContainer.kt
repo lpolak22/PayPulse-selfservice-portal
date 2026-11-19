@@ -9,6 +9,7 @@ import com.example.paypulse.data.auth.SessionStore
 import com.example.paypulse.data.auth.TokenStorage
 import com.example.paypulse.data.dashboard.ApiDashboardRepository
 import com.example.paypulse.data.merchant.ApiMerchantRepository
+import com.example.paypulse.data.outlet.ApiOutletRepository
 import com.example.paypulse.data.passwordreset.ApiPasswordResetRepository
 import com.example.paypulse.data.remote.ActivationApi
 import com.example.paypulse.data.remote.AuthApi
@@ -17,6 +18,7 @@ import com.example.paypulse.data.remote.CurrentUserApi
 import com.example.paypulse.data.remote.DashboardApi
 import com.example.paypulse.data.remote.ErrorResponseParser
 import com.example.paypulse.data.remote.MerchantApi
+import com.example.paypulse.data.remote.OutletApi
 import com.example.paypulse.data.remote.PasswordResetApi
 import com.example.paypulse.data.remote.TokenRefreshAuthenticator
 import com.example.paypulse.data.remote.TransactionApi
@@ -31,6 +33,7 @@ import com.example.paypulse.domain.activation.ActivationRepository
 import com.example.paypulse.domain.auth.AuthRepository
 import com.example.paypulse.domain.dashboard.DashboardRepository
 import com.example.paypulse.domain.merchant.MerchantRepository
+import com.example.paypulse.domain.outlet.OutletRepository
 import com.example.paypulse.domain.passwordreset.PasswordResetRepository
 import com.example.paypulse.domain.transaction.TransactionRepository
 import com.example.paypulse.domain.user.UserRepository
@@ -68,6 +71,7 @@ object AppContainer {
     private val dashboardApi: DashboardApi by lazy { authenticatedRetrofit.create() }
     private val transactionApi: TransactionApi by lazy { authenticatedRetrofit.create() }
     private val merchantApi: MerchantApi by lazy { authenticatedRetrofit.create() }
+    private val outletApi: OutletApi by lazy { authenticatedRetrofit.create() }
 
     val authRepository: AuthRepository by lazy {
         ApiAuthRepository(authApi, currentUserApi, errorResponseParser, tokenStorage, sessionStore)
@@ -85,4 +89,5 @@ object AppContainer {
     val dashboardRepository: DashboardRepository by lazy { ApiDashboardRepository(dashboardApi) }
     val transactionRepository: TransactionRepository by lazy { ApiTransactionRepository(transactionApi) }
     val merchantRepository: MerchantRepository by lazy { ApiMerchantRepository(merchantApi) }
+    val outletRepository: OutletRepository by lazy { ApiOutletRepository(outletApi) }
 }
