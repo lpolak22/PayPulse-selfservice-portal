@@ -1,6 +1,6 @@
 package com.example.paypulse.dto.terminal;
 
-public record TerminalSearchCriteria(String status, String type) {
+public record TerminalSearchCriteria(String status, String type, Long merchantId) {
 
     public boolean hasStatus() {
         return status != null && !status.isBlank();

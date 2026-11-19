@@ -23,7 +23,15 @@ public final class TerminalSpecifications {
         if (filter.hasType()) {
             specifications.add(hasType(filter.type()));
         }
+        if (filter.hasMerchant()) {
+            specifications.add(belongsToMerchant(filter.merchantId()));
+        }
         return Specification.allOf(specifications);
+    }
+
+    public static Specification<Terminal> belongsToMerchant(Long merchantId) {
+        return (root, query, builder) -> builder.equal(
+                root.get("outlet").get("merchant").get("idMerchant"), merchantId);
     }
 
     static Specification<Terminal> hasStatus(TerminalStatus status) {
