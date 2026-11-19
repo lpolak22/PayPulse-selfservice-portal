@@ -9,13 +9,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TerminalStatusTest {
 
     @ParameterizedTest
-    @CsvSource({"ACTIVE, ACTIVE", "prepared, PREPARED", "' Blocked ', BLOCKED"})
+    @CsvSource({"ACTIVE, ACTIVE", "prepared, PREPARED", "' Blocked ', BLOCKED", "unknown, UNKNOWN"})
     void knownStatusesAreFoundIgnoringCaseAndSpaces(String param, TerminalStatus expected) {
         assertThat(TerminalStatus.fromParam(param)).contains(expected);
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"ACTVE", "UNKNOWN", "HOLD"})
+    @ValueSource(strings = {"ACTVE", "SOMETHING_NEW", "HOLD"})
     void unknownStatusesAreNotFound(String param) {
         assertThat(TerminalStatus.fromParam(param)).isEmpty();
     }

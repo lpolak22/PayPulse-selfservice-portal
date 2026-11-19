@@ -135,6 +135,15 @@ class TerminalListApiTest extends ApiIntegrationTest {
     }
 
     @Test
+    void terminalStoredAsUnknownIsFoundByUnknownStatusOnly() throws Exception {
+        long unknown = terminal("01", "POS", "UNKNOWN");
+        long active = terminal("02", "POS", "ACTIVE");
+
+        assertThat(ids(get(URL).param("status", "unknown"))).containsExactly(unknown);
+        assertThat(ids(get(URL).param("status", "ACTIVE"))).containsExactly(active);
+    }
+
+    @Test
     void statusAndTypeFiltersCanBeCombined() throws Exception {
         long wanted = terminal("01", "MOBILE", "BLOCKED");
         terminal("02", "MOBILE", "ACTIVE");

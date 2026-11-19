@@ -33,6 +33,13 @@ class TerminalSortTest {
                 Sort.Order.asc("terminalId"), Sort.Order.asc("idTerminal"));
     }
 
+    @Test
+    void sortByTidAddsOnlyTheIdTieBreak() {
+        Sort sort = TerminalSort.of("tid", "desc").toSort();
+
+        assertThat(sort).containsExactly(Sort.Order.desc("terminalId"), Sort.Order.asc("idTerminal"));
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"mcc", "", "id"})
     void unknownSortIsRejected(String param) {

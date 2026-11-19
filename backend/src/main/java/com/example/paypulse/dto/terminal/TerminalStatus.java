@@ -10,10 +10,11 @@ public enum TerminalStatus {
     INACTIVE,
     DEACTIVATED,
     SUSPENDED,
-    BLOCKED;
+    BLOCKED,
+    UNKNOWN;
 
     public static final String MESSAGE =
-            "must be PREPARED, AUTHENTICATED, ACTIVE, INACTIVE, DEACTIVATED, SUSPENDED or BLOCKED";
+            "must be PREPARED, AUTHENTICATED, ACTIVE, INACTIVE, DEACTIVATED, SUSPENDED, BLOCKED or UNKNOWN";
 
     public static Optional<TerminalStatus> fromParam(String value) {
         return Arrays.stream(values())

@@ -16,6 +16,10 @@ public record TerminalSort(TerminalSortField field, Sort.Direction direction) {
     }
 
     public Sort toSort() {
-        return Sort.by(direction, field.property()).and(Sort.by("terminalId", "idTerminal"));
+        Sort sort = Sort.by(direction, field.property());
+        if (field != TerminalSortField.TID) {
+            sort = sort.and(Sort.by("terminalId"));
+        }
+        return sort.and(Sort.by("idTerminal"));
     }
 }
