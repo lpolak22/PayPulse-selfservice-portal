@@ -32,7 +32,7 @@ public final class OutletSpecifications {
         return Specification.allOf(specifications);
     }
 
-    static Specification<Outlet> belongsTo(Long merchantId) {
+    public static Specification<Outlet> belongsTo(Long merchantId) {
         return (root, query, builder) -> builder.equal(root.get("merchant").get("idMerchant"), merchantId);
     }
 
