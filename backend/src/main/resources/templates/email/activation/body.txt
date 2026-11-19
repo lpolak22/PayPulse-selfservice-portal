@@ -1,0 +1,6 @@
+Hi [(${firstName})],
+
+An account was created for you in the PayPulse merchant portal. Set your password to activate it:
+[(${link})]
+
+The link is valid for [(${validHours})] hours and can be used only once.

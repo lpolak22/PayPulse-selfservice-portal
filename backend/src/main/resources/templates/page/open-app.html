@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex">
+    <title th:text="${title}">PayPulse</title>
+    <style>
+        body { margin: 0; padding: 32px 16px; background: #f4f4f5; color: #1f2937;
+               font-family: Arial, Helvetica, sans-serif; font-size: 16px; line-height: 24px; }
+        main { max-width: 480px; margin: 0 auto; }
+        .logo { margin: 0 0 16px 8px; font-size: 28px; line-height: 32px; font-weight: bold; color: #D92D35; }
+        .logo span { font-size: 14px; font-weight: normal; color: #6b7280; }
+        .card { background: #ffffff; border-radius: 8px; padding: 32px 24px; }
+        h1 { margin: 0 0 16px 0; font-size: 22px; line-height: 28px; }
+        p { margin: 0 0 16px 0; }
+        .button { display: block; margin: 24px 0; padding: 14px 24px; border-radius: 6px; background: #D92D35;
+                  color: #ffffff; font-weight: bold; text-align: center; text-decoration: none; }
+        .hint { font-size: 13px; line-height: 20px; color: #6b7280; }
+    </style>
+</head>
+<body>
+<main>
+    <div class="logo">7pay <span>PayPulse</span></div>
+    <div class="card">
+        <h1 th:text="${title}">PayPulse</h1>
+        <th:block th:if="${appLink != null}">
+            <p>Tap the button to continue in the PayPulse app.</p>
+            <a class="button" th:href="${appLink}" href="#">Open in the PayPulse app</a>
+            <p class="hint">Open this page on the phone where the PayPulse app is installed.
+                If nothing happens, install or update the app and tap the button again.</p>
+        </th:block>
+        <th:block th:if="${appLink == null}">
+            <p>This link is not valid. Ask for a new email and use the link from it.</p>
+        </th:block>
+    </div>
+</main>
+</body>
+</html>

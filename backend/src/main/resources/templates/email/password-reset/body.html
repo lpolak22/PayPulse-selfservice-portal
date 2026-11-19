@@ -1,0 +1,8 @@
+<h1 style="margin:0 0 16px 0;font-size:22px;line-height:28px;color:#1f2937;">Reset your password</h1>
+<p th:text="|Hi ${firstName},|" style="margin:0 0 16px 0;">Hi,</p>
+<p style="margin:0;">We received a request to reset your PayPulse password.</p>
+<table th:replace="~{components.html :: button(${link}, 'Reset password')}"></table>
+<p th:text="|The link is valid for ${validMinutes} minutes and can be used only once.|"
+   style="margin:0 0 16px 0;">The link is valid for a limited time and can be used only once.</p>
+<p style="margin:0 0 16px 0;">If you did not ask for this, you can ignore this email. Your password will not change.</p>
+<p th:replace="~{components.html :: fallbackLink(${link})}"></p>

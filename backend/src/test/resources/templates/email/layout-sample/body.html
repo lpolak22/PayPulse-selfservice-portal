@@ -1,0 +1,3 @@
+<p th:text="|Hi ${name},|" style="margin:0 0 16px 0;">Hi,</p>
+<table th:replace="~{components.html :: button(${link}, 'Open PayPulse')}"></table>
+<p th:replace="~{components.html :: fallbackLink(${link})}"></p>
