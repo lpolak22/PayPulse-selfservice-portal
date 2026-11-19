@@ -53,16 +53,14 @@ public class SevenPayTransactionSync {
         this.writer = writer;
     }
 
-    public SyncCounts sync(Organisation organisation, LocalDate from, LocalDate until) {
+    public void sync(Organisation organisation, LocalDate from, LocalDate until, SyncCounts counts) {
         Map<String, Terminal> terminalsByTid = terminalsByTid(organisation);
-        SyncCounts counts = new SyncCounts();
         for (String oib : merchantRepository.findRegistrationNumbersInOrganisation(organisation.getIdOrganisation())) {
             for (LocalDate day = from; !day.isAfter(until); day = day.plusDays(1)) {
                 syncDay(oib, day, terminalsByTid, counts);
             }
         }
         log.info("7Pay transaction sync {} - {}: {}", from, until, counts);
-        return counts;
     }
 
     private Map<String, Terminal> terminalsByTid(Organisation organisation) {

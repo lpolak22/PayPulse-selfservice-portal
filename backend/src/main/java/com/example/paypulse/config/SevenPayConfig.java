@@ -5,7 +5,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
 @Configuration
-@EnableConfigurationProperties({SevenPayProperties.class, SevenPayImportProperties.class})
+@EnableConfigurationProperties({SevenPayProperties.class, SevenPayImportProperties.class,
+        SevenPaySyncProperties.class})
 @PropertySource("classpath:sevenpay.properties")
 public class SevenPayConfig {
 }

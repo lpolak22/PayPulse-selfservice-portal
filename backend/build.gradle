@@ -110,6 +110,15 @@ tasks.register('sevenPayImport', org.springframework.boot.gradle.tasks.run.BootR
 	environment loadDotEnv()
 }
 
+tasks.register('sevenPaySync', org.springframework.boot.gradle.tasks.run.BootRun) {
+	group = 'database'
+	description = 'Run the 7Pay import and transaction sync once and record it in sync_run'
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.example.paypulse.PaypulseApplication'
+	systemProperty 'spring.profiles.active', 'sevenpay-sync'
+	environment loadDotEnv()
+}
+
 tasks.withType(org.springframework.boot.gradle.tasks.run.BootRun).configureEach {
 	environment loadDotEnv()
 }
