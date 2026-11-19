@@ -1,5 +1,6 @@
 package com.example.paypulse.integration.sevenpay.sync;
 
+import com.example.paypulse.integration.sevenpay.dto.SevenPayTransaction;
 import com.example.paypulse.integration.sevenpay.dto.SevenPayTransactionDetails;
 import com.example.paypulse.integration.sevenpay.sync.SevenPayTransactionMapping.Mapped;
 import com.example.paypulse.integration.sevenpay.sync.SevenPayTransactionMapping.Skipped;
@@ -18,6 +19,12 @@ import java.util.regex.Pattern;
 @Component
 public class SevenPayTransactionMapper {
 
+    public Optional<String> statusOf(SevenPayTransaction transaction) {
+        return SevenPayTransactionValues.type(transaction.transactionType(), null)
+                .map(type -> SevenPayTransactionValues.status(transaction.validity(), transaction.responseCode(), type)
+                        .name());
+    }
+
     private static final ZoneId ZAGREB = ZoneId.of("Europe/Zagreb");
     private static final Pattern MASKED_PAN = Pattern.compile("^[0-9]{6}\\*{2,9}[0-9]{4}$");
 
@@ -27,7 +34,8 @@ public class SevenPayTransactionMapper {
                 || SevenPayTransactionValues.trimmed(details.tid()).isEmpty()) {
             return new Skipped(sourceId, SyncSkipReason.MISSING_DATA);
         }
-        Optional<TransactionType> type = SevenPayTransactionValues.type(details);
+        Optional<TransactionType> type =
+                SevenPayTransactionValues.type(details.transactionType(), details.installmentNumber());
         if (type.isEmpty()) {
             return new Skipped(sourceId, SyncSkipReason.UNSUPPORTED_TYPE);
         }
@@ -52,7 +60,7 @@ public class SevenPayTransactionMapper {
                 SevenPayTransactionValues.trimmed(details.acquirerHost()),
                 details.amount().setScale(2, RoundingMode.HALF_UP),
                 SevenPayTransactionValues.EUR,
-                SevenPayTransactionValues.status(details, type).name(),
+                SevenPayTransactionValues.status(details.validity(), details.responseCode(), type).name(),
                 rawData(details, type, brand));
     }
 

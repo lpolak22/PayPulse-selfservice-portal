@@ -1,6 +1,5 @@
 package com.example.paypulse.integration.sevenpay.sync;
 
-import com.example.paypulse.integration.sevenpay.dto.SevenPayTransactionDetails;
 import com.example.paypulse.model.CardBrand;
 import com.example.paypulse.model.TransactionStatus;
 import com.example.paypulse.model.TransactionType;
@@ -30,19 +29,19 @@ final class SevenPayTransactionValues {
     private SevenPayTransactionValues() {
     }
 
-    static Optional<TransactionType> type(SevenPayTransactionDetails details) {
-        TransactionType type = TYPES.get(normalise(details.transactionType()));
-        if (type == TransactionType.SALE && details.installmentNumber() != null) {
+    static Optional<TransactionType> type(String transactionType, Integer installmentNumber) {
+        TransactionType type = TYPES.get(normalise(transactionType));
+        if (type == TransactionType.SALE && installmentNumber != null) {
             return Optional.of(TransactionType.SALE_WITH_INSTALLMENTS);
         }
         return Optional.ofNullable(type);
     }
 
-    static TransactionStatus status(SevenPayTransactionDetails details, TransactionType type) {
-        if (CANCELLED_VALIDITY.contains(normalise(details.validity()))) {
+    static TransactionStatus status(String validity, String responseCode, TransactionType type) {
+        if (CANCELLED_VALIDITY.contains(normalise(validity))) {
             return TransactionStatus.CANCELLED;
         }
-        if (!APPROVED_RESPONSE_CODE.equals(trimmed(details.responseCode()))) {
+        if (!APPROVED_RESPONSE_CODE.equals(trimmed(responseCode))) {
             return TransactionStatus.DECLINED;
         }
         return switch (type) {

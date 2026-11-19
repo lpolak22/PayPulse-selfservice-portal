@@ -41,6 +41,16 @@ public class SevenPayTransactionWriter {
         return existing.isPresent() ? WriteOutcome.UPDATED : WriteOutcome.CREATED;
     }
 
+    @Transactional
+    public WriteOutcome refreshStatus(Transaction transaction, String status) {
+        if (transaction.getStatus().equals(status)) {
+            return WriteOutcome.UNCHANGED;
+        }
+        transaction.setStatus(status);
+        transactionRepository.save(transaction);
+        return WriteOutcome.UPDATED;
+    }
+
     private static boolean isUnchanged(Transaction transaction, Mapped mapped, Terminal terminal, Acquirer acquirer) {
         return Objects.equals(transaction.getTerminal().getIdTerminal(), terminal.getIdTerminal())
                 && Objects.equals(transaction.getAcquirer().getIdAcquirer(), acquirer.getIdAcquirer())
