@@ -31,6 +31,3 @@ fun TransactionDto.toTransaction(): Transaction = Transaction(
     authCode = authCode,
     rrn = rrn
 )
-
-private inline fun <reified T : Enum<T>> enumOrNull(value: String?): T? =
-    enumValues<T>().firstOrNull { it.name == value }
