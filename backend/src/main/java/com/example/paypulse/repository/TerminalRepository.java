@@ -20,6 +20,9 @@ import java.util.Optional;
 public interface TerminalRepository extends JpaRepository<Terminal, Long>, JpaSpecificationExecutor<Terminal> {
     Optional<Terminal> findBySourceId(String sourceId);
 
+    @Query("SELECT t FROM Terminal t WHERE t.outlet.merchant.organisation.idOrganisation = :organisationId")
+    List<Terminal> findAllInOrganisation(@Param("organisationId") Long organisationId);
+
     boolean existsByTerminalId(String terminalId);
 
     boolean existsBySourceId(String sourceId);

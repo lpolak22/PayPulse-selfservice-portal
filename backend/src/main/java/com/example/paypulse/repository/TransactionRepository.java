@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, Long>, JpaSpecificationExecutor<Transaction> {
@@ -15,4 +16,6 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long>,
     List<String> findSourceIdsByPrefix(@Param("prefix") String prefix);
 
     boolean existsBySourceId(String sourceId);
+
+    Optional<Transaction> findBySourceId(String sourceId);
 }
