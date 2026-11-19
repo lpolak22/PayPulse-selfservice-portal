@@ -45,7 +45,7 @@ public class TerminalController {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     public PageResponse<TerminalResponse> getTerminals(
             @Parameter(description = "Case-insensitive status", schema = @Schema(allowableValues = {
-                    "PREPARED", "AUTHENTICATED", "ACTIVE", "INACTIVE", "DEACTIVATED", "SUSPENDED", "BLOCKED"}))
+                    "PREPARED", "AUTHENTICATED", "ACTIVE", "INACTIVE", "DEACTIVATED", "SUSPENDED", "BLOCKED", "UNKNOWN"}))
             @RequestParam(required = false) String status,
             @Parameter(description = "Terminal type, ignoring case, spaces and underscores", schema = @Schema(
                     allowableValues = {"SoftPOS V1", "SoftPOS V2", "POS", "MOBILE", "ECR", "VIRTUAL"}))
