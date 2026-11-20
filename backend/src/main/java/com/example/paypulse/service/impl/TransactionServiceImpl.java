@@ -2,10 +2,13 @@ package com.example.paypulse.service.impl;
 
 import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
+import com.example.paypulse.dto.transaction.TransactionDetailsResponse;
 import com.example.paypulse.dto.transaction.TransactionResponse;
 import com.example.paypulse.dto.transaction.TransactionSearchCriteria;
 import com.example.paypulse.dto.transaction.TransactionSort;
+import com.example.paypulse.exception.ResourceNotFoundException;
 import com.example.paypulse.mapper.TransactionMapper;
+import com.example.paypulse.repository.transaction.TransactionDetailsRepository;
 import com.example.paypulse.repository.transaction.TransactionSearchQuery;
 import com.example.paypulse.repository.transaction.TransactionSearchRepository;
 import com.example.paypulse.security.CurrentOrganisationScope;
@@ -19,15 +22,18 @@ import java.util.List;
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionSearchRepository searchRepository;
+    private final TransactionDetailsRepository detailsRepository;
     private final TransactionRangeResolver rangeResolver;
     private final TransactionMapper mapper;
     private final CurrentOrganisationScope organisationScope;
 
     public TransactionServiceImpl(TransactionSearchRepository searchRepository,
+                                  TransactionDetailsRepository detailsRepository,
                                   TransactionRangeResolver rangeResolver,
                                   TransactionMapper mapper,
                                   CurrentOrganisationScope organisationScope) {
         this.searchRepository = searchRepository;
+        this.detailsRepository = detailsRepository;
         this.rangeResolver = rangeResolver;
         this.mapper = mapper;
         this.organisationScope = organisationScope;
@@ -43,6 +49,13 @@ public class TransactionServiceImpl implements TransactionService {
                 ? List.of()
                 : searchRepository.findPage(query).stream().map(mapper::toResponse).toList();
         return new PageResponse<>(items, pageQuery.page(), pageQuery.pageSize(), total);
+    }
+
+    @Override
+    public TransactionDetailsResponse getTransaction(Long id) {
+        return detailsRepository.findInOrganisation(id, organisationScope.organisationId())
+                .map(mapper::toDetailsResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction", id));
     }
 
     private TransactionSearchQuery toQuery(TransactionSearchCriteria criteria, TransactionRange range,
