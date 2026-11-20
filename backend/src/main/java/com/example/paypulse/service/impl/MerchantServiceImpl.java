@@ -4,22 +4,36 @@ import com.example.paypulse.dto.ValidationPatterns;
 import com.example.paypulse.dto.common.ErrorResponse;
 import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
+import com.example.paypulse.dto.merchant.MerchantDetailsResponse;
+import com.example.paypulse.dto.merchant.MerchantDetailsResponse.OutletItem;
+import com.example.paypulse.dto.merchant.MerchantDetailsResponse.RelatedItems;
+import com.example.paypulse.dto.merchant.MerchantDetailsResponse.TerminalItem;
 import com.example.paypulse.dto.merchant.MerchantResponse;
 import com.example.paypulse.dto.merchant.MerchantSearchCriteria;
 import com.example.paypulse.dto.merchant.MerchantSort;
 import com.example.paypulse.dto.merchant.MerchantStatus;
 import com.example.paypulse.exception.FieldValidationException;
+import com.example.paypulse.exception.ResourceNotFoundException;
 import com.example.paypulse.mapper.MerchantMapper;
+import com.example.paypulse.mapper.OutletMapper;
+import com.example.paypulse.mapper.TerminalMapper;
 import com.example.paypulse.model.Merchant;
+import com.example.paypulse.model.Outlet;
+import com.example.paypulse.model.Terminal;
 import com.example.paypulse.repository.MerchantRepository;
 import com.example.paypulse.repository.MerchantSpecifications;
 import com.example.paypulse.repository.OutletCount;
 import com.example.paypulse.repository.OutletRepository;
+import com.example.paypulse.repository.OutletSpecifications;
 import com.example.paypulse.repository.TerminalCount;
 import com.example.paypulse.repository.TerminalRepository;
+import com.example.paypulse.repository.TerminalSpecifications;
 import com.example.paypulse.security.CurrentOrganisationScope;
 import com.example.paypulse.service.MerchantService;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,22 +45,58 @@ import java.util.stream.Collectors;
 @Service
 public class MerchantServiceImpl implements MerchantService {
 
+    private static final int RELATED_ITEMS_LIMIT = 50;
+    private static final Pageable FIRST_OUTLETS =
+            PageRequest.of(0, RELATED_ITEMS_LIMIT, Sort.by("name", "idOutlet"));
+    private static final Pageable FIRST_TERMINALS =
+            PageRequest.of(0, RELATED_ITEMS_LIMIT, Sort.by("terminalId", "idTerminal"));
+
     private final MerchantRepository merchantRepository;
     private final OutletRepository outletRepository;
     private final TerminalRepository terminalRepository;
     private final MerchantMapper merchantMapper;
+    private final OutletMapper outletMapper;
+    private final TerminalMapper terminalMapper;
     private final CurrentOrganisationScope organisationScope;
 
     public MerchantServiceImpl(MerchantRepository merchantRepository,
                                OutletRepository outletRepository,
                                TerminalRepository terminalRepository,
                                MerchantMapper merchantMapper,
+                               OutletMapper outletMapper,
+                               TerminalMapper terminalMapper,
                                CurrentOrganisationScope organisationScope) {
         this.merchantRepository = merchantRepository;
         this.outletRepository = outletRepository;
         this.terminalRepository = terminalRepository;
         this.merchantMapper = merchantMapper;
+        this.outletMapper = outletMapper;
+        this.terminalMapper = terminalMapper;
         this.organisationScope = organisationScope;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MerchantDetailsResponse getMerchant(Long id) {
+        Merchant merchant = merchantRepository
+                .findOne(organisationScope.merchants().and(MerchantSpecifications.hasId(id)))
+                .orElseThrow(() -> new ResourceNotFoundException("Merchant", id));
+        return merchantMapper.toDetailsResponse(merchant, relatedOutlets(id), relatedTerminals(id));
+    }
+
+    private RelatedItems<OutletItem> relatedOutlets(Long merchantId) {
+        Page<Outlet> outlets = outletRepository.findAll(
+                organisationScope.outlets().and(OutletSpecifications.belongsTo(merchantId)), FIRST_OUTLETS);
+        return new RelatedItems<>(outlets.map(outletMapper::toItem).getContent(), outlets.getTotalElements(),
+                "/api/merchants/" + merchantId + "/outlets");
+    }
+
+    private RelatedItems<TerminalItem> relatedTerminals(Long merchantId) {
+        Page<Terminal> terminals = terminalRepository.findAll(
+                organisationScope.terminals().and(TerminalSpecifications.belongsToMerchant(merchantId)),
+                FIRST_TERMINALS);
+        return new RelatedItems<>(terminals.map(terminalMapper::toItem).getContent(), terminals.getTotalElements(),
+                "/api/terminals?merchantId=" + merchantId);
     }
 
     @Override

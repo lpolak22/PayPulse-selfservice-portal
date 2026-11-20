@@ -64,7 +64,7 @@ public class TerminalServiceImpl implements TerminalService {
         if (!errors.isEmpty()) {
             throw new FieldValidationException(errors);
         }
-        return new TerminalFilter(status, type);
+        return new TerminalFilter(status, type, criteria.merchantId());
     }
 
     private static void addErrorIfMissing(List<ErrorResponse.FieldError> errors, Object value, String field,

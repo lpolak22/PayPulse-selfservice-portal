@@ -32,6 +32,10 @@ public final class MerchantSpecifications {
         return Specification.allOf(specifications);
     }
 
+    public static Specification<Merchant> hasId(Long id) {
+        return (root, query, builder) -> builder.equal(root.get("idMerchant"), id);
+    }
+
     static Specification<Merchant> hasOib(String oib) {
         return (root, query, builder) -> builder.equal(root.get("registrationNumber"), oib);
     }

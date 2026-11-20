@@ -50,12 +50,15 @@ public class TerminalController {
             @Parameter(description = "Terminal type, ignoring case, spaces and underscores", schema = @Schema(
                     allowableValues = {"SoftPOS V1", "SoftPOS V2", "POS", "MOBILE", "ECR", "VIRTUAL"}))
             @RequestParam(required = false) String type,
+            @Parameter(description = "Internal merchant ID (id in the merchant list). "
+                    + "A merchant of another organisation gives an empty page.")
+            @RequestParam(required = false) Long merchantId,
             @Parameter(schema = @Schema(allowableValues = {"tid", "type", "status", "outlet", "merchant"}))
             @RequestParam(defaultValue = "tid") String sort,
             @Parameter(schema = @Schema(allowableValues = {"asc", "desc"}))
             @RequestParam(defaultValue = "asc") String direction,
             @ParameterObject PageQuery pageQuery) {
-        return terminalService.getTerminals(new TerminalSearchCriteria(status, type),
+        return terminalService.getTerminals(new TerminalSearchCriteria(status, type, merchantId),
                 TerminalSort.of(sort, direction), pageQuery);
     }
 }

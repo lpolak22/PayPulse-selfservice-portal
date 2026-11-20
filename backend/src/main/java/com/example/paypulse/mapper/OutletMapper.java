@@ -1,5 +1,6 @@
 package com.example.paypulse.mapper;
 
+import com.example.paypulse.dto.merchant.MerchantDetailsResponse;
 import com.example.paypulse.dto.outlet.OutletResponse;
 import com.example.paypulse.model.Outlet;
 import org.springframework.stereotype.Component;
@@ -17,6 +18,15 @@ public class OutletMapper {
                 outlet.getPostalCode(),
                 outlet.getStatus(),
                 terminalCount
+        );
+    }
+
+    public MerchantDetailsResponse.OutletItem toItem(Outlet outlet) {
+        return new MerchantDetailsResponse.OutletItem(
+                outlet.getIdOutlet(),
+                outlet.getName(),
+                outlet.getCity(),
+                outlet.getStatus()
         );
     }
 }

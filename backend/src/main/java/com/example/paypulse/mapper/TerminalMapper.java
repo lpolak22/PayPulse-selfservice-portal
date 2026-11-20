@@ -1,5 +1,6 @@
 package com.example.paypulse.mapper;
 
+import com.example.paypulse.dto.merchant.MerchantDetailsResponse;
 import com.example.paypulse.dto.terminal.TerminalResponse;
 import com.example.paypulse.model.Merchant;
 import com.example.paypulse.model.Outlet;
@@ -19,6 +20,16 @@ public class TerminalMapper {
                 terminal.getStatus(),
                 new TerminalResponse.OutletRef(outlet.getIdOutlet(), outlet.getName()),
                 new TerminalResponse.MerchantRef(merchant.getIdMerchant(), merchant.getName())
+        );
+    }
+
+    public MerchantDetailsResponse.TerminalItem toItem(Terminal terminal) {
+        Outlet outlet = terminal.getOutlet();
+        return new MerchantDetailsResponse.TerminalItem(
+                terminal.getIdTerminal(),
+                terminal.getTerminalId(),
+                new TerminalResponse.OutletRef(outlet.getIdOutlet(), outlet.getName()),
+                terminal.getStatus()
         );
     }
 }
