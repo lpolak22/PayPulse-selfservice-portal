@@ -1,0 +1,40 @@
+<resources>
+    <string name="merchant_details_title">Trgovac</string>
+    <string name="merchant_details_back">Natrag</string>
+    <string name="merchant_details_breadcrumb_separator">›</string>
+
+    <string name="merchant_details_outlets_tab">Prodajna mjesta (%1$s)</string>
+    <string name="merchant_details_terminals_tab">Terminali (%1$s)</string>
+    <string name="merchant_details_outlets_search">Pretraži prodajna mjesta</string>
+    <string name="merchant_details_terminals_search">Pretraži terminale</string>
+    <string name="merchant_details_shown_count">Prikazano %1$s od %2$s</string>
+    <string name="merchant_details_missing_value">—</string>
+    <plurals name="merchant_details_terminal_count">
+        <item quantity="one">%1$d terminal</item>
+        <item quantity="few">%1$d terminala</item>
+        <item quantity="other">%1$d terminala</item>
+    </plurals>
+
+    <string name="merchant_details_no_outlets_title">Nema prodajnih mjesta</string>
+    <string name="merchant_details_no_outlets_body">Ovaj trgovac još nema prodajnih mjesta.</string>
+    <string name="merchant_details_no_terminals_title">Nema terminala</string>
+    <string name="merchant_details_no_terminals_body">Ovaj trgovac još nema terminala.</string>
+    <string name="merchant_details_no_results_title">Nema rezultata</string>
+    <string name="merchant_details_no_results_body">Nijedna stavka ne odgovara pretrazi „%1$s“.</string>
+
+    <string name="merchant_details_not_found_title">Trgovac nije pronađen</string>
+    <string name="merchant_details_not_found_body">Trgovac ne postoji ili ti nije dostupan.</string>
+    <string name="merchant_details_back_to_merchants">Natrag na trgovce</string>
+
+    <string name="outlet_status_active">Aktivno</string>
+    <string name="outlet_status_deactivated">Deaktivirano</string>
+    <string name="outlet_status_hold">Na čekanju</string>
+
+    <string name="terminal_status_prepared">Pripremljen</string>
+    <string name="terminal_status_authenticated">Autentificiran</string>
+    <string name="terminal_status_active">Aktivan</string>
+    <string name="terminal_status_inactive">Neaktivan</string>
+    <string name="terminal_status_deactivated">Deaktiviran</string>
+    <string name="terminal_status_suspended">Suspendiran</string>
+    <string name="terminal_status_blocked">Blokiran</string>
+</resources>
