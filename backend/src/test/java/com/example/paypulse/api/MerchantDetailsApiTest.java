@@ -35,7 +35,8 @@ class MerchantDetailsApiTest extends ApiIntegrationTest {
         String oib = MerchantFixtures.oib();
         String sourceId = MerchantFixtures.sourceId();
         long merchantId = merchants.merchant(organisationId, "Konzum", oib, sourceId, "ACTIVE");
-        long outletId = merchants.outlet(merchantId, "Konzum Ilica", MerchantFixtures.sourceId(), "Zagreb", "HOLD");
+        String outletSourceId = MerchantFixtures.sourceId();
+        long outletId = merchants.outlet(merchantId, "Konzum Ilica", outletSourceId, "Zagreb", "HOLD");
         String tid = "T" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         long terminalId = terminals.terminal(outletId, tid, "POS", "ACTIVE");
 
@@ -49,9 +50,13 @@ class MerchantDetailsApiTest extends ApiIntegrationTest {
                 .andExpect(jsonPath("$.outlets.total").value(1))
                 .andExpect(jsonPath("$.outlets.href").value(url(merchantId) + "/outlets"))
                 .andExpect(jsonPath("$.outlets.items[0].id").value(outletId))
+                .andExpect(jsonPath("$.outlets.items[0].outletId").value(outletSourceId))
                 .andExpect(jsonPath("$.outlets.items[0].name").value("Konzum Ilica"))
+                .andExpect(jsonPath("$.outlets.items[0].address").value("Ulica 1"))
                 .andExpect(jsonPath("$.outlets.items[0].city").value("Zagreb"))
+                .andExpect(jsonPath("$.outlets.items[0].postalCode").value("10000"))
                 .andExpect(jsonPath("$.outlets.items[0].status").value("HOLD"))
+                .andExpect(jsonPath("$.outlets.items[0].terminalCount").value(1))
                 .andExpect(jsonPath("$.terminals.total").value(1))
                 .andExpect(jsonPath("$.terminals.href").value("/api/terminals?merchantId=" + merchantId))
                 .andExpect(jsonPath("$.terminals.items[0].id").value(terminalId))

@@ -21,12 +21,16 @@ public class OutletMapper {
         );
     }
 
-    public MerchantDetailsResponse.OutletItem toItem(Outlet outlet) {
+    public MerchantDetailsResponse.OutletItem toItem(Outlet outlet, long terminalCount) {
         return new MerchantDetailsResponse.OutletItem(
                 outlet.getIdOutlet(),
+                outlet.getSourceId(),
                 outlet.getName(),
+                outlet.getAddress(),
                 outlet.getCity(),
-                outlet.getStatus()
+                outlet.getPostalCode(),
+                outlet.getStatus(),
+                terminalCount
         );
     }
 }

@@ -29,7 +29,8 @@ public record MerchantDetailsResponse(
         }
     }
 
-    public record OutletItem(Long id, String name, String city, String status) {
+    public record OutletItem(Long id, String outletId, String name, String address, String city, String postalCode,
+                             String status, long terminalCount) {
     }
 
     public record TerminalItem(Long id, String terminalId, TerminalResponse.OutletRef outlet, String status) {
