@@ -1,6 +1,8 @@
 package com.example.paypulse.ui.merchants
 
 import com.example.paypulse.domain.merchant.Merchant
+import com.example.paypulse.domain.merchant.MerchantDetailsError
+import com.example.paypulse.domain.merchant.MerchantDetailsResult
 import com.example.paypulse.domain.merchant.MerchantPage
 import com.example.paypulse.domain.merchant.MerchantQuery
 import com.example.paypulse.domain.merchant.MerchantRepository
@@ -20,6 +22,19 @@ class StubMerchantRepository : MerchantRepository {
     override suspend fun search(query: MerchantQuery): MerchantResult {
         queries += query
         return queued.removeFirstOrNull() ?: defaultResult
+    }
+
+    val detailsRequests = mutableListOf<Long>()
+    private val queuedDetails = ArrayDeque<MerchantDetailsResult>()
+    var defaultDetailsResult: MerchantDetailsResult = MerchantDetailsResult.Failure(MerchantDetailsError.NOT_FOUND)
+
+    fun enqueueDetails(vararg results: MerchantDetailsResult) {
+        queuedDetails.addAll(results)
+    }
+
+    override suspend fun details(id: Long): MerchantDetailsResult {
+        detailsRequests += id
+        return queuedDetails.removeFirstOrNull() ?: defaultDetailsResult
     }
 
     companion object {
