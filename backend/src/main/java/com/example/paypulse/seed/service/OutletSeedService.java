@@ -47,8 +47,7 @@ public class OutletSeedService {
                 outlet.setPostalCode(dataGenerator.randomPostalCode());
                 outlet.setPhone(dataGenerator.randomPhone());
                 outlet.setEmail("outlet" + i + "." + merchant.getSourceId().toLowerCase() + "@example.hr");
-                outlet.setStatus("ACTIVE");
-                outlet.setIsActive(true);
+                outlet.setStatus(Outlet.ACTIVE);
                 outlet = outletRepository.save(outlet);
                 outlets.add(outlet);
             }
