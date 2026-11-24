@@ -2,6 +2,7 @@ package com.example.paypulse.integration.sevenpay.sync;
 
 import com.example.paypulse.config.SevenPayImportProperties;
 import com.example.paypulse.config.SevenPaySyncProperties;
+import com.example.paypulse.integration.sevenpay.SevenPayException;
 import com.example.paypulse.integration.sevenpay.importer.SevenPayImportService;
 import com.example.paypulse.model.Organisation;
 import com.example.paypulse.model.SyncRun;
@@ -65,15 +66,34 @@ public class SevenPaySyncService {
         SyncRun syncRun = syncRunRepository.save(SyncRun.start());
         SyncCounts counts = new SyncCounts();
         try {
-            importService.importAll().forEach(result -> log.info("7Pay import {}", result));
+            importMerchantsAndTerminals(counts);
             transactionSync.sync(organisation(), from, until, counts);
-            syncRun.finish(counts.failed() > 0 ? PARTIAL : SUCCESS, counts.processed(), counts.skippedTotal(),
-                    counts.failed(), null);
+            syncRun.finish(statusOf(counts), counts.processed(), counts.skippedTotal(), counts.failed(), null);
         } catch (RuntimeException exception) {
             log.error("7Pay sync failed", exception);
             syncRun.finish(FAILED, counts.processed(), counts.skippedTotal(), counts.failed(), message(exception));
         }
         return syncRunRepository.save(syncRun);
+    }
+
+    private void importMerchantsAndTerminals(SyncCounts counts) {
+        try {
+            importService.importAll().forEach(result -> log.info("7Pay import {}", result));
+        } catch (SevenPayException exception) {
+            if (exception.isAccessDenied() || exception.isRetryable()) {
+                throw exception;
+            }
+            log.warn("7Pay import failed, transactions are synced with the merchants already in the database: {}",
+                    exception.getMessage());
+            counts.fail();
+        }
+    }
+
+    private static String statusOf(SyncCounts counts) {
+        if (counts.failed() == 0) {
+            return SUCCESS;
+        }
+        return counts.processed() + counts.skippedTotal() > 0 ? PARTIAL : FAILED;
     }
 
     private LocalDate windowStart(LocalDate until) {

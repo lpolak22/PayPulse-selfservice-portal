@@ -6,6 +6,8 @@ import com.example.paypulse.integration.sevenpay.sync.SevenPayTransactionMapping
 import com.example.paypulse.integration.sevenpay.sync.SevenPayTransactionMapping.Skipped;
 import com.example.paypulse.model.CardBrand;
 import com.example.paypulse.model.TransactionType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.math.RoundingMode;
@@ -25,6 +27,7 @@ public class SevenPayTransactionMapper {
                         .name());
     }
 
+    private static final Logger log = LoggerFactory.getLogger(SevenPayTransactionMapper.class);
     private static final ZoneId ZAGREB = ZoneId.of("Europe/Zagreb");
     private static final Pattern MASKED_PAN = Pattern.compile("^[0-9]{6}\\*{2,9}[0-9]{4}$");
 
@@ -44,6 +47,7 @@ public class SevenPayTransactionMapper {
         }
         Optional<CardBrand> brand = SevenPayTransactionValues.cardBrand(details.cardBrand());
         if (brand.isEmpty()) {
+            log.warn("7Pay transaction {} has an unknown card brand '{}'", sourceId, details.cardBrand());
             return new Skipped(sourceId, SyncSkipReason.UNKNOWN_CARD_BRAND);
         }
         if (SevenPayTransactionValues.isDummy(brand.get())) {
