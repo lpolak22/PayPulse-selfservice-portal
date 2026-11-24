@@ -47,7 +47,7 @@ fun MerchantDetailsScreen(
             MerchantBreadcrumb(
                 merchantName = state.details?.name,
                 onMerchantsClick = { onEvent(MerchantDetailsEvent.MerchantsClicked) },
-                modifier = Modifier.padding(horizontal = 12.dp)
+                modifier = Modifier.padding(horizontal = 20.dp)
             )
             Box(modifier = Modifier.weight(1f)) {
                 when (val content = state.content) {

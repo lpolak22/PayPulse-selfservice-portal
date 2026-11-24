@@ -1,6 +1,7 @@
 package com.example.paypulse.ui.merchants.details
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -23,7 +24,11 @@ fun MerchantBreadcrumb(merchantName: String?, onMerchantsClick: () -> Unit, modi
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = modifier.fillMaxWidth()
     ) {
-        TextButton(onClick = onMerchantsClick, modifier = Modifier.heightIn(min = 48.dp)) {
+        TextButton(
+            onClick = onMerchantsClick,
+            contentPadding = PaddingValues(horizontal = 4.dp),
+            modifier = Modifier.heightIn(min = 48.dp)
+        ) {
             Text(text = stringResource(R.string.merchants_title), style = MaterialTheme.typography.bodyMedium)
         }
         merchantName?.let { name ->
