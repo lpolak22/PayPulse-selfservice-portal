@@ -18,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.paypulse.R
 import com.example.paypulse.domain.user.UserRole
@@ -25,7 +27,11 @@ import com.example.paypulse.domain.user.UserRole
 @Composable
 internal fun RoleOptionCards(selected: UserRole, onSelect: (UserRole) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier = modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(text = stringResource(R.string.users_role_label), style = MaterialTheme.typography.titleSmall)
+        Text(
+            text = stringResource(R.string.users_role_label),
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.semantics { heading() }
+        )
         RoleOptionCard(
             role = UserRole.ADMIN,
             title = R.string.users_role_admin,

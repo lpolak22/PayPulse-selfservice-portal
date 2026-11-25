@@ -22,6 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.paypulse.R
 import com.example.paypulse.domain.user.User
@@ -104,8 +106,9 @@ private fun EditUserBottomBar(form: UserFormUiState, onSaveClick: () -> Unit, on
 
 @Composable
 private fun CenteredLoading(modifier: Modifier) {
+    val description = stringResource(R.string.loading)
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(modifier = Modifier.semantics { contentDescription = description })
     }
 }
 

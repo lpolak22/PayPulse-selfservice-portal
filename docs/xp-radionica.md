@@ -72,6 +72,8 @@ Kao korisnik čitača zaslona želim da su gumbi i ikone opisani, kako bih znao 
 2. Zadano: ekran ima ikone. Kada: čitač dođe do njih. Tada: ikone koje nose značenje (status, greška, upozorenje) imaju opis, a ukrasne ikone čitač preskače.
 3. Zadano: otvoren je bilo koji glavni ekran. Kada: skačem po naslovima. Tada: naslovi ekrana i odjeljaka označeni su kao naslovi.
 
+Napomena: Nadzorna ploča i Transakcije već su imale naslove i opise, a ekran Trgovci nije na dev grani (PULSE-59 nije spojen). Zato je XP-3 proveden na ekranima Korisnici (popis, novi, uređivanje), gdje su postojale stvarne rupe.
+
 ### XP-4 Vidljivi rubovi i ikone (2 boda, Par 1, iteracija 2, AI razina 2)
 
 Kao slabovidni korisnik želim jasno vidjeti rubove polja i ikone, a ne samo tekst.
@@ -89,7 +91,7 @@ Kao slabovidni korisnik želim veći tekst u aplikaciji, bez mijenjanja veličin
 
 Testovi: `LargerTextTest`, `FontScaleTest`
 
-### XP-6 Redak transakcije kao jedna rečenica (3 boda, Par 3, iteracija 2, AI razina 4)
+### XP-6 Redak transakcije kao jedna rečenica (1 bod, Par 3, iteracija 2, AI razina 4)
 
 Kao korisnik čitača zaslona želim da se redak transakcije pročita kao jedna rečenica, kako bih brzo prošao kroz popis.
 
@@ -97,7 +99,11 @@ Kao korisnik čitača zaslona želim da se redak transakcije pročita kao jedna 
 2. Zadano: redak je fokusiran. Kada: dvaput dodirnem. Tada: otvaraju se detalji transakcije, a čitač prije toga izgovara da se otvaraju detalji.
 3. Zadano: redak s karticom. Kada: čitač ga pročita. Tada: broj kartice izgovara se samo maskiran, kao na ekranu.
 
-### XP-7 Opis grafova na nadzornoj ploči (2 boda, rezerva)
+Napomena: kriteriji 2 i 3 već su ispunjeni u postojećem kodu (TransactionRow, PULSE-70), ali nisu bili pokriveni testom. Priču smo smanjili s 3 na 1 bod: mijenja se samo redoslijed, a test zaključava sva tri kriterija.
+
+### XP-7 Opis grafova na nadzornoj ploči (2 boda, izbačeno)
+
+Napomena: opisi grafova već postoje (TrendSection, BrandSection, AcquirerSection), pa XP-7 nije nova vrijednost.
 
 Kao korisnik čitača zaslona želim čuti sažetak grafa, kako bih znao promet bez gledanja stupaca.
 
@@ -109,7 +115,7 @@ Kao korisnik čitača zaslona želim čuti sažetak grafa, kako bih znao promet 
 | Iteracija | Planirano | Ostvareno | Napomena |
 |---|---|---|---|
 | 1 | 9 (XP-1, XP-2, XP-3) | | |
-| 2 | 8 (XP-4, XP-5, XP-6) + 2 rezerva | | |
+| 2 | 6 (XP-4, XP-5, XP-6); XP-6 smanjen 3 → 1, XP-7 izbačen | | |
 
 Pravilo: ako je brzina u iteraciji 1 manja od 9, iteracija 2 dobiva najviše toliko bodova. Prvi ispada XP-4.
 

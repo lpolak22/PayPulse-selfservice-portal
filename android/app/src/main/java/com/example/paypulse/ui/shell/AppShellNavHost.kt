@@ -8,7 +8,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.paypulse.domain.user.User
+import com.example.paypulse.ui.accessibility.AccessibilitySettingsRoute
+import com.example.paypulse.ui.accessibility.AccessibilitySettingsViewModel
 import com.example.paypulse.ui.dashboard.DashboardRoute
 import com.example.paypulse.ui.merchants.MerchantsRoute
 import com.example.paypulse.ui.transactions.TransactionsRoute
@@ -42,6 +45,12 @@ fun AppShellNavHost(
         comingSoon<ShellRoute.Info>(DrawerItem.INFO, onMenuClick)
         comingSoon<ShellRoute.Support>(DrawerItem.SUPPORT, onMenuClick)
         comingSoon<ShellRoute.Settings>(DrawerItem.SETTINGS, onMenuClick)
+        composable<ShellRoute.Accessibility> {
+            AccessibilitySettingsRoute(
+                onMenuClick = onMenuClick,
+                viewModel = viewModel(factory = AccessibilitySettingsViewModel.Factory)
+            )
+        }
     }
 }
 
