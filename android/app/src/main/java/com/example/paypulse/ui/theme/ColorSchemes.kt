@@ -38,5 +38,65 @@ private val DarkColorScheme = darkColorScheme(
     onTertiary = Grey900
 )
 
-fun payPulseColorScheme(darkTheme: Boolean, highContrast: Boolean): ColorScheme =
-    if (darkTheme) DarkColorScheme else LightColorScheme
+private val HighContrastLightColorScheme = lightColorScheme(
+    primary = Red900,
+    onPrimary = Color.White,
+    primaryContainer = Red50,
+    onPrimaryContainer = Red950,
+    secondary = Orange900,
+    onSecondary = Color.White,
+    secondaryContainer = Grey100,
+    onSecondaryContainer = Color.Black,
+    tertiary = Green900,
+    onTertiary = Color.White,
+    background = Color.White,
+    onBackground = Color.Black,
+    surface = Color.White,
+    onSurface = Color.Black,
+    surfaceVariant = Grey100,
+    onSurfaceVariant = Grey900,
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color.White,
+    surfaceContainer = Grey100,
+    surfaceContainerHigh = Grey100,
+    surfaceContainerHighest = Grey100,
+    error = Red900,
+    onError = Color.White,
+    errorContainer = Red50,
+    onErrorContainer = Red950
+)
+
+private val HighContrastDarkColorScheme = darkColorScheme(
+    primary = Red200,
+    onPrimary = Color.Black,
+    primaryContainer = Red950,
+    onPrimaryContainer = Color.White,
+    secondary = Orange200,
+    onSecondary = Color.Black,
+    secondaryContainer = Grey850,
+    onSecondaryContainer = Color.White,
+    tertiary = Green200,
+    onTertiary = Color.Black,
+    background = Color.Black,
+    onBackground = Color.White,
+    surface = Color.Black,
+    onSurface = Color.White,
+    surfaceVariant = Grey850,
+    onSurfaceVariant = Grey100,
+    surfaceContainerLowest = Color.Black,
+    surfaceContainerLow = Color.Black,
+    surfaceContainer = Grey850,
+    surfaceContainerHigh = Grey850,
+    surfaceContainerHighest = Grey850,
+    error = Red200,
+    onError = Color.Black,
+    errorContainer = Red950,
+    onErrorContainer = Color.White
+)
+
+fun payPulseColorScheme(darkTheme: Boolean, highContrast: Boolean): ColorScheme = when {
+    darkTheme && highContrast -> HighContrastDarkColorScheme
+    highContrast -> HighContrastLightColorScheme
+    darkTheme -> DarkColorScheme
+    else -> LightColorScheme
+}
