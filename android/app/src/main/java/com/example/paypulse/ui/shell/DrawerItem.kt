@@ -22,7 +22,8 @@ enum class DrawerItem(
     USERS(R.string.navigation_users, R.drawable.ic_group, ShellRoute.Users, DrawerGroup.MAIN, UserRole.ADMIN),
     INFO(R.string.navigation_info, R.drawable.ic_info, ShellRoute.Info, DrawerGroup.SECONDARY),
     SUPPORT(R.string.navigation_support, R.drawable.ic_help, ShellRoute.Support, DrawerGroup.SECONDARY),
-    SETTINGS(R.string.navigation_settings, R.drawable.ic_settings, ShellRoute.Settings, DrawerGroup.SECONDARY);
+    SETTINGS(R.string.navigation_settings, R.drawable.ic_settings, ShellRoute.Settings, DrawerGroup.SECONDARY),
+    ACCESSIBILITY(R.string.navigation_accessibility, R.drawable.ic_accessibility, ShellRoute.Accessibility, DrawerGroup.SECONDARY);
 
     fun isVisibleFor(role: UserRole): Boolean = requiredRole == null || requiredRole == role
 

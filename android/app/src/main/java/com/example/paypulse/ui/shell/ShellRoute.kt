@@ -13,4 +13,5 @@ sealed interface ShellRoute {
     @Serializable data object Info : ShellRoute
     @Serializable data object Support : ShellRoute
     @Serializable data object Settings : ShellRoute
+    @Serializable data object Accessibility : ShellRoute
 }
