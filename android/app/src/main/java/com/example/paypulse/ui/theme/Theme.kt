@@ -2,52 +2,26 @@ package com.example.paypulse.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.graphics.Color
-
-private val LightColorScheme = lightColorScheme(
-    primary = Red600,
-    onPrimary = Color.White,
-    primaryContainer = Red50,
-    onPrimaryContainer = Red900,
-    secondary = Orange700,
-    onSecondary = Color.White,
-    secondaryContainer = Grey100,
-    onSecondaryContainer = Grey900,
-    tertiary = Green700,
-    onTertiary = Color.White,
-    background = Color.White,
-    onBackground = Grey900,
-    surface = Color.White,
-    onSurface = Grey900,
-    surfaceVariant = Grey100,
-    onSurfaceVariant = Grey700,
-    surfaceContainerHighest = Grey100,
-    outline = Grey600,
-    outlineVariant = Grey300
-)
-
-private val DarkColorScheme = darkColorScheme(
-    primary = Red300,
-    onPrimary = Grey900,
-    primaryContainer = Red950,
-    onPrimaryContainer = Red50,
-    secondary = Orange300,
-    onSecondary = Grey900,
-    tertiary = Green300,
-    onTertiary = Grey900
-)
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import com.example.paypulse.domain.accessibility.AccessibilitySettings
 
 @Composable
 fun PayPulseTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
+    accessibility: AccessibilitySettings = AccessibilitySettings(),
     content: @Composable () -> Unit
 ) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme,
-        typography = Typography,
-        content = content
-    )
+    val systemDensity = LocalDensity.current
+    val fontScale = effectiveFontScale(systemDensity.fontScale, accessibility.largerText)
+    val density = if (fontScale == systemDensity.fontScale) systemDensity else Density(systemDensity.density, fontScale)
+    CompositionLocalProvider(LocalDensity provides density) {
+        MaterialTheme(
+            colorScheme = payPulseColorScheme(darkTheme, accessibility.highContrast),
+            typography = Typography,
+            content = content
+        )
+    }
 }
