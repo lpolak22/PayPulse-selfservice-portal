@@ -30,7 +30,7 @@ fun TransactionRow(row: TransactionRowModel, onClick: () -> Unit, modifier: Modi
     val channel = row.channel?.let { stringResource(it.label()) }
     val subtitle = listOfNotNull(row.time, row.terminalId, channel)
         .joinToString(stringResource(R.string.transactions_row_separator))
-    val description = listOfNotNull(card, row.dateTime, terminal, channel, row.amount, status)
+    val description = listOfNotNull(status, row.amount, card, row.dateTime, terminal, channel)
         .joinToString(stringResource(R.string.transactions_description_separator))
     Row(
         modifier = modifier
