@@ -2,6 +2,7 @@ package com.example.paypulse.data
 
 import android.content.Context
 import com.example.paypulse.BuildConfig
+import com.example.paypulse.data.accessibility.DataStoreAccessibilitySettingsRepository
 import com.example.paypulse.data.activation.ApiActivationRepository
 import com.example.paypulse.data.auth.ApiAuthRepository
 import com.example.paypulse.data.auth.EncryptedTokenStorage
@@ -28,6 +29,7 @@ import com.example.paypulse.data.security.KeystoreCipher
 import com.example.paypulse.data.transaction.ApiTransactionDetailsRepository
 import com.example.paypulse.data.transaction.ApiTransactionRepository
 import com.example.paypulse.data.user.FakeUserRepository
+import com.example.paypulse.domain.accessibility.AccessibilitySettingsRepository
 import com.example.paypulse.domain.activation.ActivationRepository
 import com.example.paypulse.domain.auth.AuthRepository
 import com.example.paypulse.domain.dashboard.DashboardRepository
@@ -90,4 +92,7 @@ object AppContainer {
         ApiTransactionDetailsRepository(transactionApi, errorResponseParser)
     }
     val merchantRepository: MerchantRepository by lazy { ApiMerchantRepository(merchantApi) }
+    val accessibilitySettingsRepository: AccessibilitySettingsRepository by lazy {
+        DataStoreAccessibilitySettingsRepository(applicationContext)
+    }
 }
