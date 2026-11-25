@@ -11,6 +11,7 @@
     <string name="users_empty">Još nema korisnika.</string>
     <string name="users_search_empty">Nema korisnika za traženi pojam.</string>
     <string name="users_add_button">Novi korisnik</string>
+    <string name="users_open_edit">Uredi korisnika</string>
 
     <string name="users_role_admin">Admin</string>
     <string name="users_role_user">Korisnik</string>
@@ -33,6 +34,7 @@
     <string name="users_active_description">Neaktivan korisnik se ne može prijaviti</string>
     <string name="users_create_button">Kreiraj korisnika</string>
     <string name="users_save_button">Spremi promjene</string>
+    <string name="users_saving">Spremanje u tijeku</string>
     <string name="users_delete_button">Obriši korisnika</string>
 
     <string name="users_error_required">Obavezno polje.</string>
