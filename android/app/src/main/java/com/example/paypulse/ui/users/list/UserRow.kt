@@ -30,7 +30,7 @@ internal fun UserRow(user: User, onClick: () -> Unit, modifier: Modifier = Modif
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .clickable(onClickLabel = stringResource(R.string.users_open_edit), onClick = onClick)
             .padding(vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
