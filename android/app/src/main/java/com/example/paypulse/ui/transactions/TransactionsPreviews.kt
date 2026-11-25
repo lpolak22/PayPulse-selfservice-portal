@@ -4,6 +4,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import com.example.paypulse.domain.accessibility.AccessibilitySettings
 import com.example.paypulse.domain.dashboard.CardBrand
 import com.example.paypulse.domain.dashboard.DateRange
 import com.example.paypulse.domain.dashboard.TransactionStatus
@@ -75,6 +76,14 @@ private fun stateWith(content: TransactionsContent) =
 @PreviewLightDark
 @Composable
 private fun TransactionsFilledPreview() = TransactionsPreview(loadedState())
+
+@PreviewLightDark
+@Composable
+private fun TransactionsHighContrastPreview() {
+    PayPulseTheme(accessibility = AccessibilitySettings(highContrast = true)) {
+        TransactionsScreen(state = loadedState(), onEvent = {})
+    }
+}
 
 @PreviewLightDark
 @Composable
