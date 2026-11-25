@@ -6,6 +6,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.paypulse.data.AppContainer
+import com.example.paypulse.domain.accessibility.AccessibilitySettings
 import com.example.paypulse.ui.app.AppRoute
 import com.example.paypulse.ui.app.AppViewModel
 import com.example.paypulse.ui.theme.PayPulseTheme
@@ -19,7 +23,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         if (savedInstanceState == null) appViewModel.onAppLink(intent?.dataString)
         setContent {
-            PayPulseTheme {
+            val accessibility by AppContainer.accessibilitySettingsRepository.settings
+                .collectAsStateWithLifecycle(AccessibilitySettings())
+            PayPulseTheme(accessibility = accessibility) {
                 AppRoute(viewModel = appViewModel)
             }
         }

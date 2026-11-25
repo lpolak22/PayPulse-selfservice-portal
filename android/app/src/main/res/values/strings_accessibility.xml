@@ -1,0 +1,9 @@
+<resources>
+    <string name="accessibility_title">Pristupačnost</string>
+    <string name="accessibility_larger_text">Veći tekst</string>
+    <string name="accessibility_larger_text_description">Povećava veličinu teksta u cijeloj aplikaciji</string>
+    <string name="accessibility_high_contrast">Visoki kontrast</string>
+    <string name="accessibility_high_contrast_description">Pojačava kontrast boja radi bolje čitljivosti</string>
+    <string name="accessibility_preview_title">Pregled</string>
+    <string name="accessibility_preview_body">Ovako će izgledati tekst u aplikaciji s odabranim postavkama.</string>
+</resources>
