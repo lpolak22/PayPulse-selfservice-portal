@@ -1,0 +1,42 @@
+package com.example.paypulse.ui.theme
+
+import androidx.compose.material3.ColorScheme
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
+
+private val LightColorScheme = lightColorScheme(
+    primary = Red600,
+    onPrimary = Color.White,
+    primaryContainer = Red50,
+    onPrimaryContainer = Red900,
+    secondary = Orange700,
+    onSecondary = Color.White,
+    secondaryContainer = Grey100,
+    onSecondaryContainer = Grey900,
+    tertiary = Green700,
+    onTertiary = Color.White,
+    background = Color.White,
+    onBackground = Grey900,
+    surface = Color.White,
+    onSurface = Grey900,
+    surfaceVariant = Grey100,
+    onSurfaceVariant = Grey700,
+    surfaceContainerHighest = Grey100,
+    outline = Grey600,
+    outlineVariant = Grey300
+)
+
+private val DarkColorScheme = darkColorScheme(
+    primary = Red300,
+    onPrimary = Grey900,
+    primaryContainer = Red950,
+    onPrimaryContainer = Red50,
+    secondary = Orange300,
+    onSecondary = Grey900,
+    tertiary = Green300,
+    onTertiary = Grey900
+)
+
+fun payPulseColorScheme(darkTheme: Boolean, highContrast: Boolean): ColorScheme =
+    if (darkTheme) DarkColorScheme else LightColorScheme
