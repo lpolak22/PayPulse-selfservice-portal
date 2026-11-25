@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -37,7 +39,7 @@ import com.example.paypulse.R
 @Composable
 internal fun UserFormTopBar(@StringRes title: Int, onBackClick: () -> Unit) {
     CenterAlignedTopAppBar(
-        title = { Text(stringResource(title)) },
+        title = { Text(stringResource(title), modifier = Modifier.semantics { heading() }) },
         navigationIcon = {
             IconButton(onClick = onBackClick) {
                 Icon(
@@ -64,6 +66,7 @@ internal fun FormBottomBar(content: @Composable ColumnScope.() -> Unit) {
 
 @Composable
 internal fun SaveButton(@StringRes text: Int, isSaving: Boolean, onClick: () -> Unit) {
+    val savingDescription = stringResource(R.string.users_saving)
     Button(
         onClick = onClick,
         enabled = !isSaving,
@@ -71,7 +74,10 @@ internal fun SaveButton(@StringRes text: Int, isSaving: Boolean, onClick: () -> 
         shape = CircleShape
     ) {
         if (isSaving) {
-            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp).semantics { contentDescription = savingDescription },
+                strokeWidth = 2.dp
+            )
         } else {
             Text(stringResource(text))
         }

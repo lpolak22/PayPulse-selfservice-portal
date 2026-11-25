@@ -22,6 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.example.paypulse.R
 import com.example.paypulse.domain.user.User
@@ -69,7 +72,7 @@ private fun UsersHeader(totalCount: Int) {
         Text(
             text = stringResource(R.string.users_title),
             style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.weight(1f).alignByBaseline()
+            modifier = Modifier.weight(1f).alignByBaseline().semantics { heading() }
         )
         Text(
             text = pluralStringResource(R.plurals.users_count, totalCount, totalCount),
@@ -105,8 +108,9 @@ private fun UsersList(users: List<User>, onUserClick: (Long) -> Unit) {
 
 @Composable
 private fun LoadingIndicator() {
+    val description = stringResource(R.string.loading)
     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        CircularProgressIndicator()
+        CircularProgressIndicator(modifier = Modifier.semantics { contentDescription = description })
     }
 }
 
