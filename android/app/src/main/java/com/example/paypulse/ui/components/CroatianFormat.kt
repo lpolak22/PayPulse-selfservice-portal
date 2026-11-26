@@ -19,6 +19,12 @@ object CroatianFormat {
     fun money(amount: BigDecimal): String =
         NumberFormat.getCurrencyInstance(CroatianLocale).apply { currency = euro }.format(amount)
 
+    fun money(amount: BigDecimal, currencyCode: String?): String {
+        val currency = currencyCode?.let(::currencyOrNull)
+            ?: return listOfNotNull(twoDecimals().format(amount), currencyCode).joinToString(" ")
+        return NumberFormat.getCurrencyInstance(CroatianLocale).apply { this.currency = currency }.format(amount)
+    }
+
     fun count(value: Int): String = NumberFormat.getIntegerInstance(CroatianLocale).format(value)
 
     fun percent(ratio: BigDecimal): String = percentFormat().format(ratio)
@@ -34,6 +40,14 @@ object CroatianFormat {
     }
 
     private fun oneDecimal(): DecimalFormat = DecimalFormat("#,##0.0", DecimalFormatSymbols(CroatianLocale))
+
+    private fun twoDecimals(): DecimalFormat = DecimalFormat("#,##0.00", DecimalFormatSymbols(CroatianLocale))
+
+    private fun currencyOrNull(code: String): Currency? = try {
+        Currency.getInstance(code)
+    } catch (exception: IllegalArgumentException) {
+        null
+    }
 
     private fun percentFormat(): DecimalFormat = (NumberFormat.getPercentInstance(CroatianLocale) as DecimalFormat).apply {
         minimumFractionDigits = 1

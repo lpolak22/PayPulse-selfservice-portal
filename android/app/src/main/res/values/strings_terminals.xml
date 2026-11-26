@@ -1,0 +1,40 @@
+<resources>
+    <string name="terminals_title">Terminali</string>
+    <string name="terminals_count">%1$s od %2$s</string>
+    <string name="terminals_tid_and_type">%1$s · %2$s</string>
+    <string name="terminals_outlet_and_merchant">%1$s · %2$s</string>
+
+    <string name="terminals_filter_all_statuses">Svi statusi</string>
+    <string name="terminals_filter_all_types">Svi tipovi</string>
+    <string name="terminals_filter_prepared">Pripremljeni</string>
+    <string name="terminals_filter_authenticated">Autentificirani</string>
+    <string name="terminals_filter_active">Aktivni</string>
+    <string name="terminals_filter_inactive">Neaktivni</string>
+    <string name="terminals_filter_deactivated">Deaktivirani</string>
+    <string name="terminals_filter_suspended">Suspendirani</string>
+    <string name="terminals_filter_blocked">Blokirani</string>
+    <string name="terminals_filter_unknown">Nepoznati</string>
+
+    <string name="terminals_status_prepared">Pripremljen</string>
+    <string name="terminals_status_authenticated">Autentificiran</string>
+    <string name="terminals_status_active">Aktivan</string>
+    <string name="terminals_status_inactive">Neaktivan</string>
+    <string name="terminals_status_deactivated">Deaktiviran</string>
+    <string name="terminals_status_suspended">Suspendiran</string>
+    <string name="terminals_status_blocked">Blokiran</string>
+    <string name="terminals_status_unknown">Nepoznat</string>
+
+    <string name="terminals_empty_title">Nema pronađenih terminala</string>
+    <string name="terminals_empty_body">Promijeni ili poništi filtre.</string>
+    <string name="terminals_empty_no_filters_body">Tvoja organizacija još nema terminala.</string>
+    <string name="terminals_clear_filters">Poništi filtre</string>
+    <string name="terminals_retry">Pokušaj ponovno</string>
+    <string name="terminals_error_network_title">Nema internetske veze</string>
+    <string name="terminals_error_network_body">Provjeri vezu s internetom i pokušaj ponovno.</string>
+    <string name="terminals_error_unknown_title">Nešto je pošlo po zlu</string>
+    <string name="terminals_error_unknown_body">Pokušaj ponovno za nekoliko trenutaka.</string>
+    <string name="terminals_error_invalid_filter_title">Filtar nije ispravan</string>
+    <string name="terminals_error_invalid_filter_body">Poništi filtre i pokušaj ponovno.</string>
+    <string name="terminals_loading_more">Učitavanje još terminala</string>
+    <string name="terminals_load_more_failed">Sljedeći terminali se nisu učitali.</string>
+</resources>
