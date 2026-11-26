@@ -11,6 +11,7 @@ import androidx.navigation.toRoute
 import com.example.paypulse.domain.user.User
 import com.example.paypulse.ui.dashboard.DashboardRoute
 import com.example.paypulse.ui.merchants.MerchantsRoute
+import com.example.paypulse.ui.terminals.TerminalsRoute
 import com.example.paypulse.ui.transactions.TransactionsRoute
 import com.example.paypulse.ui.transactions.details.TransactionDetailsRoute
 import com.example.paypulse.ui.users.UserManagementNavHost
@@ -33,7 +34,9 @@ fun AppShellNavHost(
         composable<ShellRoute.Merchants> {
             MerchantsRoute(onMenuClick = onMenuClick, onMerchantClick = {})
         }
-        comingSoon<ShellRoute.Terminals>(DrawerItem.TERMINALS, onMenuClick)
+        composable<ShellRoute.Terminals> {
+            TerminalsRoute(onMenuClick = onMenuClick, onTerminalClick = {})
+        }
         transactionDestinations(navController, onMenuClick)
         comingSoon<ShellRoute.Reports>(DrawerItem.REPORTS, onMenuClick)
         composable<ShellRoute.Users> {
