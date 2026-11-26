@@ -25,6 +25,7 @@ import com.example.paypulse.repository.MerchantSpecifications;
 import com.example.paypulse.repository.OutletCount;
 import com.example.paypulse.repository.OutletRepository;
 import com.example.paypulse.repository.OutletSpecifications;
+import com.example.paypulse.repository.OutletTerminalCount;
 import com.example.paypulse.repository.TerminalCount;
 import com.example.paypulse.repository.TerminalRepository;
 import com.example.paypulse.repository.TerminalSpecifications;
@@ -87,8 +88,18 @@ public class MerchantServiceImpl implements MerchantService {
     private RelatedItems<OutletItem> relatedOutlets(Long merchantId) {
         Page<Outlet> outlets = outletRepository.findAll(
                 organisationScope.outlets().and(OutletSpecifications.belongsTo(merchantId)), FIRST_OUTLETS);
-        return new RelatedItems<>(outlets.map(outletMapper::toItem).getContent(), outlets.getTotalElements(),
-                "/api/merchants/" + merchantId + "/outlets");
+        Map<Long, Long> terminalCounts = outletTerminalCounts(outlets.map(Outlet::getIdOutlet).getContent());
+        List<OutletItem> items = outlets.map(outlet -> outletMapper.toItem(outlet,
+                terminalCounts.getOrDefault(outlet.getIdOutlet(), 0L))).getContent();
+        return new RelatedItems<>(items, outlets.getTotalElements(), "/api/merchants/" + merchantId + "/outlets");
+    }
+
+    private Map<Long, Long> outletTerminalCounts(List<Long> outletIds) {
+        if (outletIds.isEmpty()) {
+            return Map.of();
+        }
+        return terminalRepository.countByOutletIds(outletIds).stream()
+                .collect(Collectors.toMap(OutletTerminalCount::outletId, OutletTerminalCount::count));
     }
 
     private RelatedItems<TerminalItem> relatedTerminals(Long merchantId) {
