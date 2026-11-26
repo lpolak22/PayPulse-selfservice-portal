@@ -18,6 +18,7 @@ import com.example.paypulse.data.remote.DashboardApi
 import com.example.paypulse.data.remote.ErrorResponseParser
 import com.example.paypulse.data.remote.MerchantApi
 import com.example.paypulse.data.remote.PasswordResetApi
+import com.example.paypulse.data.remote.TerminalApi
 import com.example.paypulse.data.remote.TokenRefreshAuthenticator
 import com.example.paypulse.data.remote.TransactionApi
 import com.example.paypulse.data.remote.createApiJson
@@ -25,6 +26,7 @@ import com.example.paypulse.data.remote.createOkHttpClient
 import com.example.paypulse.data.remote.createRetrofit
 import com.example.paypulse.data.remote.withTokenAuthentication
 import com.example.paypulse.data.security.KeystoreCipher
+import com.example.paypulse.data.terminal.ApiTerminalRepository
 import com.example.paypulse.data.transaction.ApiTransactionDetailsRepository
 import com.example.paypulse.data.transaction.ApiTransactionRepository
 import com.example.paypulse.data.user.FakeUserRepository
@@ -33,6 +35,7 @@ import com.example.paypulse.domain.auth.AuthRepository
 import com.example.paypulse.domain.dashboard.DashboardRepository
 import com.example.paypulse.domain.merchant.MerchantRepository
 import com.example.paypulse.domain.passwordreset.PasswordResetRepository
+import com.example.paypulse.domain.terminal.TerminalRepository
 import com.example.paypulse.domain.transaction.TransactionDetailsRepository
 import com.example.paypulse.domain.transaction.TransactionRepository
 import com.example.paypulse.domain.user.UserRepository
@@ -70,6 +73,7 @@ object AppContainer {
     private val dashboardApi: DashboardApi by lazy { authenticatedRetrofit.create() }
     private val transactionApi: TransactionApi by lazy { authenticatedRetrofit.create() }
     private val merchantApi: MerchantApi by lazy { authenticatedRetrofit.create() }
+    private val terminalApi: TerminalApi by lazy { authenticatedRetrofit.create() }
 
     val authRepository: AuthRepository by lazy {
         ApiAuthRepository(authApi, currentUserApi, errorResponseParser, tokenStorage, sessionStore)
@@ -90,4 +94,5 @@ object AppContainer {
         ApiTransactionDetailsRepository(transactionApi, errorResponseParser)
     }
     val merchantRepository: MerchantRepository by lazy { ApiMerchantRepository(merchantApi) }
+    val terminalRepository: TerminalRepository by lazy { ApiTerminalRepository(terminalApi) }
 }
