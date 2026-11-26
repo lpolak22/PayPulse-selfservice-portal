@@ -17,7 +17,7 @@ fun MerchantDetailsDto.toMerchantDetails(): MerchantDetails = MerchantDetails(
     merchantId = merchantId.nullIfBlank(),
     name = name,
     oib = registrationNumber,
-    status = enumOrNull<MerchantStatus>(status),
+    status = statusOrNull<MerchantStatus>(status),
     outlets = outlets.toRelatedItems { it.toRelatedOutlet() },
     terminals = terminals.toRelatedItems { it.toMerchantTerminal() }
 )
@@ -32,7 +32,7 @@ private fun OutletDto.toRelatedOutlet(): Outlet = Outlet(
     address = address.nullIfBlank(),
     city = city.nullIfBlank(),
     postalCode = postalCode.nullIfBlank(),
-    status = enumOrNull<OutletStatus>(status),
+    status = statusOrNull<OutletStatus>(status),
     terminalCount = terminalCount
 )
 
@@ -40,10 +40,10 @@ private fun MerchantTerminalDto.toMerchantTerminal(): MerchantTerminal = Merchan
     id = id,
     terminalId = terminalId.nullIfBlank(),
     outletName = outlet?.name.nullIfBlank(),
-    status = enumOrNull<TerminalStatus>(status)
+    status = statusOrNull<TerminalStatus>(status)
 )
 
 private fun String?.nullIfBlank(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
 
-private inline fun <reified T : Enum<T>> enumOrNull(value: String?): T? =
+private inline fun <reified T : Enum<T>> statusOrNull(value: String?): T? =
     enumValues<T>().firstOrNull { it.name.equals(value?.trim(), ignoreCase = true) }
