@@ -1,7 +1,10 @@
 package com.example.paypulse.data.merchant
 
 import com.example.paypulse.data.remote.MerchantApi
+import com.example.paypulse.data.remote.mapper.toMerchantDetails
 import com.example.paypulse.data.remote.mapper.toMerchantPage
+import com.example.paypulse.domain.merchant.MerchantDetailsError
+import com.example.paypulse.domain.merchant.MerchantDetailsResult
 import com.example.paypulse.domain.merchant.MerchantError
 import com.example.paypulse.domain.merchant.MerchantQuery
 import com.example.paypulse.domain.merchant.MerchantRepository
@@ -31,6 +34,21 @@ class ApiMerchantRepository(private val merchantApi: MerchantApi) : MerchantRepo
         MerchantResult.Failure(MerchantError.UNKNOWN)
     }
 
+    override suspend fun details(id: Long): MerchantDetailsResult = try {
+        MerchantDetailsResult.Success(merchantApi.details(id).toMerchantDetails())
+    } catch (exception: CancellationException) {
+        throw exception
+    } catch (exception: IOException) {
+        MerchantDetailsResult.Failure(MerchantDetailsError.NETWORK)
+    } catch (exception: HttpException) {
+        MerchantDetailsResult.Failure(exception.toMerchantDetailsError())
+    } catch (exception: Exception) {
+        MerchantDetailsResult.Failure(MerchantDetailsError.UNKNOWN)
+    }
+
     private fun HttpException.toMerchantError(): MerchantError =
         if (code() == HttpURLConnection.HTTP_BAD_REQUEST) MerchantError.INVALID_FILTER else MerchantError.UNKNOWN
+
+    private fun HttpException.toMerchantDetailsError(): MerchantDetailsError =
+        if (code() == HttpURLConnection.HTTP_NOT_FOUND) MerchantDetailsError.NOT_FOUND else MerchantDetailsError.UNKNOWN
 }

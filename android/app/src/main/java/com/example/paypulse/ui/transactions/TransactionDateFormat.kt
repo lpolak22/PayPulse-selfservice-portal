@@ -8,11 +8,14 @@ import java.time.format.DateTimeFormatter
 object TransactionDateFormat {
     private val date = DateTimeFormatter.ofPattern("dd.MM.yyyy.", CroatianLocale)
     private val time = DateTimeFormatter.ofPattern("HH:mm", CroatianLocale)
+    private val timeWithSeconds = DateTimeFormatter.ofPattern("HH:mm:ss", CroatianLocale)
     private val dateTime = DateTimeFormatter.ofPattern("dd.MM.yyyy. HH:mm", CroatianLocale)
 
     fun date(value: LocalDate): String = date.format(value)
 
     fun time(value: LocalDateTime): String = time.format(value)
+
+    fun timeWithSeconds(value: LocalDateTime): String = timeWithSeconds.format(value)
 
     fun dateTime(value: LocalDateTime): String = dateTime.format(value)
 }

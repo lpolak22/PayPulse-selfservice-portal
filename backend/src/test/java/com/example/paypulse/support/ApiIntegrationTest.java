@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ActiveProfiles("test")
 @AutoConfigureMockMvc
-@Import(RequestBoundaryConfig.class)
+@Import({RequestBoundaryConfig.class, EmailCaptureConfig.class})
 @Transactional
 @Tag("integration")
 public abstract class ApiIntegrationTest {

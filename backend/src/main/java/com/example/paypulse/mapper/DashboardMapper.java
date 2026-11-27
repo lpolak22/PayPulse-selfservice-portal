@@ -70,7 +70,7 @@ public class DashboardMapper {
     private LatestTransactionResponse toLatestTransaction(LatestTransactionRow row) {
         return new LatestTransactionResponse(
                 row.cardBrand(),
-                row.maskedPan(),
+                CardMasking.mask(row.maskedPan()),
                 row.outletName(),
                 row.transactionAt(),
                 money(row.amount()),

@@ -1,8 +1,10 @@
 package com.example.paypulse.data.remote
 
 import com.example.paypulse.data.remote.dto.PageResponseDto
+import com.example.paypulse.data.remote.dto.TransactionDetailsDto
 import com.example.paypulse.data.remote.dto.TransactionDto
 import retrofit2.http.GET
+import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface TransactionApi {
@@ -21,4 +23,7 @@ interface TransactionApi {
         @Query("page") page: Int,
         @Query("pageSize") pageSize: Int
     ): PageResponseDto<TransactionDto>
+
+    @GET("api/transactions/{id}")
+    suspend fun getDetails(@Path("id") id: Long): TransactionDetailsDto
 }

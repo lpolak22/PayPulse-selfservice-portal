@@ -4,6 +4,7 @@ import com.example.paypulse.config.SecurityConfig;
 import com.example.paypulse.dto.common.ErrorResponse;
 import com.example.paypulse.dto.common.PageQuery;
 import com.example.paypulse.dto.common.PageResponse;
+import com.example.paypulse.dto.transaction.TransactionDetailsResponse;
 import com.example.paypulse.dto.transaction.TransactionResponse;
 import com.example.paypulse.dto.transaction.TransactionSearchCriteria;
 import com.example.paypulse.dto.transaction.TransactionSort;
@@ -22,6 +23,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -31,7 +33,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/transactions")
-@Tag(name = "Transactions", description = "Search the transactions of the signed-in user's organisation")
+@Tag(name = "Transactions", description = "Search and view the transactions of the signed-in user's organisation")
 @SecurityRequirement(name = SecurityConfig.BEARER_AUTH)
 @ApiResponse(responseCode = "401", description = "UNAUTHORIZED: not signed in",
         content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
@@ -75,5 +77,20 @@ public class TransactionController {
         TransactionSearchCriteria criteria = new TransactionSearchCriteria(from, to, status, type, cardBrand,
                 salesChannel, authCode, rrn, outletId, terminalId);
         return transactionService.search(criteria, TransactionSort.of(sort, direction), pageQuery);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get transaction details",
+            description = "One transaction of the user's organisation with its acquirer, terminal, outlet and "
+                    + "merchant. The card number is always masked as the first 6 digits, asterisks and the last "
+                    + "4 digits; card.maskedPan is null when the stored value is not a recognisable card number. "
+                    + "Times are UTC.")
+    @ApiResponse(responseCode = "200", description = "The transaction")
+    @ApiResponse(responseCode = "400", description = "BAD_REQUEST: id is not a number",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    @ApiResponse(responseCode = "404", description = "NOT_FOUND: no such transaction in the user's organisation",
+            content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    public TransactionDetailsResponse getTransaction(@PathVariable Long id) {
+        return transactionService.getTransaction(id);
     }
 }

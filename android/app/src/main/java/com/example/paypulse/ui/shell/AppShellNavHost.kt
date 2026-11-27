@@ -7,10 +7,12 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.example.paypulse.domain.user.User
 import com.example.paypulse.ui.dashboard.DashboardRoute
-import com.example.paypulse.ui.merchants.MerchantsRoute
+import com.example.paypulse.ui.terminals.TerminalsRoute
 import com.example.paypulse.ui.transactions.TransactionsRoute
+import com.example.paypulse.ui.transactions.details.TransactionDetailsRoute
 import com.example.paypulse.ui.users.UserManagementNavHost
 
 @Composable
@@ -28,13 +30,11 @@ fun AppShellNavHost(
                 onShowAllTransactions = { navController.navigateToTopLevel(ShellRoute.Transactions) }
             )
         }
-        composable<ShellRoute.Merchants> {
-            MerchantsRoute(onMenuClick = onMenuClick, onMerchantClick = {})
+        merchantsDestinations(navController = navController, onMenuClick = onMenuClick)
+        composable<ShellRoute.Terminals> {
+            TerminalsRoute(onMenuClick = onMenuClick, onTerminalClick = {})
         }
-        comingSoon<ShellRoute.Terminals>(DrawerItem.TERMINALS, onMenuClick)
-        composable<ShellRoute.Transactions> {
-            TransactionsRoute(onMenuClick = onMenuClick, onTransactionClick = {})
-        }
+        transactionDestinations(navController, onMenuClick)
         comingSoon<ShellRoute.Reports>(DrawerItem.REPORTS, onMenuClick)
         composable<ShellRoute.Users> {
             UserManagementNavHost(currentUserRole = user.role, onMenuClick = onMenuClick)
@@ -42,6 +42,23 @@ fun AppShellNavHost(
         comingSoon<ShellRoute.Info>(DrawerItem.INFO, onMenuClick)
         comingSoon<ShellRoute.Support>(DrawerItem.SUPPORT, onMenuClick)
         comingSoon<ShellRoute.Settings>(DrawerItem.SETTINGS, onMenuClick)
+    }
+}
+
+private fun NavGraphBuilder.transactionDestinations(navController: NavHostController, onMenuClick: () -> Unit) {
+    composable<ShellRoute.Transactions> { entry ->
+        TransactionsRoute(
+            onMenuClick = onMenuClick,
+            onTransactionClick = { id -> navController.navigateFrom(entry, ShellRoute.TransactionDetails(id)) }
+        )
+    }
+    composable<ShellRoute.TransactionDetails> { entry ->
+        TransactionDetailsRoute(
+            transactionId = entry.toRoute<ShellRoute.TransactionDetails>().id,
+            onBackClick = { navController.popFrom(entry) },
+            onTerminalClick = {},
+            onOutletClick = {}
+        )
     }
 }
 
