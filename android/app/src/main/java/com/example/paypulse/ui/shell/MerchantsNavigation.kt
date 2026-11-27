@@ -7,6 +7,7 @@ import androidx.navigation.navDeepLink
 import com.example.paypulse.ui.merchants.MerchantsRoute
 import com.example.paypulse.ui.merchants.details.MerchantDetailsNavigation
 import com.example.paypulse.ui.merchants.details.MerchantDetailsRoute
+import com.example.paypulse.ui.outlets.OutletsRoute
 
 const val MERCHANT_DETAILS_LINK_BASE = "paypulse://merchants"
 
@@ -25,9 +26,13 @@ internal fun NavGraphBuilder.merchantsDestinations(navController: NavHostControl
                 onBackClick = { navController.navigateUp() },
                 onMerchantsClick = { navController.navigateBackToMerchants() },
                 onOutletClick = {},
-                onTerminalClick = {}
+                onTerminalClick = {},
+                onAllOutletsClick = { id, name -> navController.navigate(ShellRoute.MerchantOutlets(id, name)) }
             )
         )
+    }
+    composable<ShellRoute.MerchantOutlets> {
+        OutletsRoute(onBack = { navController.navigateUp() }, onOutletClick = {})
     }
 }
 

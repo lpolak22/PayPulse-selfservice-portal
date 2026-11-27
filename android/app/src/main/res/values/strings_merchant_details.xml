@@ -8,6 +8,7 @@
     <string name="merchant_details_outlets_search">Pretraži prodajna mjesta</string>
     <string name="merchant_details_terminals_search">Pretraži terminale</string>
     <string name="merchant_details_shown_count">Prikazano %1$s od %2$s</string>
+    <string name="merchant_details_all_outlets">Prikaži sva prodajna mjesta</string>
     <string name="merchant_details_missing_value">—</string>
     <plurals name="merchant_details_terminal_count">
         <item quantity="one">%1$d terminal</item>

@@ -6,6 +6,7 @@ sealed interface ShellRoute {
     @Serializable data object Home : ShellRoute
     @Serializable data object Merchants : ShellRoute
     @Serializable data class MerchantDetails(val id: Long) : ShellRoute
+    @Serializable data class MerchantOutlets(val merchantId: Long, val merchantName: String) : ShellRoute
     @Serializable data object Terminals : ShellRoute
     @Serializable data object Transactions : ShellRoute
     @Serializable data class TransactionDetails(val id: Long) : ShellRoute

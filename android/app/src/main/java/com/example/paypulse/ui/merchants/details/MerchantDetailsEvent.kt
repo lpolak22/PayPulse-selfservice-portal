@@ -8,5 +8,6 @@ sealed interface MerchantDetailsEvent {
     data object SearchCleared : MerchantDetailsEvent
     data class OutletClicked(val id: Long) : MerchantDetailsEvent
     data class TerminalClicked(val id: Long) : MerchantDetailsEvent
+    data class AllOutletsClicked(val merchantId: Long, val merchantName: String) : MerchantDetailsEvent
     data object Retry : MerchantDetailsEvent
 }
