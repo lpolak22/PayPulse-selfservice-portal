@@ -29,6 +29,7 @@
     <string name="outlets_error_not_found_body">Trgovac ne postoji ili ne pripada tvojoj organizaciji.</string>
     <string name="outlets_error_unknown_title">Nešto je pošlo po zlu</string>
     <string name="outlets_error_unknown_body">Pokušaj ponovno za nekoliko trenutaka.</string>
+    <string name="outlets_refresh_failed">Popis nije osvježen. Prikazani su zadnji učitani podaci.</string>
     <string name="outlets_loading_more">Učitavanje još prodajnih mjesta</string>
     <string name="outlets_load_more_failed">Sljedeća prodajna mjesta se nisu učitala.</string>
 </resources>

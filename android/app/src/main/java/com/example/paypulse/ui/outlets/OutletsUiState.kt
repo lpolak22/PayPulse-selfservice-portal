@@ -9,7 +9,8 @@ data class OutletsUiState(
     val city: String? = null,
     val cities: List<String> = emptyList(),
     val content: OutletsContent = OutletsContent.Loading,
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
+    val refreshError: OutletError? = null
 ) {
     val hasFilters: Boolean
         get() = searchText.isNotBlank() || city != null

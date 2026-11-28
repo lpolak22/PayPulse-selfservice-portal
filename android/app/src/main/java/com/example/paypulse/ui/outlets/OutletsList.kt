@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -33,36 +34,48 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 
 private const val LOAD_MORE_THRESHOLD = 3
+private const val HEADER_KEY = "header"
 private const val FOOTER_KEY = "paging-footer"
 
 @Composable
 fun OutletsList(
-    content: OutletsContent.Loaded,
+    state: OutletsUiState,
     onEvent: (OutletsEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
-    LoadMoreEffect(listState = listState, paging = content.paging, onEvent = onEvent)
+    val canLoadMore = (state.content as? OutletsContent.Loaded)?.paging == OutletsPaging.IDLE && !state.isRefreshing
+    LoadMoreEffect(listState = listState, canLoadMore = canLoadMore, onEvent = onEvent)
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(items = content.outlets, key = { it.id }) { outlet ->
-            OutletCard(outlet = outlet, onClick = { onEvent(OutletsEvent.OutletClicked(outlet.id)) })
-        }
-        item(key = FOOTER_KEY) {
-            PagingFooter(paging = content.paging, onRetry = { onEvent(OutletsEvent.Retry) })
+        item(key = HEADER_KEY) { OutletsHeader(state = state, onEvent = onEvent) }
+        when (val content = state.content) {
+            OutletsContent.Loading -> item(key = "skeleton") { OutletsSkeleton() }
+            OutletsContent.Empty -> item(key = "empty") { EmptyMessage(hasFilters = state.hasFilters, onEvent = onEvent) }
+            is OutletsContent.Error -> item(key = "error") { ErrorMessage(error = content.error, onEvent = onEvent) }
+            is OutletsContent.Loaded -> outletItems(content = content, onEvent = onEvent)
         }
     }
 }
 
+private fun LazyListScope.outletItems(content: OutletsContent.Loaded, onEvent: (OutletsEvent) -> Unit) {
+    items(items = content.outlets, key = { it.id }) { outlet ->
+        OutletCard(outlet = outlet, onClick = { onEvent(OutletsEvent.OutletClicked(outlet.id)) })
+    }
+    item(key = FOOTER_KEY) {
+        PagingFooter(paging = content.paging, onRetry = { onEvent(OutletsEvent.Retry) })
+    }
+}
+
 @Composable
-private fun LoadMoreEffect(listState: LazyListState, paging: OutletsPaging, onEvent: (OutletsEvent) -> Unit) {
+private fun LoadMoreEffect(listState: LazyListState, canLoadMore: Boolean, onEvent: (OutletsEvent) -> Unit) {
     val currentOnEvent by rememberUpdatedState(onEvent)
-    LaunchedEffect(listState, paging) {
-        if (paging != OutletsPaging.IDLE) return@LaunchedEffect
+    LaunchedEffect(listState, canLoadMore) {
+        if (!canLoadMore) return@LaunchedEffect
         snapshotFlow { listState.isNearEnd() }
             .distinctUntilChanged()
             .filter { it }

@@ -192,6 +192,62 @@ class OutletsViewModelTest {
     }
 
     @Test
+    fun failedRefresh_keepsTheListAndShowsTheRefreshError() = runTest {
+        val viewModel = openedViewModel()
+        repository.defaultResult = OutletResult.Failure(OutletError.NETWORK)
+
+        viewModel.onEvent(OutletsEvent.Refresh)
+        advanceUntilIdle()
+
+        assertEquals(outlets(1..2), viewModel.loaded().outlets)
+        assertEquals(OutletError.NETWORK, viewModel.uiState.value.refreshError)
+        assertFalse(viewModel.uiState.value.isRefreshing)
+    }
+
+    @Test
+    fun successfulRefreshAfterAFailure_clearsTheRefreshError() = runTest {
+        val viewModel = openedViewModel()
+        repository.enqueue(OutletResult.Failure(OutletError.NETWORK))
+        viewModel.onEvent(OutletsEvent.Refresh)
+        advanceUntilIdle()
+
+        viewModel.onEvent(OutletsEvent.Refresh)
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.refreshError)
+        assertEquals(outlets(1..2), viewModel.loaded().outlets)
+    }
+
+    @Test
+    fun loadMore_whileANewSearchIsWaiting_doesNotMixOldAndNewResults() = runTest {
+        repository.enqueue(successPage(outlets(1..20), total = 25))
+        val viewModel = openedViewModel()
+
+        viewModel.onEvent(OutletsEvent.SearchChanged("ilica"))
+        viewModel.onEvent(OutletsEvent.LoadMore)
+        advanceUntilIdle()
+
+        assertEquals(listOf(0, 0), repository.queries.map { it.page })
+        assertEquals("ilica", repository.queries.last().search)
+    }
+
+    @Test
+    fun nextPage_usesTheSearchOfTheListOnScreen() = runTest {
+        repository.enqueue(successPage(outlets(1..20), total = 25))
+        val viewModel = openedViewModel()
+        repository.enqueue(successPage(outlets(1..20), total = 25))
+        viewModel.onEvent(OutletsEvent.CitySelected("Rijeka"))
+        advanceUntilIdle()
+
+        viewModel.onEvent(OutletsEvent.LoadMore)
+        advanceUntilIdle()
+
+        val nextPage = repository.queries.last()
+        assertEquals(1, nextPage.page)
+        assertEquals("Rijeka", nextPage.city)
+    }
+
+    @Test
     fun searchAndCity_areRestoredFromSavedState() = runTest {
         val viewModel = openedViewModel()
         viewModel.onEvent(OutletsEvent.SearchChanged("ilica"))

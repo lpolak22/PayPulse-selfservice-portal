@@ -1,7 +1,6 @@
 package com.example.paypulse.ui.outlets
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -9,8 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import com.example.paypulse.R
 import com.example.paypulse.domain.outlet.OutletError
 import com.example.paypulse.ui.components.CroatianFormat
+import com.example.paypulse.ui.components.MessageBanner
 import com.example.paypulse.ui.components.SearchField
 import com.example.paypulse.ui.components.StatusMessage
 
@@ -84,39 +82,24 @@ fun OutletsPane(
         onRefresh = { onEvent(OutletsEvent.Refresh) },
         modifier = modifier.fillMaxSize()
     ) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            OutletsHeader(state = state, onEvent = onEvent)
-            OutletsBody(state = state, onEvent = onEvent, modifier = Modifier.weight(1f))
-        }
+        OutletsList(state = state, onEvent = onEvent)
     }
 }
 
 @Composable
-private fun OutletsHeader(state: OutletsUiState, onEvent: (OutletsEvent) -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
+internal fun OutletsHeader(state: OutletsUiState, onEvent: (OutletsEvent) -> Unit) {
+    Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         HeaderTitle()
         SearchField(
             query = state.searchText,
             onQueryChange = { onEvent(OutletsEvent.SearchChanged(it)) },
             placeholder = stringResource(R.string.outlets_search_placeholder),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxWidth(),
             onClear = { onEvent(OutletsEvent.SearchCleared) }
         )
-        CityFilter(
-            selected = state.city,
-            cities = state.cities,
-            onSelect = { onEvent(OutletsEvent.CitySelected(it)) },
-            modifier = Modifier.padding(horizontal = 16.dp)
-        )
+        CityFilter(selected = state.city, cities = state.cities, onSelect = { onEvent(OutletsEvent.CitySelected(it)) })
         (state.content as? OutletsContent.Loaded)?.let { ResultCount(total = it.total) }
+        state.refreshError?.let { RefreshFailedBanner(onRetry = { onEvent(OutletsEvent.Refresh) }) }
     }
 }
 
@@ -126,9 +109,7 @@ private fun HeaderTitle() {
         text = stringResource(R.string.outlets_title),
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.SemiBold,
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .semantics { heading() }
+        modifier = Modifier.semantics { heading() }
     )
 }
 
@@ -138,30 +119,25 @@ private fun ResultCount(total: Long) {
     Text(
         text = stringResource(R.string.outlets_count, count),
         style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp)
+        color = MaterialTheme.colorScheme.onSurfaceVariant
     )
 }
 
 @Composable
-private fun OutletsBody(state: OutletsUiState, onEvent: (OutletsEvent) -> Unit, modifier: Modifier) {
-    Box(modifier = modifier.fillMaxSize()) {
-        when (val content = state.content) {
-            OutletsContent.Loading -> OutletsSkeleton()
-            OutletsContent.Empty -> EmptyMessage(hasFilters = state.hasFilters, onEvent = onEvent)
-            is OutletsContent.Error -> ErrorMessage(error = content.error, onEvent = onEvent)
-            is OutletsContent.Loaded -> OutletsList(content = content, onEvent = onEvent)
-        }
-    }
+private fun RefreshFailedBanner(onRetry: () -> Unit) {
+    MessageBanner(
+        message = stringResource(R.string.outlets_refresh_failed),
+        actionLabel = stringResource(R.string.outlets_retry),
+        onAction = onRetry
+    )
 }
 
 @Composable
-private fun EmptyMessage(hasFilters: Boolean, onEvent: (OutletsEvent) -> Unit) {
+internal fun EmptyMessage(hasFilters: Boolean, onEvent: (OutletsEvent) -> Unit) {
     StatusMessage(
         icon = R.drawable.ic_inbox,
         title = stringResource(R.string.outlets_empty_title),
         body = stringResource(if (hasFilters) R.string.outlets_empty_body else R.string.outlets_empty_no_filters_body),
-        modifier = Modifier.verticalScroll(rememberScrollState()),
         action = if (hasFilters) {
             { MessageButton(text = stringResource(R.string.outlets_clear_filters), onClick = { onEvent(OutletsEvent.ClearFilters) }) }
         } else {
@@ -171,13 +147,12 @@ private fun EmptyMessage(hasFilters: Boolean, onEvent: (OutletsEvent) -> Unit) {
 }
 
 @Composable
-private fun ErrorMessage(error: OutletError, onEvent: (OutletsEvent) -> Unit) {
+internal fun ErrorMessage(error: OutletError, onEvent: (OutletsEvent) -> Unit) {
     val isNotFound = error == OutletError.MERCHANT_NOT_FOUND
     StatusMessage(
         icon = error.icon(),
         title = stringResource(error.title()),
-        body = stringResource(error.body()),
-        modifier = Modifier.verticalScroll(rememberScrollState())
+        body = stringResource(error.body())
     ) {
         MessageButton(
             text = stringResource(if (isNotFound) R.string.outlets_back else R.string.outlets_retry),

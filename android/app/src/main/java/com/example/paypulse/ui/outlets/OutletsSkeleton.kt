@@ -30,7 +30,7 @@ fun OutletsSkeleton(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .padding(vertical = 4.dp)
             .clearAndSetSemantics { contentDescription = description },
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {

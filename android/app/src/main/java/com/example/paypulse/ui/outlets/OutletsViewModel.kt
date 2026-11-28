@@ -43,6 +43,7 @@ class OutletsViewModel(
     val uiState: StateFlow<OutletsUiState> = _uiState.asStateFlow()
 
     private var outlets: List<Outlet> = emptyList()
+    private var loadedQuery: OutletQuery = currentQuery()
     private var nextPage = 0
     private var loadJob: Job? = null
     private var searchJob: Job? = null
@@ -93,27 +94,35 @@ class OutletsViewModel(
 
     private fun refresh() {
         searchJob?.cancel()
-        _uiState.update { it.copy(isRefreshing = true) }
+        _uiState.update { it.copy(isRefreshing = true, refreshError = null) }
         loadCities()
-        loadPage(0)
+        loadedQuery = currentQuery()
+        loadPage(loadedQuery)
     }
 
     private fun loadMore() {
         val state = _uiState.value
         val content = state.content as? OutletsContent.Loaded ?: return
-        if (content.paging == OutletsPaging.IDLE && !state.isRefreshing) loadNextPage(content)
+        val searchPending = searchJob?.isActive == true
+        if (content.paging == OutletsPaging.IDLE && !state.isRefreshing && !searchPending) loadNextPage(content)
     }
 
     private fun loadNextPage(content: OutletsContent.Loaded) {
         _uiState.update { it.copy(content = content.copy(paging = OutletsPaging.LOADING_MORE)) }
-        loadPage(nextPage)
+        loadPage(loadedQuery.copy(page = nextPage))
     }
 
     private fun reload() {
         outlets = emptyList()
         nextPage = 0
-        _uiState.update { it.copy(content = OutletsContent.Loading) }
-        loadPage(0)
+        _uiState.update { it.copy(content = OutletsContent.Loading, refreshError = null) }
+        loadedQuery = currentQuery()
+        loadPage(loadedQuery)
+    }
+
+    private fun currentQuery(): OutletQuery {
+        val state = _uiState.value
+        return OutletQuery(merchantId = merchantId, search = state.searchText, city = state.city)
     }
 
     private fun loadCities() {
@@ -124,14 +133,12 @@ class OutletsViewModel(
         }
     }
 
-    private fun loadPage(page: Int) {
+    private fun loadPage(query: OutletQuery) {
         loadJob?.cancel()
-        val state = _uiState.value
-        val query = OutletQuery(merchantId = merchantId, search = state.searchText, city = state.city, page = page)
         loadJob = viewModelScope.launch {
             when (val result = repository.search(query)) {
                 is OutletResult.Success -> onPageLoaded(result.page)
-                is OutletResult.Failure -> onPageFailed(page, result.error)
+                is OutletResult.Failure -> onPageFailed(query.page, result.error)
             }
         }
     }
@@ -144,16 +151,16 @@ class OutletsViewModel(
             total = page.total,
             paging = if (page.hasMore) OutletsPaging.IDLE else OutletsPaging.END
         )
-        _uiState.update { it.copy(content = content, isRefreshing = false) }
+        _uiState.update { it.copy(content = content, isRefreshing = false, refreshError = null) }
     }
 
     private fun onPageFailed(page: Int, error: OutletError) {
         _uiState.update { state ->
             val content = state.content
-            if (page > 0 && content is OutletsContent.Loaded) {
-                state.copy(content = content.copy(paging = OutletsPaging.APPEND_ERROR), isRefreshing = false)
-            } else {
-                state.copy(content = OutletsContent.Error(error), isRefreshing = false)
+            when {
+                content !is OutletsContent.Loaded -> state.copy(content = OutletsContent.Error(error), isRefreshing = false)
+                page > 0 -> state.copy(content = content.copy(paging = OutletsPaging.APPEND_ERROR), isRefreshing = false)
+                else -> state.copy(isRefreshing = false, refreshError = error)
             }
         }
     }
