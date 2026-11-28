@@ -3,10 +3,12 @@ package com.example.paypulse.ui.merchants.details
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -60,10 +62,13 @@ fun LazyListScope.relatedItemsSection(state: MerchantDetailsUiState, onEvent: (M
     val details = state.details ?: return
     val search = state.currentSearch
     when (state.selectedTab) {
-        MerchantDetailsTab.OUTLETS -> section(state.selectedTab, details.outlets, state.visibleOutlets, search, onEvent) {
-            items(items = it, key = { outlet -> "outlet-${outlet.id}" }) { outlet ->
-                OutletRow(outlet = outlet, onClick = { onEvent(MerchantDetailsEvent.OutletClicked(outlet.id)) })
+        MerchantDetailsTab.OUTLETS -> {
+            section(state.selectedTab, details.outlets, state.visibleOutlets, search, onEvent) {
+                items(items = it, key = { outlet -> "outlet-${outlet.id}" }) { outlet ->
+                    OutletRow(outlet = outlet, onClick = { onEvent(MerchantDetailsEvent.OutletClicked(outlet.id)) })
+                }
             }
+            allOutletsButton(details, onEvent)
         }
         MerchantDetailsTab.TERMINALS -> section(state.selectedTab, details.terminals, state.visibleTerminals, search, onEvent) {
             items(items = it, key = { terminal -> "terminal-${terminal.id}" }) { terminal ->
@@ -93,6 +98,21 @@ private fun <T> LazyListScope.section(
     }
     if (all.total > all.items.size && search.isBlank()) {
         item(key = "shown-count") { ShownCount(shown = all.items.size.toLong(), total = all.total) }
+    }
+}
+
+private fun LazyListScope.allOutletsButton(details: MerchantDetails, onEvent: (MerchantDetailsEvent) -> Unit) {
+    if (details.outlets.items.isEmpty()) return
+    item(key = "all-outlets") {
+        OutlinedButton(
+            onClick = { onEvent(MerchantDetailsEvent.AllOutletsClicked(details.id, details.name)) },
+            modifier = Modifier
+                .padding(top = 16.dp, bottom = 8.dp)
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+        ) {
+            Text(text = stringResource(R.string.merchant_details_all_outlets))
+        }
     }
 }
 

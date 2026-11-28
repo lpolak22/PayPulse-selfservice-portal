@@ -112,7 +112,8 @@ class MerchantDetailsViewModelTest {
             MerchantDetailsEvent.BackClicked,
             MerchantDetailsEvent.MerchantsClicked,
             MerchantDetailsEvent.OutletClicked(11),
-            MerchantDetailsEvent.TerminalClicked(21)
+            MerchantDetailsEvent.TerminalClicked(21),
+            MerchantDetailsEvent.AllOutletsClicked(7, "Konzum d.d.")
         ).forEach(viewModel::onEvent)
         advanceUntilIdle()
 

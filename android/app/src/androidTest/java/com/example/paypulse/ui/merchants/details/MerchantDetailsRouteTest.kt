@@ -3,11 +3,14 @@ package com.example.paypulse.ui.merchants.details
 import androidx.annotation.StringRes
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.lifecycle.SavedStateHandle
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -34,7 +37,8 @@ class MerchantDetailsRouteTest {
         onBackClick = { navigationCalls += "back" },
         onMerchantsClick = { navigationCalls += "merchants" },
         onOutletClick = { navigationCalls += "outlet $it" },
-        onTerminalClick = { navigationCalls += "terminal $it" }
+        onTerminalClick = { navigationCalls += "terminal $it" },
+        onAllOutletsClick = { id, name -> navigationCalls += "all outlets $id $name" }
     )
 
     private fun openMerchant(id: Long) {
@@ -74,6 +78,17 @@ class MerchantDetailsRouteTest {
         composeRule.onNodeWithText("TK000101", useUnmergedTree = true).performClick()
 
         assertEquals(listOf("outlet 14", "terminal 21"), navigationCalls)
+    }
+
+    @Test
+    fun showAllOutlets_opensTheFullOutletListOfThisMerchant() {
+        openMerchant(OWN_MERCHANT_ID)
+        val showAll = text(R.string.merchant_details_all_outlets)
+
+        composeRule.onNode(hasScrollAction()).performScrollToNode(hasText(showAll))
+        composeRule.onNodeWithText(showAll).performClick()
+
+        assertEquals(listOf("all outlets $OWN_MERCHANT_ID Trgovina Kvadrat d.o.o."), navigationCalls)
     }
 
     @Test

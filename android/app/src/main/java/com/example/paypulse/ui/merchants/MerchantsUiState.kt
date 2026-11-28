@@ -8,7 +8,8 @@ data class MerchantsUiState(
     val searchText: String = "",
     val status: MerchantStatus? = null,
     val content: MerchantsContent = MerchantsContent.Loading,
-    val isRefreshing: Boolean = false
+    val isRefreshing: Boolean = false,
+    val refreshError: MerchantError? = null
 ) {
     val hasFilters: Boolean
         get() = searchText.isNotBlank() || status != null

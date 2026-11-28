@@ -151,6 +151,32 @@ class MerchantsViewModelTest {
     }
 
     @Test
+    fun failedRefresh_keepsTheListAndShowsTheRefreshError() = runTest {
+        val viewModel = openedViewModel()
+        repository.defaultResult = MerchantResult.Failure(MerchantError.NETWORK)
+
+        viewModel.onEvent(MerchantsEvent.Refresh)
+        advanceUntilIdle()
+
+        assertEquals(merchants(1..2), viewModel.loaded().merchants)
+        assertEquals(MerchantError.NETWORK, viewModel.uiState.value.refreshError)
+        assertFalse(viewModel.uiState.value.isRefreshing)
+    }
+
+    @Test
+    fun loadMore_whileANewSearchIsWaiting_doesNotMixOldAndNewResults() = runTest {
+        repository.enqueue(successPage(merchants(1..20), total = 25))
+        val viewModel = openedViewModel()
+
+        viewModel.onEvent(MerchantsEvent.SearchChanged("konzum"))
+        viewModel.onEvent(MerchantsEvent.LoadMore)
+        advanceUntilIdle()
+
+        assertEquals(listOf(0, 0), repository.queries.map { it.page })
+        assertEquals("konzum", repository.queries.last().search)
+    }
+
+    @Test
     fun searchAndStatus_areRestoredFromSavedState() = runTest {
         val viewModel = openedViewModel()
         viewModel.onEvent(MerchantsEvent.SearchChanged("konzum"))

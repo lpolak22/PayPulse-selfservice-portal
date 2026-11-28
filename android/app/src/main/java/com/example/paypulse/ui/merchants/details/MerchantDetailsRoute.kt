@@ -12,7 +12,8 @@ class MerchantDetailsNavigation(
     val onBackClick: () -> Unit,
     val onMerchantsClick: () -> Unit,
     val onOutletClick: (Long) -> Unit,
-    val onTerminalClick: (Long) -> Unit
+    val onTerminalClick: (Long) -> Unit,
+    val onAllOutletsClick: (merchantId: Long, merchantName: String) -> Unit
 )
 
 @Composable
@@ -30,6 +31,8 @@ fun MerchantDetailsRoute(
                 MerchantDetailsEvent.MerchantsClicked -> currentNavigation.onMerchantsClick()
                 is MerchantDetailsEvent.OutletClicked -> currentNavigation.onOutletClick(event.id)
                 is MerchantDetailsEvent.TerminalClicked -> currentNavigation.onTerminalClick(event.id)
+                is MerchantDetailsEvent.AllOutletsClicked ->
+                    currentNavigation.onAllOutletsClick(event.merchantId, event.merchantName)
                 else -> viewModel.onEvent(event)
             }
         }

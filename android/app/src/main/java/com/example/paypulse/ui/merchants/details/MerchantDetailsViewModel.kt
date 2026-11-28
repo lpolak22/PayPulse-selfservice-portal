@@ -55,7 +55,8 @@ class MerchantDetailsViewModel(
             MerchantDetailsEvent.BackClicked,
             MerchantDetailsEvent.MerchantsClicked,
             is MerchantDetailsEvent.OutletClicked,
-            is MerchantDetailsEvent.TerminalClicked -> Unit
+            is MerchantDetailsEvent.TerminalClicked,
+            is MerchantDetailsEvent.AllOutletsClicked -> Unit
         }
     }
 

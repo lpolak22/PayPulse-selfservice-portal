@@ -29,6 +29,7 @@
     <string name="merchants_error_unknown_body">Pokušaj ponovno za nekoliko trenutaka.</string>
     <string name="merchants_error_invalid_filter_title">Pretraga nije ispravna</string>
     <string name="merchants_error_invalid_filter_body">Promijeni pretragu ili poništi filtre.</string>
+    <string name="merchants_refresh_failed">Popis nije osvježen. Prikazani su zadnji učitani podaci.</string>
     <string name="merchants_loading_more">Učitavanje još trgovaca</string>
     <string name="merchants_load_more_failed">Sljedeći trgovci se nisu učitali.</string>
 </resources>
