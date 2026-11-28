@@ -32,6 +32,7 @@ import com.example.paypulse.R
 import com.example.paypulse.domain.merchant.MerchantError
 import com.example.paypulse.domain.merchant.MerchantStatus
 import com.example.paypulse.ui.components.CroatianFormat
+import com.example.paypulse.ui.components.MessageBanner
 import com.example.paypulse.ui.components.PayPulseTopBar
 import com.example.paypulse.ui.components.SearchField
 import com.example.paypulse.ui.components.StatusMessage
@@ -72,14 +73,7 @@ private fun MerchantsHeader(state: MerchantsUiState, onEvent: (MerchantsEvent) -
             .padding(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(
-            text = stringResource(R.string.merchants_title),
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier
-                .padding(horizontal = 16.dp)
-                .semantics { heading() }
-        )
+        HeaderTitle()
         SearchField(
             query = state.searchText,
             onQueryChange = { onEvent(MerchantsEvent.SearchChanged(it)) },
@@ -91,7 +85,30 @@ private fun MerchantsHeader(state: MerchantsUiState, onEvent: (MerchantsEvent) -
         )
         StatusFilterRow(selected = state.status, onSelect = { onEvent(MerchantsEvent.StatusSelected(it)) })
         (state.content as? MerchantsContent.Loaded)?.let { ResultCount(total = it.total) }
+        state.refreshError?.let { RefreshFailedBanner(onRetry = { onEvent(MerchantsEvent.Refresh) }) }
     }
+}
+
+@Composable
+private fun HeaderTitle() {
+    Text(
+        text = stringResource(R.string.merchants_title),
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier
+            .padding(horizontal = 16.dp)
+            .semantics { heading() }
+    )
+}
+
+@Composable
+private fun RefreshFailedBanner(onRetry: () -> Unit) {
+    MessageBanner(
+        message = stringResource(R.string.merchants_refresh_failed),
+        actionLabel = stringResource(R.string.merchants_retry),
+        onAction = onRetry,
+        modifier = Modifier.padding(horizontal = 16.dp)
+    )
 }
 
 @Composable
@@ -132,7 +149,7 @@ private fun MerchantsBody(state: MerchantsUiState, onEvent: (MerchantsEvent) -> 
             MerchantsContent.Loading -> MerchantsSkeleton()
             MerchantsContent.Empty -> EmptyMessage(hasFilters = state.hasFilters, onEvent = onEvent)
             is MerchantsContent.Error -> ErrorMessage(error = content.error, onEvent = onEvent)
-            is MerchantsContent.Loaded -> MerchantsList(content = content, onEvent = onEvent)
+            is MerchantsContent.Loaded -> MerchantsList(content = content, isRefreshing = state.isRefreshing, onEvent = onEvent)
         }
     }
 }

@@ -40,6 +40,7 @@ class MerchantsViewModel(
     val uiState: StateFlow<MerchantsUiState> = _uiState.asStateFlow()
 
     private var merchants: List<Merchant> = emptyList()
+    private var loadedQuery: MerchantQuery = currentQuery()
     private var nextPage = 0
     private var loadJob: Job? = null
     private var searchJob: Job? = null
@@ -87,36 +88,42 @@ class MerchantsViewModel(
 
     private fun refresh() {
         searchJob?.cancel()
-        _uiState.update { it.copy(isRefreshing = true) }
-        loadPage(0)
+        _uiState.update { it.copy(isRefreshing = true, refreshError = null) }
+        loadedQuery = currentQuery()
+        loadPage(loadedQuery)
     }
 
     private fun loadMore() {
         val state = _uiState.value
         val content = state.content as? MerchantsContent.Loaded ?: return
-        if (content.paging == MerchantsPaging.IDLE && !state.isRefreshing) loadNextPage(content)
+        val searchPending = searchJob?.isActive == true
+        if (content.paging == MerchantsPaging.IDLE && !state.isRefreshing && !searchPending) loadNextPage(content)
     }
 
     private fun loadNextPage(content: MerchantsContent.Loaded) {
         _uiState.update { it.copy(content = content.copy(paging = MerchantsPaging.LOADING_MORE)) }
-        loadPage(nextPage)
+        loadPage(loadedQuery.copy(page = nextPage))
     }
 
     private fun reload() {
         merchants = emptyList()
         nextPage = 0
-        _uiState.update { it.copy(content = MerchantsContent.Loading) }
-        loadPage(0)
+        _uiState.update { it.copy(content = MerchantsContent.Loading, refreshError = null) }
+        loadedQuery = currentQuery()
+        loadPage(loadedQuery)
     }
 
-    private fun loadPage(page: Int) {
-        loadJob?.cancel()
+    private fun currentQuery(): MerchantQuery {
         val state = _uiState.value
-        val query = MerchantQuery(search = state.searchText, status = state.status, page = page)
+        return MerchantQuery(search = state.searchText, status = state.status)
+    }
+
+    private fun loadPage(query: MerchantQuery) {
+        loadJob?.cancel()
         loadJob = viewModelScope.launch {
             when (val result = repository.search(query)) {
                 is MerchantResult.Success -> onPageLoaded(result.page)
-                is MerchantResult.Failure -> onPageFailed(page, result.error)
+                is MerchantResult.Failure -> onPageFailed(query.page, result.error)
             }
         }
     }
@@ -129,16 +136,16 @@ class MerchantsViewModel(
             total = page.total,
             paging = if (page.hasMore) MerchantsPaging.IDLE else MerchantsPaging.END
         )
-        _uiState.update { it.copy(content = content, isRefreshing = false) }
+        _uiState.update { it.copy(content = content, isRefreshing = false, refreshError = null) }
     }
 
     private fun onPageFailed(page: Int, error: MerchantError) {
         _uiState.update { state ->
             val content = state.content
-            if (page > 0 && content is MerchantsContent.Loaded) {
-                state.copy(content = content.copy(paging = MerchantsPaging.APPEND_ERROR), isRefreshing = false)
-            } else {
-                state.copy(content = MerchantsContent.Error(error), isRefreshing = false)
+            when {
+                content !is MerchantsContent.Loaded -> state.copy(content = MerchantsContent.Error(error), isRefreshing = false)
+                page > 0 -> state.copy(content = content.copy(paging = MerchantsPaging.APPEND_ERROR), isRefreshing = false)
+                else -> state.copy(isRefreshing = false, refreshError = error)
             }
         }
     }

@@ -38,11 +38,13 @@ private const val FOOTER_KEY = "paging-footer"
 @Composable
 fun MerchantsList(
     content: MerchantsContent.Loaded,
+    isRefreshing: Boolean,
     onEvent: (MerchantsEvent) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
-    LoadMoreEffect(listState = listState, paging = content.paging, onEvent = onEvent)
+    val canLoadMore = content.paging == MerchantsPaging.IDLE && !isRefreshing
+    LoadMoreEffect(listState = listState, canLoadMore = canLoadMore, onEvent = onEvent)
     LazyColumn(
         state = listState,
         modifier = modifier.fillMaxSize(),
@@ -59,10 +61,10 @@ fun MerchantsList(
 }
 
 @Composable
-private fun LoadMoreEffect(listState: LazyListState, paging: MerchantsPaging, onEvent: (MerchantsEvent) -> Unit) {
+private fun LoadMoreEffect(listState: LazyListState, canLoadMore: Boolean, onEvent: (MerchantsEvent) -> Unit) {
     val currentOnEvent by rememberUpdatedState(onEvent)
-    LaunchedEffect(listState, paging) {
-        if (paging != MerchantsPaging.IDLE) return@LaunchedEffect
+    LaunchedEffect(listState, canLoadMore) {
+        if (!canLoadMore) return@LaunchedEffect
         snapshotFlow { listState.isNearEnd() }
             .distinctUntilChanged()
             .filter { it }
